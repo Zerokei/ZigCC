@@ -5,253 +5,963 @@
 #include "SyntaxModel/SyntaxModel.h"
 #include "Visitor.h"
 
-// TODO: add checks for nullptr
-// TODO: replace static_cast with dynamic_cast?
-
 namespace SM = SyntaxModel;
 using PT = SM::PrimitiveType;
 
-antlrcpp::Any Visitor::visitProgram(ZigCCParser::ProgramContext* ctx)
+std::any visitTranslationUnit(ZigCCParser::TranslationUnitContext *ctx)
 {
-    std::vector<SM::Include> includes;
-    for (auto* inc : ctx->INCLUDE())
-        includes.push_back(SM::Include(inc));
-    auto definitions = visit_all<SM::Definition>(ctx->decl_or_def());
-    auto functions = visit_all<SM::Function>(ctx->function());
-    functions.push_back(new SM::Putchar()); // We add putchar function which is defined by default
-    return new SM::Program(ctx->getSourceInterval(), includes, functions, definitions);
+    
 }
 
-antlrcpp::Any Visitor::visitFunctioncall(ZigCCParser::FunctioncallContext* ctx)
+std::any visitPrimaryExpression(ZigCCParser::PrimaryExpressionContext *ctx)
 {
-    auto args = visit_all<SM::Expression>(ctx->expression());
-    auto func_name = SM::Identifier(ctx->IDENTIFIER());
-    return static_cast<SM::Expression*>(new SM::FunctionCall(ctx->getSourceInterval(), args, func_name));
+    
 }
 
-antlrcpp::Any Visitor::visitFunction(ZigCCParser::FunctionContext* ctx)
+std::any visitIdExpression(ZigCCParser::IdExpressionContext *ctx)
 {
-    auto id = SM::Identifier(ctx->IDENTIFIER());
-    auto args = visit_single<SM::Args>(ctx->args());
-    auto definitions = visit_all<SM::Definition>(ctx->decl_or_def());
-    auto return_type = visit_single<SM::Type>(ctx->type());
-    auto instructions = visit_all<SM::Instruction>(ctx->instruction());
-    return new SM::Function(ctx->getSourceInterval(), definitions, instructions, args, id, return_type);
+
 }
 
-antlrcpp::Any Visitor::visitArgs(ZigCCParser::ArgsContext* ctx)
+std::any visitUnqualifiedId(ZigCCParser::UnqualifiedIdContext *ctx)
 {
-    auto names = make_all_terminals(ctx->IDENTIFIER());
-    auto types = visit_all<SM::Type>(ctx->type());
-    return new SM::Args(ctx->getSourceInterval(), types, names);
+
 }
 
-antlrcpp::Any Visitor::visitDeclare(ZigCCParser::DeclareContext* ctx)
+std::any visitQualifiedId(ZigCCParser::QualifiedIdContext *ctx)
 {
-    auto type = visit_single<SM::Type>(ctx->atomic_type());
-    auto names = make_all_terminals(ctx->IDENTIFIER());
-    return new SM::Definition(ctx->getSourceInterval(), type, names);
+
 }
 
-const std::list<const SM::Definition::size_constant*> Visitor::parseArraySizes(const std::vector<antlr4::tree::TerminalNode*>& integers)
+std::any visitNestedNameSpecifier(ZigCCParser::NestedNameSpecifierContext *ctx)
 {
-    // Parse array sizes from their tokens to build Constant<INT32_T> instances
-    std::list<const SM::Definition::size_constant*> sizes;
-    for (auto* terminal : integers) {
-        // Find source interval from terminal node and make a Constant<INT32_T> for each specified size
-        auto interval = antlr4::misc::Interval(terminal->getSymbol()->getStartIndex(), terminal->getSymbol()->getStopIndex()); // TODO: make sure this is the right interval
-        sizes.push_back(SM::make_constant_from_terminal<PT::INT32_T>(interval, terminal));
-    }
-    return sizes;
+
 }
 
-antlrcpp::Any Visitor::visitDecltable(ZigCCParser::DecltableContext* ctx)
+std::any visitLambdaExpression(ZigCCParser::LambdaExpressionContext *ctx)
 {
-    auto* type = visit_single<SM::Type>(ctx->atomic_type());
-    auto* array_type = new SM::Type(type->source_interval, type->type, true);
-    delete type;
-    auto names = make_all_terminals(ctx->IDENTIFIER());
-    auto sizes = parseArraySizes(ctx->INTEGER());
-    return new SM::Definition(ctx->getSourceInterval(), array_type, names, sizes);
+
 }
 
-antlrcpp::Any Visitor::visitDeftable(ZigCCParser::DeftableContext* ctx)
+std::any visitLambdaIntroducer(ZigCCParser::LambdaIntroducerContext *ctx)
 {
-    auto type = visit_single<SM::Type>(ctx->atomic_type());
-    auto array_type = new SM::Type(type->source_interval, type->type, true);
-    delete type;
-    auto names = make_all_terminals(ctx->IDENTIFIER());
-    auto sizes = parseArraySizes(ctx->INTEGER());
-    auto init_arrays = visit_all<SM::Expression>(ctx->expression());
-    return new SM::Definition(ctx->getSourceInterval(), array_type, names, sizes, init_arrays);
+
 }
 
-antlrcpp::Any Visitor::visitDefine(ZigCCParser::DefineContext* ctx)
+std::any visitLambdaCapture(ZigCCParser::LambdaCaptureContext *ctx)
 {
-    auto type = visit_single<SM::Type>(ctx->atomic_type());
-    auto names = make_all_terminals(ctx->IDENTIFIER());
-    auto init_values = visit_all<SM::Expression>(ctx->expression());
-    return new SM::Definition(ctx->getSourceInterval(), type, names, init_values);
+
 }
 
-antlrcpp::Any Visitor::visitReturn(ZigCCParser::ReturnContext* ctx)
+std::any visitCaptureDefault(ZigCCParser::CaptureDefaultContext *ctx)
 {
-    auto returned_expr = visit_single<SM::Expression>(ctx->expression());
-    return static_cast<SM::Instruction*>(new SM::Return(ctx->getSourceInterval(), returned_expr));
+
 }
 
-antlrcpp::Any Visitor::visitBreak(ZigCCParser::BreakContext* ctx) { return static_cast<SM::Instruction*>(new SM::Break(ctx->getSourceInterval())); }
-antlrcpp::Any Visitor::visitContinue(ZigCCParser::ContinueContext* ctx) { return static_cast<SM::Instruction*>(new SM::Continue(ctx->getSourceInterval())); }
-
-antlrcpp::Any Visitor::visitInfequal(ZigCCParser::InfequalContext* ctx) { return visitBinaryOp(ctx, SM::BinaryOp::Op::INF_EQ); }
-antlrcpp::Any Visitor::visitDifferent(ZigCCParser::DifferentContext* ctx) { return visitBinaryOp(ctx, SM::BinaryOp::Op::DIFFERENT); }
-antlrcpp::Any Visitor::visitPlus(ZigCCParser::PlusContext* ctx) { return SM::BinaryOp::Op::PLUS; }
-antlrcpp::Any Visitor::visitMult(ZigCCParser::MultContext* ctx) { return SM::BinaryOp::Op::MULT; }
-antlrcpp::Any Visitor::visitMinus(ZigCCParser::MinusContext* ctx) { return SM::BinaryOp::Op::MINUS; }
-antlrcpp::Any Visitor::visitInf(ZigCCParser::InfContext* ctx) { return visitBinaryOp(ctx, SM::BinaryOp::Op::INF); }
-antlrcpp::Any Visitor::visitDiv(ZigCCParser::DivContext* ctx) { return SM::BinaryOp::Op::DIV; }
-antlrcpp::Any Visitor::visitEqual(ZigCCParser::EqualContext* ctx) { return visitBinaryOp(ctx, SM::BinaryOp::Op::EQUAL); }
-antlrcpp::Any Visitor::visitSup(ZigCCParser::SupContext* ctx) { return visitBinaryOp(ctx, SM::BinaryOp::Op::SUP); }
-antlrcpp::Any Visitor::visitSupequal(ZigCCParser::SupequalContext* ctx) { return visitBinaryOp(ctx, SM::BinaryOp::Op::SUP_EQ); }
-antlrcpp::Any Visitor::visitModulo(ZigCCParser::ModuloContext* ctx) { return SM::BinaryOp::Op::MODULO; }
-
-antlrcpp::Any Visitor::visitBinadd(ZigCCParser::BinaddContext *ctx)
+std::any visitCaptureList(ZigCCParser::CaptureListContext *ctx)
 {
-    auto op = visit(ctx->opPLUS());
-    return visitBinaryOp(ctx, op);
+
 }
 
-antlrcpp::Any Visitor::visitBinmul(ZigCCParser::BinmulContext *ctx)
+std::any visitCapture(ZigCCParser::CaptureContext *ctx)
 {
-    auto op = visit(ctx->opMULT());
-    return visitBinaryOp(ctx, op);
+
 }
 
-antlrcpp::Any Visitor::visitNot(ZigCCParser::NotContext* ctx)
+std::any visitSimpleCapture(ZigCCParser::SimpleCaptureContext *ctx)
 {
-    auto expr = visit_single<SM::Expression>(ctx->expression());
-    return static_cast<SM::Expression*>(new SM::UnaryOp(ctx->getSourceInterval(), expr, SM::UnaryOp::Op::NOT));
+
 }
 
-antlrcpp::Any Visitor::visitUnary_minus(ZigCCParser::Unary_minusContext* ctx)
+std::any visitInitcapture(ZigCCParser::InitcaptureContext *ctx)
 {
-    auto expr = visit_single<SM::Expression>(ctx->expression());
-    return static_cast<SM::Expression*>(new SM::UnaryOp(ctx->getSourceInterval(), expr, SM::UnaryOp::Op::MINUS));
+
 }
 
-// Parse int64_t from token (we assume here this is int64_t, if int32_t is needed an implicit cast will be performed unless optimized away)
-antlrcpp::Any Visitor::visitInteger(ZigCCParser::IntegerContext* ctx)
+std::any visitLambdaDeclarator(ZigCCParser::LambdaDeclaratorContext *ctx)
 {
-    return static_cast<SM::Expression*>(SM::make_constant_from_terminal<PT::INT64_T>(ctx->getSourceInterval(), ctx->INTEGER()));
-}
-antlrcpp::Any Visitor::visitChar_literal(ZigCCParser::Char_literalContext* ctx)
-{
-    return static_cast<SM::Expression*>(SM::make_constant_from_terminal<PT::CHAR>(ctx->getSourceInterval(), ctx->QUOTED_CHAR_LITERAL()));
-}
-antlrcpp::Any Visitor::visitString_literal(ZigCCParser::String_literalContext* ctx) { return static_cast<SM::Expression*>(SM::make_array_const_from_string(ctx->getSourceInterval(), ctx->STRING_LITERAL())); }
 
-antlrcpp::Any Visitor::visitVariable_usage(ZigCCParser::Variable_usageContext* ctx)
-{
-    auto var_name = SM::Identifier(ctx->IDENTIFIER());
-    return static_cast<SM::Expression*>(new SM::VariableUsage(ctx->getSourceInterval(), var_name));
 }
 
-antlrcpp::Any Visitor::visitIf(ZigCCParser::IfContext* ctx)
+std::any visitPostfixExpression(ZigCCParser::PostfixExpressionContext *ctx)
 {
-    auto condition = visit_single<SM::Expression>(ctx->expression());
-    auto instructions = visit_all<SM::Instruction>(ctx->instruction());
-    auto else_clause = visit_single<SM::Else>(ctx->else_structure());
-    return static_cast<SM::Instruction*>(new SM::If(ctx->getSourceInterval(), condition, instructions, else_clause));
+
 }
 
-antlrcpp::Any Visitor::visitWhile(ZigCCParser::WhileContext* ctx)
+std::any visitTypeIdOfTheTypeId(ZigCCParser::TypeIdOfTheTypeIdContext *ctx)
 {
-    auto condition = visit_single<SM::Expression>(ctx->expression());
-    auto instructions = visit_all<SM::Instruction>(ctx->instruction());
-    return static_cast<SM::Instruction*>(new SM::While(ctx->getSourceInterval(), condition, instructions));
+
 }
 
-antlrcpp::Any Visitor::visitElse(ZigCCParser::ElseContext* ctx)
+std::any visitExpressionList(ZigCCParser::ExpressionListContext *ctx)
 {
-    auto instructions = visit_all<SM::Instruction>(ctx->instruction());
-    return new SM::Else(ctx->getSourceInterval(), instructions);
+
 }
 
-antlrcpp::Any Visitor::visitArray_expr(ZigCCParser::Array_exprContext* ctx)
+std::any visitPseudoDestructorName(ZigCCParser::PseudoDestructorNameContext *ctx)
 {
-    if (ctx->INTEGER().size() > 0) {
-        return static_cast<SM::Expression*>(SM::make_array_const<PT::INT64_T>(ctx->getSourceInterval(), ctx->INTEGER()));
-    } else if (ctx->QUOTED_CHAR_LITERAL().size() > 0) {
-        return static_cast<SM::Expression*>(SM::make_array_const<PT::CHAR>(ctx->getSourceInterval(), ctx->QUOTED_CHAR_LITERAL()));
-    }
-    return nullptr;
+
 }
 
-antlrcpp::Any Visitor::visitAtomic_type(ZigCCParser::Atomic_typeContext* ctx)
+std::any visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
 {
-    if (ctx->CHAR() != nullptr) {
-        return new SM::Type(ctx->getSourceInterval(), PT::CHAR, false);
-    } else if (ctx->INT32_T() != nullptr) {
-        return new SM::Type(ctx->getSourceInterval(), PT::INT32_T, false);
-    } else if (ctx->INT64_T() != nullptr) {
-        return new SM::Type(ctx->getSourceInterval(), PT::INT64_T, false);
-    }
-    return nullptr;
+
 }
 
-antlrcpp::Any Visitor::visitType(ZigCCParser::TypeContext* ctx)
+std::any visitUnaryOperator(ZigCCParser::UnaryOperatorContext *ctx)
 {
-    if (ctx->CHAR() != nullptr) {
-        return new SM::Type(ctx->getSourceInterval(), PT::CHAR, ctx->ARRAY_BRACKETS() != nullptr);
-    } else if (ctx->INT32_T() != nullptr) {
-        return new SM::Type(ctx->getSourceInterval(), PT::INT32_T, ctx->ARRAY_BRACKETS() != nullptr);
-    } else if (ctx->INT64_T() != nullptr) {
-        return new SM::Type(ctx->getSourceInterval(), PT::INT64_T, ctx->ARRAY_BRACKETS() != nullptr);
-    }
-    return nullptr;
+
 }
 
-antlrcpp::Any Visitor::visitExpression_instr(ZigCCParser::Expression_instrContext* ctx)
+std::any visitNewExpression(ZigCCParser::NewExpressionContext *ctx)
 {
-    // Don't touch and don't ask why!
-    return static_cast<SM::Instruction*>(visit_single<SM::Expression>(ctx->expression()));
+
 }
 
-antlrcpp::Any Visitor::visitParenthesis(ZigCCParser::ParenthesisContext* ctx)
+std::any visitNewPlacement(ZigCCParser::NewPlacementContext *ctx)
 {
-    return visit_single<SM::Expression>(ctx->expression());
+
 }
 
-antlrcpp::Any Visitor::visitFor(ZigCCParser::ForContext* ctx)
+std::any visitNewTypeId(ZigCCParser::NewTypeIdContext *ctx)
 {
-    auto init = visit_single<SM::SyntaxNodeBase>(ctx->def_or_expr(0));
-    auto condition = visit_single<SM::SyntaxNodeBase>(ctx->def_or_expr(1));
-    if (condition->is<SM::Definition>())
-        throw new CompilerException("For loop doesn't support definitions in their condition statements for now");
-    auto condition_expr = dynamic_cast<const SM::Expression*>(condition);
-    auto iteration_expression = visit_single<SM::Expression>(ctx->expression());
-    auto instructions = visit_all<SM::Instruction>(ctx->instruction());
-    return static_cast<SM::Instruction*>(new SM::For(ctx->getSourceInterval(), init, condition_expr, iteration_expression, instructions));
+
 }
 
-antlrcpp::Any Visitor::visitDef_or_expr(ZigCCParser::Def_or_exprContext* ctx)
+std::any visitNewDeclarator(ZigCCParser::NewDeclaratorContext *ctx)
 {
-    if (ctx->definition() != nullptr)
-        return static_cast<SM::SyntaxNodeBase*>(visit_single<SM::Definition>(ctx->definition()));
-    else
-        return static_cast<SM::SyntaxNodeBase*>(visit_single<SM::Expression>(ctx->expression()));
+
 }
 
-antlrcpp::Any Visitor::visitPre_inc(ZigCCParser::Pre_incContext* ctx) { return visitUnaryAffectation(SM::Affectation::Op::PRE_INC, ctx); }
-antlrcpp::Any Visitor::visitPre_dec(ZigCCParser::Pre_decContext* ctx) { return visitUnaryAffectation(SM::Affectation::Op::PRE_DEC, ctx); }
-antlrcpp::Any Visitor::visitPost_inc(ZigCCParser::Post_incContext* ctx) { return visitUnaryAffectation(SM::Affectation::Op::POST_INC, ctx); }
-antlrcpp::Any Visitor::visitPost_dec(ZigCCParser::Post_decContext* ctx) { return visitUnaryAffectation(SM::Affectation::Op::POST_DEC, ctx); }
-antlrcpp::Any Visitor::visitAffect_eq(ZigCCParser::Affect_eqContext* ctx) { return visitBinaryAffectation(SM::Affectation::Op::EQ, ctx); }
-antlrcpp::Any Visitor::visitPlus_equal(ZigCCParser::Plus_equalContext* ctx) { return visitBinaryAffectation(SM::Affectation::Op::PLUS_EQ, ctx); }
-antlrcpp::Any Visitor::visitMinus_equal(ZigCCParser::Minus_equalContext* ctx) { return visitBinaryAffectation(SM::Affectation::Op::MIN_EQ, ctx); }
-antlrcpp::Any Visitor::visitDiv_equal(ZigCCParser::Div_equalContext* ctx) { return visitBinaryAffectation(SM::Affectation::Op::DIV_EQ, ctx); }
-antlrcpp::Any Visitor::visitMult_equal(ZigCCParser::Mult_equalContext* ctx) { return visitBinaryAffectation(SM::Affectation::Op::MULT_EQ, ctx); }
-antlrcpp::Any Visitor::visitModulo_equal(ZigCCParser::Modulo_equalContext* ctx) { return visitBinaryAffectation(SM::Affectation::Op::MODULO_EQ, ctx); }
+std::any visitNoPointerNewDeclarator(ZigCCParser::NoPointerNewDeclaratorContext *ctx)
+{
+
+}
+
+std::any visitNewInitializer(ZigCCParser::NewInitializerContext *ctx)
+{
+
+}
+
+std::any visitDeleteExpression(ZigCCParser::DeleteExpressionContext *ctx)
+{
+
+}
+
+std::any visitNoExceptExpression(ZigCCParser::NoExceptExpressionContext *ctx)
+{
+
+}
+
+std::any visitCastExpression(ZigCCParser::CastExpressionContext *ctx)
+{
+
+}
+
+std::any visitPointerMemberExpression(ZigCCParser::PointerMemberExpressionContext *ctx)
+{
+
+}
+
+std::any visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpressionContext *ctx)
+{
+
+}
+
+std::any visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext *ctx)
+{
+
+}
+
+std::any visitShiftExpression(ZigCCParser::ShiftExpressionContext *ctx)
+{
+
+}
+
+std::any visitShiftOperator(ZigCCParser::ShiftOperatorContext *ctx)
+{
+
+}
+
+std::any visitRelationalExpression(ZigCCParser::RelationalExpressionContext *ctx)
+{
+
+}
+
+std::any visitEqualityExpression(ZigCCParser::EqualityExpressionContext *ctx)
+{
+
+}
+
+std::any visitAndExpression(ZigCCParser::AndExpressionContext *ctx)
+{
+
+}
+
+std::any visitExclusiveOrExpression(ZigCCParser::ExclusiveOrExpressionContext *ctx)
+{
+
+}
+
+std::any visitInclusiveOrExpression(ZigCCParser::InclusiveOrExpressionContext *ctx)
+{
+
+}
+
+std::any visitLogicalAndExpression(ZigCCParser::LogicalAndExpressionContext *ctx)
+{
+
+}
+
+std::any visitLogicalOrExpression(ZigCCParser::LogicalOrExpressionContext *ctx)
+{
+
+}
+
+std::any visitConditionalExpression(ZigCCParser::ConditionalExpressionContext *ctx)
+{
+
+}
+
+std::any visitAssignmentExpression(ZigCCParser::AssignmentExpressionContext *ctx)
+{
+
+}
+
+std::any visitAssignmentOperator(ZigCCParser::AssignmentOperatorContext *ctx)
+{
+
+}
+
+std::any visitExpression(ZigCCParser::ExpressionContext *ctx)
+{
+
+}
+
+std::any visitConstantExpression(ZigCCParser::ConstantExpressionContext *ctx)
+{
+
+}
+
+std::any visitStatement(ZigCCParser::StatementContext *ctx)
+{
+
+}
+
+std::any visitLabeledStatement(ZigCCParser::LabeledStatementContext *ctx)
+{
+
+}
+
+std::any visitExpressionStatement(ZigCCParser::ExpressionStatementContext *ctx)
+{
+
+}
+
+std::any visitCompoundStatement(ZigCCParser::CompoundStatementContext *ctx)
+{
+
+}
+
+std::any visitStatementSeq(ZigCCParser::StatementSeqContext *ctx)
+{
+
+}
+
+std::any visitSelectionStatement(ZigCCParser::SelectionStatementContext *ctx)
+{
+
+}
+
+std::any visitCondition(ZigCCParser::ConditionContext *ctx)
+{
+
+}
+
+std::any visitIterationStatement(ZigCCParser::IterationStatementContext *ctx)
+{
+
+}
+
+std::any visitForInitStatement(ZigCCParser::ForInitStatementContext *ctx)
+{
+
+}
+
+std::any visitForRangeDeclaration(ZigCCParser::ForRangeDeclarationContext *ctx)
+{
+
+}
+
+std::any visitForRangeInitializer(ZigCCParser::ForRangeInitializerContext *ctx)
+{
+
+}
+
+std::any visitJumpStatement(ZigCCParser::JumpStatementContext *ctx)
+{
+
+}
+
+std::any visitDeclarationStatement(ZigCCParser::DeclarationStatementContext *ctx)
+{
+
+}
+
+std::any visitDeclarationseq(ZigCCParser::DeclarationseqContext *ctx)
+{
+
+}
+
+std::any visitDeclaration(ZigCCParser::DeclarationContext *ctx)
+{
+
+}
+
+std::any visitBlockDeclaration(ZigCCParser::BlockDeclarationContext *ctx)
+{
+
+}
+
+std::any visitAliasDeclaration(ZigCCParser::AliasDeclarationContext *ctx)
+{
+
+}
+
+std::any visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *ctx)
+{
+
+}
+
+std::any visitStaticAssertDeclaration(ZigCCParser::StaticAssertDeclarationContext *ctx)
+{
+
+}
+
+std::any visitEmptyDeclaration(ZigCCParser::EmptyDeclarationContext *ctx)
+{
+
+}
+
+std::any visitAttributeDeclaration(ZigCCParser::AttributeDeclarationContext *ctx)
+{
+
+}
+
+std::any visitDeclSpecifier(ZigCCParser::DeclSpecifierContext *ctx)
+{
+
+}
+
+std::any visitDeclSpecifierSeq(ZigCCParser::DeclSpecifierSeqContext *ctx)
+{
+
+}
+
+std::any visitStorageClassSpecifier(ZigCCParser::StorageClassSpecifierContext *ctx)
+{
+
+}
+
+std::any visitFunctionSpecifier(ZigCCParser::FunctionSpecifierContext *ctx)
+{
+
+}
+
+std::any visitTypedefName(ZigCCParser::TypedefNameContext *ctx)
+{
+
+}
+
+std::any visitTypeSpecifier(ZigCCParser::TypeSpecifierContext *ctx)
+{
+
+}
+
+std::any visitTrailingTypeSpecifier(ZigCCParser::TrailingTypeSpecifierContext *ctx)
+{
+
+}
+
+std::any visitTypeSpecifierSeq(ZigCCParser::TypeSpecifierSeqContext *ctx)
+{
+
+}
+
+std::any visitTrailingTypeSpecifierSeq(ZigCCParser::TrailingTypeSpecifierSeqContext *ctx)
+{
+
+}
+
+std::any visitSimpleTypeLengthModifier(ZigCCParser::SimpleTypeLengthModifierContext *ctx)
+{
+
+}
+
+std::any visitSimpleTypeSignednessModifier(ZigCCParser::SimpleTypeSignednessModifierContext *ctx)
+{
+
+}
+
+std::any visitSimpleTypeSpecifier(ZigCCParser::SimpleTypeSpecifierContext *ctx)
+{
+
+}
+
+std::any visitTheTypeName(ZigCCParser::TheTypeNameContext *ctx)
+{
+
+}
+
+std::any visitDecltypeSpecifier(ZigCCParser::DecltypeSpecifierContext *ctx)
+{
+
+}
+
+std::any visitElaboratedTypeSpecifier(ZigCCParser::ElaboratedTypeSpecifierContext *ctx)
+{
+
+}
+
+std::any visitEnumName(ZigCCParser::EnumNameContext *ctx)
+{
+
+}
+
+std::any visitEnumSpecifier(ZigCCParser::EnumSpecifierContext *ctx)
+{
+
+}
+
+std::any visitEnumHead(ZigCCParser::EnumHeadContext *ctx)
+{
+
+}
+
+std::any visitOpaqueEnumDeclaration(ZigCCParser::OpaqueEnumDeclarationContext *ctx)
+{
+
+}
+
+std::any visitEnumkey(ZigCCParser::EnumkeyContext *ctx)
+{
+
+}
+
+std::any visitEnumbase(ZigCCParser::EnumbaseContext *ctx)
+{
+
+}
+
+std::any visitEnumeratorList(ZigCCParser::EnumeratorListContext *ctx)
+{
+
+}
+
+std::any visitEnumeratorDefinition(ZigCCParser::EnumeratorDefinitionContext *ctx)
+{
+
+}
+
+std::any visitEnumerator(ZigCCParser::EnumeratorContext *ctx)
+{
+
+}
+
+std::any visitNamespaceName(ZigCCParser::NamespaceNameContext *ctx)
+{
+
+}
+
+std::any visitOriginalNamespaceName(ZigCCParser::OriginalNamespaceNameContext *ctx)
+{
+
+}
+
+std::any visitNamespaceDefinition(ZigCCParser::NamespaceDefinitionContext *ctx)
+{
+
+}
+
+std::any visitNamespaceAlias(ZigCCParser::NamespaceAliasContext *ctx)
+{
+
+}
+
+std::any visitNamespaceAliasDefinition(ZigCCParser::NamespaceAliasDefinitionContext *ctx)
+{
+
+}
+
+std::any visitQualifiednamespacespecifier(ZigCCParser::QualifiednamespacespecifierContext *ctx)
+{
+
+}
+
+std::any visitUsingDeclaration(ZigCCParser::UsingDeclarationContext *ctx)
+{
+
+}
+
+std::any visitUsingDirective(ZigCCParser::UsingDirectiveContext *ctx)
+{
+
+}
+
+std::any visitAsmDefinition(ZigCCParser::AsmDefinitionContext *ctx)
+{
+
+}
+
+std::any visitLinkageSpecification(ZigCCParser::LinkageSpecificationContext *ctx)
+{
+
+}
+
+std::any visitAttributeSpecifierSeq(ZigCCParser::AttributeSpecifierSeqContext *ctx)
+{
+
+}
+
+std::any visitAttributeSpecifier(ZigCCParser::AttributeSpecifierContext *ctx)
+{
+
+}
+
+std::any visitAlignmentspecifier(ZigCCParser::AlignmentspecifierContext *ctx)
+{
+
+}
+
+std::any visitAttributeList(ZigCCParser::AttributeListContext *ctx)
+{
+
+}
+
+std::any visitAttribute(ZigCCParser::AttributeContext *ctx)
+{
+
+}
+
+std::any visitAttributeNamespace(ZigCCParser::AttributeNamespaceContext *ctx)
+{
+
+}
+
+std::any visitAttributeArgumentClause(ZigCCParser::AttributeArgumentClauseContext *ctx)
+{
+
+}
+
+std::any visitBalancedTokenSeq(ZigCCParser::BalancedTokenSeqContext *ctx)
+{
+
+}
+
+std::any visitBalancedtoken(ZigCCParser::BalancedtokenContext *ctx)
+{
+
+}
+
+std::any visitInitDeclaratorList(ZigCCParser::InitDeclaratorListContext *ctx)
+{
+
+}
+
+std::any visitInitDeclarator(ZigCCParser::InitDeclaratorContext *ctx)
+{
+
+}
+
+std::any visitDeclarator(ZigCCParser::DeclaratorContext *ctx)
+{
+
+}
+
+std::any visitPointerDeclarator(ZigCCParser::PointerDeclaratorContext *ctx)
+{
+
+}
+
+std::any visitNoPointerDeclarator(ZigCCParser::NoPointerDeclaratorContext *ctx)
+{
+
+}
+
+std::any visitParametersAndQualifiers(ZigCCParser::ParametersAndQualifiersContext *ctx)
+{
+
+}
+
+std::any visitTrailingReturnType(ZigCCParser::TrailingReturnTypeContext *ctx)
+{
+
+}
+
+std::any visitPointerOperator(ZigCCParser::PointerOperatorContext *ctx)
+{
+
+}
+
+std::any visitCvqualifierseq(ZigCCParser::CvqualifierseqContext *ctx)
+{
+
+}
+
+std::any visitCvQualifier(ZigCCParser::CvQualifierContext *ctx)
+{
+
+}
+
+std::any visitRefqualifier(ZigCCParser::RefqualifierContext *ctx)
+{
+
+}
+
+std::any visitDeclaratorid(ZigCCParser::DeclaratoridContext *ctx)
+{
+
+}
+
+std::any visitTheTypeId(ZigCCParser::TheTypeIdContext *ctx)
+{
+
+}
+
+std::any visitAbstractDeclarator(ZigCCParser::AbstractDeclaratorContext *ctx)
+{
+
+}
+
+std::any visitPointerAbstractDeclarator(ZigCCParser::PointerAbstractDeclaratorContext *ctx)
+{
+
+}
+
+std::any visitNoPointerAbstractDeclarator(ZigCCParser::NoPointerAbstractDeclaratorContext *ctx)
+{
+
+}
+
+std::any visitAbstractPackDeclarator(ZigCCParser::AbstractPackDeclaratorContext *ctx)
+{
+
+}
+
+std::any visitNoPointerAbstractPackDeclarator(ZigCCParser::NoPointerAbstractPackDeclaratorContext *ctx)
+{
+
+}
+
+std::any visitParameterDeclarationClause(ZigCCParser::ParameterDeclarationClauseContext *ctx)
+{
+
+}
+
+std::any visitParameterDeclarationList(ZigCCParser::ParameterDeclarationListContext *ctx)
+{
+
+}
+
+std::any visitParameterDeclaration(ZigCCParser::ParameterDeclarationContext *ctx)
+{
+
+}
+
+std::any visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext *ctx)
+{
+
+}
+
+std::any visitFunctionBody(ZigCCParser::FunctionBodyContext *ctx)
+{
+
+}
+
+std::any visitInitializer(ZigCCParser::InitializerContext *ctx)
+{
+
+}
+
+std::any visitBraceOrEqualInitializer(ZigCCParser::BraceOrEqualInitializerContext *ctx)
+{
+
+}
+
+std::any visitInitializerClause(ZigCCParser::InitializerClauseContext *ctx)
+{
+
+}
+
+std::any visitInitializerList(ZigCCParser::InitializerListContext *ctx)
+{
+
+}
+
+std::any visitBracedInitList(ZigCCParser::BracedInitListContext *ctx)
+{
+
+}
+
+std::any visitClassName(ZigCCParser::ClassNameContext *ctx)
+{
+
+}
+
+std::any visitClassSpecifier(ZigCCParser::ClassSpecifierContext *ctx)
+{
+
+}
+
+std::any visitClassHead(ZigCCParser::ClassHeadContext *ctx)
+{
+
+}
+
+std::any visitClassHeadName(ZigCCParser::ClassHeadNameContext *ctx)
+{
+
+}
+
+std::any visitClassVirtSpecifier(ZigCCParser::ClassVirtSpecifierContext *ctx)
+{
+
+}
+
+std::any visitClassKey(ZigCCParser::ClassKeyContext *ctx)
+{
+
+}
+
+std::any visitMemberSpecification(ZigCCParser::MemberSpecificationContext *ctx)
+{
+
+}
+
+std::any visitMemberdeclaration(ZigCCParser::MemberdeclarationContext *ctx)
+{
+
+}
+
+std::any visitMemberDeclaratorList(ZigCCParser::MemberDeclaratorListContext *ctx)
+{
+
+}
+
+std::any visitMemberDeclarator(ZigCCParser::MemberDeclaratorContext *ctx)
+{
+
+}
+
+std::any visitVirtualSpecifierSeq(ZigCCParser::VirtualSpecifierSeqContext *ctx)
+{
+
+}
+
+std::any visitVirtualSpecifier(ZigCCParser::VirtualSpecifierContext *ctx)
+{
+
+}
+
+std::any visitPureSpecifier(ZigCCParser::PureSpecifierContext *ctx)
+{
+
+}
+
+std::any visitBaseClause(ZigCCParser::BaseClauseContext *ctx)
+{
+
+}
+
+std::any visitBaseSpecifierList(ZigCCParser::BaseSpecifierListContext *ctx)
+{
+
+}
+
+std::any visitBaseSpecifier(ZigCCParser::BaseSpecifierContext *ctx)
+{
+
+}
+
+std::any visitClassOrDeclType(ZigCCParser::ClassOrDeclTypeContext *ctx)
+{
+
+}
+
+std::any visitBaseTypeSpecifier(ZigCCParser::BaseTypeSpecifierContext *ctx)
+{
+
+}
+
+std::any visitAccessSpecifier(ZigCCParser::AccessSpecifierContext *ctx)
+{
+
+}
+
+std::any visitConversionFunctionId(ZigCCParser::ConversionFunctionIdContext *ctx)
+{
+
+}
+
+std::any visitConversionTypeId(ZigCCParser::ConversionTypeIdContext *ctx)
+{
+
+}
+
+std::any visitConversionDeclarator(ZigCCParser::ConversionDeclaratorContext *ctx)
+{
+
+}
+
+std::any visitConstructorInitializer(ZigCCParser::ConstructorInitializerContext *ctx)
+{
+
+}
+
+std::any visitMemInitializerList(ZigCCParser::MemInitializerListContext *ctx)
+{
+
+}
+
+std::any visitMemInitializer(ZigCCParser::MemInitializerContext *ctx)
+{
+
+}
+
+std::any visitMeminitializerid(ZigCCParser::MeminitializeridContext *ctx)
+{
+
+}
+
+std::any visitOperatorFunctionId(ZigCCParser::OperatorFunctionIdContext *ctx)
+{
+
+}
+
+std::any visitLiteralOperatorId(ZigCCParser::LiteralOperatorIdContext *ctx)
+{
+
+}
+
+std::any visitTemplateDeclaration(ZigCCParser::TemplateDeclarationContext *ctx)
+{
+
+}
+
+std::any visitTemplateparameterList(ZigCCParser::TemplateparameterListContext *ctx)
+{
+
+}
+
+std::any visitTemplateParameter(ZigCCParser::TemplateParameterContext *ctx)
+{
+
+}
+
+std::any visitTypeParameter(ZigCCParser::TypeParameterContext *ctx)
+{
+
+}
+
+std::any visitSimpleTemplateId(ZigCCParser::SimpleTemplateIdContext *ctx)
+{
+
+}
+
+std::any visitTemplateId(ZigCCParser::TemplateIdContext *ctx)
+{
+
+}
+
+std::any visitTemplateName(ZigCCParser::TemplateNameContext *ctx)
+{
+
+}
+
+std::any visitTemplateArgumentList(ZigCCParser::TemplateArgumentListContext *ctx)
+{
+
+}
+
+std::any visitTemplateArgument(ZigCCParser::TemplateArgumentContext *ctx)
+{
+
+}
+
+std::any visitTypeNameSpecifier(ZigCCParser::TypeNameSpecifierContext *ctx)
+{
+
+}
+
+std::any visitExplicitInstantiation(ZigCCParser::ExplicitInstantiationContext *ctx)
+{
+
+}
+
+std::any visitExplicitSpecialization(ZigCCParser::ExplicitSpecializationContext *ctx)
+{
+
+}
+
+std::any visitTryBlock(ZigCCParser::TryBlockContext *ctx)
+{
+
+}
+
+std::any visitFunctionTryBlock(ZigCCParser::FunctionTryBlockContext *ctx)
+{
+
+}
+
+std::any visitHandlerSeq(ZigCCParser::HandlerSeqContext *ctx)
+{
+
+}
+
+std::any visitHandler(ZigCCParser::HandlerContext *ctx)
+{
+
+}
+
+std::any visitExceptionDeclaration(ZigCCParser::ExceptionDeclarationContext *ctx)
+{
+
+}
+
+std::any visitThrowExpression(ZigCCParser::ThrowExpressionContext *ctx)
+{
+
+}
+
+std::any visitExceptionSpecification(ZigCCParser::ExceptionSpecificationContext *ctx)
+{
+
+}
+
+std::any visitDynamicExceptionSpecification(ZigCCParser::DynamicExceptionSpecificationContext *ctx)
+{
+
+}
+
+std::any visitTypeIdList(ZigCCParser::TypeIdListContext *ctx)
+{
+
+}
+
+std::any visitNoeExceptSpecification(ZigCCParser::NoeExceptSpecificationContext *ctx)
+{
+
+}
+
+std::any visitTheOperator(ZigCCParser::TheOperatorContext *ctx)
+{
+
+}
+
+std::any visitLiteral(ZigCCParser::LiteralContext *ctx)
+{
+
+}
 
 std::vector<utils::TerminalInfo> Visitor::make_all_terminals(const std::vector<antlr4::tree::TerminalNode*>& contexts)
 {

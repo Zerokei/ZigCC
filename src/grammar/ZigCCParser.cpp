@@ -2,10 +2,9 @@
 // Generated from ZigCCParser.g4 by ANTLR 4.12.0
 
 
-#include "ZigCCParserListener.h"
-#include "ZigCCParserVisitor.h"
+#include "grammar/ZigCCParserVisitor.h"
 
-#include "ZigCCParser.h"
+#include "grammar/ZigCCParser.h"
 
 
 using namespace antlrcpp;
@@ -1038,18 +1037,6 @@ size_t ZigCCParser::TranslationUnitContext::getRuleIndex() const {
   return ZigCCParser::RuleTranslationUnit;
 }
 
-void ZigCCParser::TranslationUnitContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTranslationUnit(this);
-}
-
-void ZigCCParser::TranslationUnitContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTranslationUnit(this);
-}
-
 
 std::any ZigCCParser::TranslationUnitContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -1136,18 +1123,6 @@ ZigCCParser::LambdaExpressionContext* ZigCCParser::PrimaryExpressionContext::lam
 
 size_t ZigCCParser::PrimaryExpressionContext::getRuleIndex() const {
   return ZigCCParser::RulePrimaryExpression;
-}
-
-void ZigCCParser::PrimaryExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterPrimaryExpression(this);
-}
-
-void ZigCCParser::PrimaryExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitPrimaryExpression(this);
 }
 
 
@@ -1272,18 +1247,6 @@ size_t ZigCCParser::IdExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleIdExpression;
 }
 
-void ZigCCParser::IdExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterIdExpression(this);
-}
-
-void ZigCCParser::IdExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitIdExpression(this);
-}
-
 
 std::any ZigCCParser::IdExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -1376,18 +1339,6 @@ ZigCCParser::TemplateIdContext* ZigCCParser::UnqualifiedIdContext::templateId() 
 
 size_t ZigCCParser::UnqualifiedIdContext::getRuleIndex() const {
   return ZigCCParser::RuleUnqualifiedId;
-}
-
-void ZigCCParser::UnqualifiedIdContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterUnqualifiedId(this);
-}
-
-void ZigCCParser::UnqualifiedIdContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitUnqualifiedId(this);
 }
 
 
@@ -1510,18 +1461,6 @@ size_t ZigCCParser::QualifiedIdContext::getRuleIndex() const {
   return ZigCCParser::RuleQualifiedId;
 }
 
-void ZigCCParser::QualifiedIdContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterQualifiedId(this);
-}
-
-void ZigCCParser::QualifiedIdContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitQualifiedId(this);
-}
-
 
 std::any ZigCCParser::QualifiedIdContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -1608,18 +1547,6 @@ tree::TerminalNode* ZigCCParser::NestedNameSpecifierContext::Template() {
 
 size_t ZigCCParser::NestedNameSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleNestedNameSpecifier;
-}
-
-void ZigCCParser::NestedNameSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNestedNameSpecifier(this);
-}
-
-void ZigCCParser::NestedNameSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNestedNameSpecifier(this);
 }
 
 
@@ -1762,18 +1689,6 @@ size_t ZigCCParser::LambdaExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleLambdaExpression;
 }
 
-void ZigCCParser::LambdaExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterLambdaExpression(this);
-}
-
-void ZigCCParser::LambdaExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitLambdaExpression(this);
-}
-
 
 std::any ZigCCParser::LambdaExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -1840,18 +1755,6 @@ ZigCCParser::LambdaCaptureContext* ZigCCParser::LambdaIntroducerContext::lambdaC
 
 size_t ZigCCParser::LambdaIntroducerContext::getRuleIndex() const {
   return ZigCCParser::RuleLambdaIntroducer;
-}
-
-void ZigCCParser::LambdaIntroducerContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterLambdaIntroducer(this);
-}
-
-void ZigCCParser::LambdaIntroducerContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitLambdaIntroducer(this);
 }
 
 
@@ -1921,18 +1824,6 @@ tree::TerminalNode* ZigCCParser::LambdaCaptureContext::Comma() {
 
 size_t ZigCCParser::LambdaCaptureContext::getRuleIndex() const {
   return ZigCCParser::RuleLambdaCapture;
-}
-
-void ZigCCParser::LambdaCaptureContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterLambdaCapture(this);
-}
-
-void ZigCCParser::LambdaCaptureContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitLambdaCapture(this);
 }
 
 
@@ -2016,18 +1907,6 @@ size_t ZigCCParser::CaptureDefaultContext::getRuleIndex() const {
   return ZigCCParser::RuleCaptureDefault;
 }
 
-void ZigCCParser::CaptureDefaultContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterCaptureDefault(this);
-}
-
-void ZigCCParser::CaptureDefaultContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitCaptureDefault(this);
-}
-
 
 std::any ZigCCParser::CaptureDefaultContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -2101,18 +1980,6 @@ tree::TerminalNode* ZigCCParser::CaptureListContext::Ellipsis() {
 
 size_t ZigCCParser::CaptureListContext::getRuleIndex() const {
   return ZigCCParser::RuleCaptureList;
-}
-
-void ZigCCParser::CaptureListContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterCaptureList(this);
-}
-
-void ZigCCParser::CaptureListContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitCaptureList(this);
 }
 
 
@@ -2189,18 +2056,6 @@ size_t ZigCCParser::CaptureContext::getRuleIndex() const {
   return ZigCCParser::RuleCapture;
 }
 
-void ZigCCParser::CaptureContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterCapture(this);
-}
-
-void ZigCCParser::CaptureContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitCapture(this);
-}
-
 
 std::any ZigCCParser::CaptureContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -2273,18 +2128,6 @@ tree::TerminalNode* ZigCCParser::SimpleCaptureContext::This() {
 
 size_t ZigCCParser::SimpleCaptureContext::getRuleIndex() const {
   return ZigCCParser::RuleSimpleCapture;
-}
-
-void ZigCCParser::SimpleCaptureContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterSimpleCapture(this);
-}
-
-void ZigCCParser::SimpleCaptureContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitSimpleCapture(this);
 }
 
 
@@ -2371,18 +2214,6 @@ size_t ZigCCParser::InitcaptureContext::getRuleIndex() const {
   return ZigCCParser::RuleInitcapture;
 }
 
-void ZigCCParser::InitcaptureContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterInitcapture(this);
-}
-
-void ZigCCParser::InitcaptureContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitInitcapture(this);
-}
-
 
 std::any ZigCCParser::InitcaptureContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -2465,18 +2296,6 @@ ZigCCParser::TrailingReturnTypeContext* ZigCCParser::LambdaDeclaratorContext::tr
 
 size_t ZigCCParser::LambdaDeclaratorContext::getRuleIndex() const {
   return ZigCCParser::RuleLambdaDeclarator;
-}
-
-void ZigCCParser::LambdaDeclaratorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterLambdaDeclarator(this);
-}
-
-void ZigCCParser::LambdaDeclaratorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitLambdaDeclarator(this);
 }
 
 
@@ -2673,18 +2492,6 @@ tree::TerminalNode* ZigCCParser::PostfixExpressionContext::MinusMinus() {
 
 size_t ZigCCParser::PostfixExpressionContext::getRuleIndex() const {
   return ZigCCParser::RulePostfixExpression;
-}
-
-void ZigCCParser::PostfixExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterPostfixExpression(this);
-}
-
-void ZigCCParser::PostfixExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitPostfixExpression(this);
 }
 
 
@@ -3067,18 +2874,6 @@ size_t ZigCCParser::TypeIdOfTheTypeIdContext::getRuleIndex() const {
   return ZigCCParser::RuleTypeIdOfTheTypeId;
 }
 
-void ZigCCParser::TypeIdOfTheTypeIdContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTypeIdOfTheTypeId(this);
-}
-
-void ZigCCParser::TypeIdOfTheTypeIdContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTypeIdOfTheTypeId(this);
-}
-
 
 std::any ZigCCParser::TypeIdOfTheTypeIdContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -3126,18 +2921,6 @@ ZigCCParser::InitializerListContext* ZigCCParser::ExpressionListContext::initial
 
 size_t ZigCCParser::ExpressionListContext::getRuleIndex() const {
   return ZigCCParser::RuleExpressionList;
-}
-
-void ZigCCParser::ExpressionListContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterExpressionList(this);
-}
-
-void ZigCCParser::ExpressionListContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitExpressionList(this);
 }
 
 
@@ -3215,18 +2998,6 @@ ZigCCParser::DecltypeSpecifierContext* ZigCCParser::PseudoDestructorNameContext:
 
 size_t ZigCCParser::PseudoDestructorNameContext::getRuleIndex() const {
   return ZigCCParser::RulePseudoDestructorName;
-}
-
-void ZigCCParser::PseudoDestructorNameContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterPseudoDestructorName(this);
-}
-
-void ZigCCParser::PseudoDestructorNameContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitPseudoDestructorName(this);
 }
 
 
@@ -3394,18 +3165,6 @@ ZigCCParser::DeleteExpressionContext* ZigCCParser::UnaryExpressionContext::delet
 
 size_t ZigCCParser::UnaryExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleUnaryExpression;
-}
-
-void ZigCCParser::UnaryExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterUnaryExpression(this);
-}
-
-void ZigCCParser::UnaryExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitUnaryExpression(this);
 }
 
 
@@ -3603,18 +3362,6 @@ size_t ZigCCParser::UnaryOperatorContext::getRuleIndex() const {
   return ZigCCParser::RuleUnaryOperator;
 }
 
-void ZigCCParser::UnaryOperatorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterUnaryOperator(this);
-}
-
-void ZigCCParser::UnaryOperatorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitUnaryOperator(this);
-}
-
 
 std::any ZigCCParser::UnaryOperatorContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -3699,18 +3446,6 @@ tree::TerminalNode* ZigCCParser::NewExpressionContext::RightParen() {
 
 size_t ZigCCParser::NewExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleNewExpression;
-}
-
-void ZigCCParser::NewExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNewExpression(this);
-}
-
-void ZigCCParser::NewExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNewExpression(this);
 }
 
 
@@ -3847,18 +3582,6 @@ size_t ZigCCParser::NewPlacementContext::getRuleIndex() const {
   return ZigCCParser::RuleNewPlacement;
 }
 
-void ZigCCParser::NewPlacementContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNewPlacement(this);
-}
-
-void ZigCCParser::NewPlacementContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNewPlacement(this);
-}
-
 
 std::any ZigCCParser::NewPlacementContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -3914,18 +3637,6 @@ ZigCCParser::NewDeclaratorContext* ZigCCParser::NewTypeIdContext::newDeclarator(
 
 size_t ZigCCParser::NewTypeIdContext::getRuleIndex() const {
   return ZigCCParser::RuleNewTypeId;
-}
-
-void ZigCCParser::NewTypeIdContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNewTypeId(this);
-}
-
-void ZigCCParser::NewTypeIdContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNewTypeId(this);
 }
 
 
@@ -3996,18 +3707,6 @@ ZigCCParser::NoPointerNewDeclaratorContext* ZigCCParser::NewDeclaratorContext::n
 
 size_t ZigCCParser::NewDeclaratorContext::getRuleIndex() const {
   return ZigCCParser::RuleNewDeclarator;
-}
-
-void ZigCCParser::NewDeclaratorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNewDeclarator(this);
-}
-
-void ZigCCParser::NewDeclaratorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNewDeclarator(this);
 }
 
 
@@ -4112,18 +3811,6 @@ ZigCCParser::ConstantExpressionContext* ZigCCParser::NoPointerNewDeclaratorConte
 
 size_t ZigCCParser::NoPointerNewDeclaratorContext::getRuleIndex() const {
   return ZigCCParser::RuleNoPointerNewDeclarator;
-}
-
-void ZigCCParser::NoPointerNewDeclaratorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNoPointerNewDeclarator(this);
-}
-
-void ZigCCParser::NoPointerNewDeclaratorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNoPointerNewDeclarator(this);
 }
 
 
@@ -4253,18 +3940,6 @@ size_t ZigCCParser::NewInitializerContext::getRuleIndex() const {
   return ZigCCParser::RuleNewInitializer;
 }
 
-void ZigCCParser::NewInitializerContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNewInitializer(this);
-}
-
-void ZigCCParser::NewInitializerContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNewInitializer(this);
-}
-
 
 std::any ZigCCParser::NewInitializerContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -4360,18 +4035,6 @@ size_t ZigCCParser::DeleteExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleDeleteExpression;
 }
 
-void ZigCCParser::DeleteExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterDeleteExpression(this);
-}
-
-void ZigCCParser::DeleteExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitDeleteExpression(this);
-}
-
 
 std::any ZigCCParser::DeleteExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -4459,18 +4122,6 @@ size_t ZigCCParser::NoExceptExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleNoExceptExpression;
 }
 
-void ZigCCParser::NoExceptExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNoExceptExpression(this);
-}
-
-void ZigCCParser::NoExceptExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNoExceptExpression(this);
-}
-
 
 std::any ZigCCParser::NoExceptExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -4540,18 +4191,6 @@ ZigCCParser::CastExpressionContext* ZigCCParser::CastExpressionContext::castExpr
 
 size_t ZigCCParser::CastExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleCastExpression;
-}
-
-void ZigCCParser::CastExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterCastExpression(this);
-}
-
-void ZigCCParser::CastExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitCastExpression(this);
 }
 
 
@@ -4644,18 +4283,6 @@ tree::TerminalNode* ZigCCParser::PointerMemberExpressionContext::ArrowStar(size_
 
 size_t ZigCCParser::PointerMemberExpressionContext::getRuleIndex() const {
   return ZigCCParser::RulePointerMemberExpression;
-}
-
-void ZigCCParser::PointerMemberExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterPointerMemberExpression(this);
-}
-
-void ZigCCParser::PointerMemberExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitPointerMemberExpression(this);
 }
 
 
@@ -4759,18 +4386,6 @@ size_t ZigCCParser::MultiplicativeExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleMultiplicativeExpression;
 }
 
-void ZigCCParser::MultiplicativeExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterMultiplicativeExpression(this);
-}
-
-void ZigCCParser::MultiplicativeExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitMultiplicativeExpression(this);
-}
-
 
 std::any ZigCCParser::MultiplicativeExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -4862,18 +4477,6 @@ size_t ZigCCParser::AdditiveExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleAdditiveExpression;
 }
 
-void ZigCCParser::AdditiveExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAdditiveExpression(this);
-}
-
-void ZigCCParser::AdditiveExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAdditiveExpression(this);
-}
-
 
 std::any ZigCCParser::AdditiveExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -4959,18 +4562,6 @@ size_t ZigCCParser::ShiftExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleShiftExpression;
 }
 
-void ZigCCParser::ShiftExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterShiftExpression(this);
-}
-
-void ZigCCParser::ShiftExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitShiftExpression(this);
-}
-
 
 std::any ZigCCParser::ShiftExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -5045,18 +4636,6 @@ tree::TerminalNode* ZigCCParser::ShiftOperatorContext::Less(size_t i) {
 
 size_t ZigCCParser::ShiftOperatorContext::getRuleIndex() const {
   return ZigCCParser::RuleShiftOperator;
-}
-
-void ZigCCParser::ShiftOperatorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterShiftOperator(this);
-}
-
-void ZigCCParser::ShiftOperatorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitShiftOperator(this);
 }
 
 
@@ -5165,18 +4744,6 @@ size_t ZigCCParser::RelationalExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleRelationalExpression;
 }
 
-void ZigCCParser::RelationalExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterRelationalExpression(this);
-}
-
-void ZigCCParser::RelationalExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitRelationalExpression(this);
-}
-
 
 std::any ZigCCParser::RelationalExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -5270,18 +4837,6 @@ size_t ZigCCParser::EqualityExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleEqualityExpression;
 }
 
-void ZigCCParser::EqualityExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterEqualityExpression(this);
-}
-
-void ZigCCParser::EqualityExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitEqualityExpression(this);
-}
-
 
 std::any ZigCCParser::EqualityExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -5367,18 +4922,6 @@ size_t ZigCCParser::AndExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleAndExpression;
 }
 
-void ZigCCParser::AndExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAndExpression(this);
-}
-
-void ZigCCParser::AndExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAndExpression(this);
-}
-
 
 std::any ZigCCParser::AndExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -5451,18 +4994,6 @@ tree::TerminalNode* ZigCCParser::ExclusiveOrExpressionContext::Caret(size_t i) {
 
 size_t ZigCCParser::ExclusiveOrExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleExclusiveOrExpression;
-}
-
-void ZigCCParser::ExclusiveOrExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterExclusiveOrExpression(this);
-}
-
-void ZigCCParser::ExclusiveOrExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitExclusiveOrExpression(this);
 }
 
 
@@ -5539,18 +5070,6 @@ size_t ZigCCParser::InclusiveOrExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleInclusiveOrExpression;
 }
 
-void ZigCCParser::InclusiveOrExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterInclusiveOrExpression(this);
-}
-
-void ZigCCParser::InclusiveOrExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitInclusiveOrExpression(this);
-}
-
 
 std::any ZigCCParser::InclusiveOrExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -5625,18 +5144,6 @@ size_t ZigCCParser::LogicalAndExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleLogicalAndExpression;
 }
 
-void ZigCCParser::LogicalAndExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterLogicalAndExpression(this);
-}
-
-void ZigCCParser::LogicalAndExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitLogicalAndExpression(this);
-}
-
 
 std::any ZigCCParser::LogicalAndExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -5709,18 +5216,6 @@ tree::TerminalNode* ZigCCParser::LogicalOrExpressionContext::OrOr(size_t i) {
 
 size_t ZigCCParser::LogicalOrExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleLogicalOrExpression;
-}
-
-void ZigCCParser::LogicalOrExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterLogicalOrExpression(this);
-}
-
-void ZigCCParser::LogicalOrExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitLogicalOrExpression(this);
 }
 
 
@@ -5801,18 +5296,6 @@ size_t ZigCCParser::ConditionalExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleConditionalExpression;
 }
 
-void ZigCCParser::ConditionalExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterConditionalExpression(this);
-}
-
-void ZigCCParser::ConditionalExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitConditionalExpression(this);
-}
-
 
 std::any ZigCCParser::ConditionalExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -5891,18 +5374,6 @@ ZigCCParser::ThrowExpressionContext* ZigCCParser::AssignmentExpressionContext::t
 
 size_t ZigCCParser::AssignmentExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleAssignmentExpression;
-}
-
-void ZigCCParser::AssignmentExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAssignmentExpression(this);
-}
-
-void ZigCCParser::AssignmentExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAssignmentExpression(this);
 }
 
 
@@ -6022,18 +5493,6 @@ size_t ZigCCParser::AssignmentOperatorContext::getRuleIndex() const {
   return ZigCCParser::RuleAssignmentOperator;
 }
 
-void ZigCCParser::AssignmentOperatorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAssignmentOperator(this);
-}
-
-void ZigCCParser::AssignmentOperatorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAssignmentOperator(this);
-}
-
 
 std::any ZigCCParser::AssignmentOperatorContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -6104,18 +5563,6 @@ size_t ZigCCParser::ExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleExpression;
 }
 
-void ZigCCParser::ExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterExpression(this);
-}
-
-void ZigCCParser::ExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitExpression(this);
-}
-
 
 std::any ZigCCParser::ExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -6176,18 +5623,6 @@ ZigCCParser::ConditionalExpressionContext* ZigCCParser::ConstantExpressionContex
 
 size_t ZigCCParser::ConstantExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleConstantExpression;
-}
-
-void ZigCCParser::ConstantExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterConstantExpression(this);
-}
-
-void ZigCCParser::ConstantExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitConstantExpression(this);
 }
 
 
@@ -6269,18 +5704,6 @@ ZigCCParser::AttributeSpecifierSeqContext* ZigCCParser::StatementContext::attrib
 
 size_t ZigCCParser::StatementContext::getRuleIndex() const {
   return ZigCCParser::RuleStatement;
-}
-
-void ZigCCParser::StatementContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterStatement(this);
-}
-
-void ZigCCParser::StatementContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitStatement(this);
 }
 
 
@@ -6488,18 +5911,6 @@ size_t ZigCCParser::LabeledStatementContext::getRuleIndex() const {
   return ZigCCParser::RuleLabeledStatement;
 }
 
-void ZigCCParser::LabeledStatementContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterLabeledStatement(this);
-}
-
-void ZigCCParser::LabeledStatementContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitLabeledStatement(this);
-}
-
 
 std::any ZigCCParser::LabeledStatementContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -6590,18 +6001,6 @@ size_t ZigCCParser::ExpressionStatementContext::getRuleIndex() const {
   return ZigCCParser::RuleExpressionStatement;
 }
 
-void ZigCCParser::ExpressionStatementContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterExpressionStatement(this);
-}
-
-void ZigCCParser::ExpressionStatementContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitExpressionStatement(this);
-}
-
 
 std::any ZigCCParser::ExpressionStatementContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -6670,18 +6069,6 @@ size_t ZigCCParser::CompoundStatementContext::getRuleIndex() const {
   return ZigCCParser::RuleCompoundStatement;
 }
 
-void ZigCCParser::CompoundStatementContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterCompoundStatement(this);
-}
-
-void ZigCCParser::CompoundStatementContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitCompoundStatement(this);
-}
-
 
 std::any ZigCCParser::CompoundStatementContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -6747,18 +6134,6 @@ ZigCCParser::StatementContext* ZigCCParser::StatementSeqContext::statement(size_
 
 size_t ZigCCParser::StatementSeqContext::getRuleIndex() const {
   return ZigCCParser::RuleStatementSeq;
-}
-
-void ZigCCParser::StatementSeqContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterStatementSeq(this);
-}
-
-void ZigCCParser::StatementSeqContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitStatementSeq(this);
 }
 
 
@@ -6848,18 +6223,6 @@ tree::TerminalNode* ZigCCParser::SelectionStatementContext::Switch() {
 
 size_t ZigCCParser::SelectionStatementContext::getRuleIndex() const {
   return ZigCCParser::RuleSelectionStatement;
-}
-
-void ZigCCParser::SelectionStatementContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterSelectionStatement(this);
-}
-
-void ZigCCParser::SelectionStatementContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitSelectionStatement(this);
 }
 
 
@@ -6981,18 +6344,6 @@ ZigCCParser::AttributeSpecifierSeqContext* ZigCCParser::ConditionContext::attrib
 
 size_t ZigCCParser::ConditionContext::getRuleIndex() const {
   return ZigCCParser::RuleCondition;
-}
-
-void ZigCCParser::ConditionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterCondition(this);
-}
-
-void ZigCCParser::ConditionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitCondition(this);
 }
 
 
@@ -7138,18 +6489,6 @@ ZigCCParser::ForRangeInitializerContext* ZigCCParser::IterationStatementContext:
 
 size_t ZigCCParser::IterationStatementContext::getRuleIndex() const {
   return ZigCCParser::RuleIterationStatement;
-}
-
-void ZigCCParser::IterationStatementContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterIterationStatement(this);
-}
-
-void ZigCCParser::IterationStatementContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitIterationStatement(this);
 }
 
 
@@ -7300,18 +6639,6 @@ size_t ZigCCParser::ForInitStatementContext::getRuleIndex() const {
   return ZigCCParser::RuleForInitStatement;
 }
 
-void ZigCCParser::ForInitStatementContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterForInitStatement(this);
-}
-
-void ZigCCParser::ForInitStatementContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitForInitStatement(this);
-}
-
 
 std::any ZigCCParser::ForInitStatementContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -7386,18 +6713,6 @@ size_t ZigCCParser::ForRangeDeclarationContext::getRuleIndex() const {
   return ZigCCParser::RuleForRangeDeclaration;
 }
 
-void ZigCCParser::ForRangeDeclarationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterForRangeDeclaration(this);
-}
-
-void ZigCCParser::ForRangeDeclarationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitForRangeDeclaration(this);
-}
-
 
 std::any ZigCCParser::ForRangeDeclarationContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -7460,18 +6775,6 @@ ZigCCParser::BracedInitListContext* ZigCCParser::ForRangeInitializerContext::bra
 
 size_t ZigCCParser::ForRangeInitializerContext::getRuleIndex() const {
   return ZigCCParser::RuleForRangeInitializer;
-}
-
-void ZigCCParser::ForRangeInitializerContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterForRangeInitializer(this);
-}
-
-void ZigCCParser::ForRangeInitializerContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitForRangeInitializer(this);
 }
 
 
@@ -7614,18 +6917,6 @@ ZigCCParser::BracedInitListContext* ZigCCParser::JumpStatementContext::bracedIni
 
 size_t ZigCCParser::JumpStatementContext::getRuleIndex() const {
   return ZigCCParser::RuleJumpStatement;
-}
-
-void ZigCCParser::JumpStatementContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterJumpStatement(this);
-}
-
-void ZigCCParser::JumpStatementContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitJumpStatement(this);
 }
 
 
@@ -7779,18 +7070,6 @@ size_t ZigCCParser::DeclarationStatementContext::getRuleIndex() const {
   return ZigCCParser::RuleDeclarationStatement;
 }
 
-void ZigCCParser::DeclarationStatementContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterDeclarationStatement(this);
-}
-
-void ZigCCParser::DeclarationStatementContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitDeclarationStatement(this);
-}
-
 
 std::any ZigCCParser::DeclarationStatementContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -7842,18 +7121,6 @@ ZigCCParser::DeclarationContext* ZigCCParser::DeclarationseqContext::declaration
 
 size_t ZigCCParser::DeclarationseqContext::getRuleIndex() const {
   return ZigCCParser::RuleDeclarationseq;
-}
-
-void ZigCCParser::DeclarationseqContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterDeclarationseq(this);
-}
-
-void ZigCCParser::DeclarationseqContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitDeclarationseq(this);
 }
 
 
@@ -7946,18 +7213,6 @@ ZigCCParser::AttributeDeclarationContext* ZigCCParser::DeclarationContext::attri
 
 size_t ZigCCParser::DeclarationContext::getRuleIndex() const {
   return ZigCCParser::RuleDeclaration;
-}
-
-void ZigCCParser::DeclarationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterDeclaration(this);
-}
-
-void ZigCCParser::DeclarationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitDeclaration(this);
 }
 
 
@@ -8103,18 +7358,6 @@ size_t ZigCCParser::BlockDeclarationContext::getRuleIndex() const {
   return ZigCCParser::RuleBlockDeclaration;
 }
 
-void ZigCCParser::BlockDeclarationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterBlockDeclaration(this);
-}
-
-void ZigCCParser::BlockDeclarationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitBlockDeclaration(this);
-}
-
 
 std::any ZigCCParser::BlockDeclarationContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -8243,18 +7486,6 @@ size_t ZigCCParser::AliasDeclarationContext::getRuleIndex() const {
   return ZigCCParser::RuleAliasDeclaration;
 }
 
-void ZigCCParser::AliasDeclarationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAliasDeclaration(this);
-}
-
-void ZigCCParser::AliasDeclarationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAliasDeclaration(this);
-}
-
 
 std::any ZigCCParser::AliasDeclarationContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -8331,18 +7562,6 @@ ZigCCParser::AttributeSpecifierSeqContext* ZigCCParser::SimpleDeclarationContext
 
 size_t ZigCCParser::SimpleDeclarationContext::getRuleIndex() const {
   return ZigCCParser::RuleSimpleDeclaration;
-}
-
-void ZigCCParser::SimpleDeclarationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterSimpleDeclaration(this);
-}
-
-void ZigCCParser::SimpleDeclarationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitSimpleDeclaration(this);
 }
 
 
@@ -8520,18 +7739,6 @@ size_t ZigCCParser::StaticAssertDeclarationContext::getRuleIndex() const {
   return ZigCCParser::RuleStaticAssertDeclaration;
 }
 
-void ZigCCParser::StaticAssertDeclarationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterStaticAssertDeclaration(this);
-}
-
-void ZigCCParser::StaticAssertDeclarationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitStaticAssertDeclaration(this);
-}
-
 
 std::any ZigCCParser::StaticAssertDeclarationContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -8593,18 +7800,6 @@ size_t ZigCCParser::EmptyDeclarationContext::getRuleIndex() const {
   return ZigCCParser::RuleEmptyDeclaration;
 }
 
-void ZigCCParser::EmptyDeclarationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterEmptyDeclaration(this);
-}
-
-void ZigCCParser::EmptyDeclarationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitEmptyDeclaration(this);
-}
-
 
 std::any ZigCCParser::EmptyDeclarationContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -8656,18 +7851,6 @@ tree::TerminalNode* ZigCCParser::AttributeDeclarationContext::Semi() {
 
 size_t ZigCCParser::AttributeDeclarationContext::getRuleIndex() const {
   return ZigCCParser::RuleAttributeDeclaration;
-}
-
-void ZigCCParser::AttributeDeclarationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAttributeDeclaration(this);
-}
-
-void ZigCCParser::AttributeDeclarationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAttributeDeclaration(this);
 }
 
 
@@ -8739,18 +7922,6 @@ tree::TerminalNode* ZigCCParser::DeclSpecifierContext::Constexpr() {
 
 size_t ZigCCParser::DeclSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleDeclSpecifier;
-}
-
-void ZigCCParser::DeclSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterDeclSpecifier(this);
-}
-
-void ZigCCParser::DeclSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitDeclSpecifier(this);
 }
 
 
@@ -8884,18 +8055,6 @@ size_t ZigCCParser::DeclSpecifierSeqContext::getRuleIndex() const {
   return ZigCCParser::RuleDeclSpecifierSeq;
 }
 
-void ZigCCParser::DeclSpecifierSeqContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterDeclSpecifierSeq(this);
-}
-
-void ZigCCParser::DeclSpecifierSeqContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitDeclSpecifierSeq(this);
-}
-
 
 std::any ZigCCParser::DeclSpecifierSeqContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -8991,18 +8150,6 @@ size_t ZigCCParser::StorageClassSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleStorageClassSpecifier;
 }
 
-void ZigCCParser::StorageClassSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterStorageClassSpecifier(this);
-}
-
-void ZigCCParser::StorageClassSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitStorageClassSpecifier(this);
-}
-
 
 std::any ZigCCParser::StorageClassSpecifierContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -9069,18 +8216,6 @@ size_t ZigCCParser::FunctionSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleFunctionSpecifier;
 }
 
-void ZigCCParser::FunctionSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterFunctionSpecifier(this);
-}
-
-void ZigCCParser::FunctionSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitFunctionSpecifier(this);
-}
-
 
 std::any ZigCCParser::FunctionSpecifierContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -9139,18 +8274,6 @@ size_t ZigCCParser::TypedefNameContext::getRuleIndex() const {
   return ZigCCParser::RuleTypedefName;
 }
 
-void ZigCCParser::TypedefNameContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTypedefName(this);
-}
-
-void ZigCCParser::TypedefNameContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTypedefName(this);
-}
-
 
 std::any ZigCCParser::TypedefNameContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -9206,18 +8329,6 @@ ZigCCParser::EnumSpecifierContext* ZigCCParser::TypeSpecifierContext::enumSpecif
 
 size_t ZigCCParser::TypeSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleTypeSpecifier;
-}
-
-void ZigCCParser::TypeSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTypeSpecifier(this);
-}
-
-void ZigCCParser::TypeSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTypeSpecifier(this);
 }
 
 
@@ -9303,18 +8414,6 @@ ZigCCParser::CvQualifierContext* ZigCCParser::TrailingTypeSpecifierContext::cvQu
 
 size_t ZigCCParser::TrailingTypeSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleTrailingTypeSpecifier;
-}
-
-void ZigCCParser::TrailingTypeSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTrailingTypeSpecifier(this);
-}
-
-void ZigCCParser::TrailingTypeSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTrailingTypeSpecifier(this);
 }
 
 
@@ -9424,18 +8523,6 @@ size_t ZigCCParser::TypeSpecifierSeqContext::getRuleIndex() const {
   return ZigCCParser::RuleTypeSpecifierSeq;
 }
 
-void ZigCCParser::TypeSpecifierSeqContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTypeSpecifierSeq(this);
-}
-
-void ZigCCParser::TypeSpecifierSeqContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTypeSpecifierSeq(this);
-}
-
 
 std::any ZigCCParser::TypeSpecifierSeqContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -9523,18 +8610,6 @@ size_t ZigCCParser::TrailingTypeSpecifierSeqContext::getRuleIndex() const {
   return ZigCCParser::RuleTrailingTypeSpecifierSeq;
 }
 
-void ZigCCParser::TrailingTypeSpecifierSeqContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTrailingTypeSpecifierSeq(this);
-}
-
-void ZigCCParser::TrailingTypeSpecifierSeqContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTrailingTypeSpecifierSeq(this);
-}
-
 
 std::any ZigCCParser::TrailingTypeSpecifierSeqContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -9618,18 +8693,6 @@ size_t ZigCCParser::SimpleTypeLengthModifierContext::getRuleIndex() const {
   return ZigCCParser::RuleSimpleTypeLengthModifier;
 }
 
-void ZigCCParser::SimpleTypeLengthModifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterSimpleTypeLengthModifier(this);
-}
-
-void ZigCCParser::SimpleTypeLengthModifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitSimpleTypeLengthModifier(this);
-}
-
 
 std::any ZigCCParser::SimpleTypeLengthModifierContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -9691,18 +8754,6 @@ tree::TerminalNode* ZigCCParser::SimpleTypeSignednessModifierContext::Signed() {
 
 size_t ZigCCParser::SimpleTypeSignednessModifierContext::getRuleIndex() const {
   return ZigCCParser::RuleSimpleTypeSignednessModifier;
-}
-
-void ZigCCParser::SimpleTypeSignednessModifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterSimpleTypeSignednessModifier(this);
-}
-
-void ZigCCParser::SimpleTypeSignednessModifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitSimpleTypeSignednessModifier(this);
 }
 
 
@@ -9830,18 +8881,6 @@ ZigCCParser::DecltypeSpecifierContext* ZigCCParser::SimpleTypeSpecifierContext::
 
 size_t ZigCCParser::SimpleTypeSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleSimpleTypeSpecifier;
-}
-
-void ZigCCParser::SimpleTypeSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterSimpleTypeSpecifier(this);
-}
-
-void ZigCCParser::SimpleTypeSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitSimpleTypeSpecifier(this);
 }
 
 
@@ -10130,18 +9169,6 @@ size_t ZigCCParser::TheTypeNameContext::getRuleIndex() const {
   return ZigCCParser::RuleTheTypeName;
 }
 
-void ZigCCParser::TheTypeNameContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTheTypeName(this);
-}
-
-void ZigCCParser::TheTypeNameContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTheTypeName(this);
-}
-
 
 std::any ZigCCParser::TheTypeNameContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -10238,18 +9265,6 @@ size_t ZigCCParser::DecltypeSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleDecltypeSpecifier;
 }
 
-void ZigCCParser::DecltypeSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterDecltypeSpecifier(this);
-}
-
-void ZigCCParser::DecltypeSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitDecltypeSpecifier(this);
-}
-
 
 std::any ZigCCParser::DecltypeSpecifierContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -10343,18 +9358,6 @@ tree::TerminalNode* ZigCCParser::ElaboratedTypeSpecifierContext::Enum() {
 
 size_t ZigCCParser::ElaboratedTypeSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleElaboratedTypeSpecifier;
-}
-
-void ZigCCParser::ElaboratedTypeSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterElaboratedTypeSpecifier(this);
-}
-
-void ZigCCParser::ElaboratedTypeSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitElaboratedTypeSpecifier(this);
 }
 
 
@@ -10495,18 +9498,6 @@ size_t ZigCCParser::EnumNameContext::getRuleIndex() const {
   return ZigCCParser::RuleEnumName;
 }
 
-void ZigCCParser::EnumNameContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterEnumName(this);
-}
-
-void ZigCCParser::EnumNameContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitEnumName(this);
-}
-
 
 std::any ZigCCParser::EnumNameContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -10570,18 +9561,6 @@ tree::TerminalNode* ZigCCParser::EnumSpecifierContext::Comma() {
 
 size_t ZigCCParser::EnumSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleEnumSpecifier;
-}
-
-void ZigCCParser::EnumSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterEnumSpecifier(this);
-}
-
-void ZigCCParser::EnumSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitEnumSpecifier(this);
 }
 
 
@@ -10668,18 +9647,6 @@ ZigCCParser::NestedNameSpecifierContext* ZigCCParser::EnumHeadContext::nestedNam
 
 size_t ZigCCParser::EnumHeadContext::getRuleIndex() const {
   return ZigCCParser::RuleEnumHead;
-}
-
-void ZigCCParser::EnumHeadContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterEnumHead(this);
-}
-
-void ZigCCParser::EnumHeadContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitEnumHead(this);
 }
 
 
@@ -10787,18 +9754,6 @@ size_t ZigCCParser::OpaqueEnumDeclarationContext::getRuleIndex() const {
   return ZigCCParser::RuleOpaqueEnumDeclaration;
 }
 
-void ZigCCParser::OpaqueEnumDeclarationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterOpaqueEnumDeclaration(this);
-}
-
-void ZigCCParser::OpaqueEnumDeclarationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitOpaqueEnumDeclaration(this);
-}
-
 
 std::any ZigCCParser::OpaqueEnumDeclarationContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -10877,18 +9832,6 @@ size_t ZigCCParser::EnumkeyContext::getRuleIndex() const {
   return ZigCCParser::RuleEnumkey;
 }
 
-void ZigCCParser::EnumkeyContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterEnumkey(this);
-}
-
-void ZigCCParser::EnumkeyContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitEnumkey(this);
-}
-
 
 std::any ZigCCParser::EnumkeyContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -10962,18 +9905,6 @@ size_t ZigCCParser::EnumbaseContext::getRuleIndex() const {
   return ZigCCParser::RuleEnumbase;
 }
 
-void ZigCCParser::EnumbaseContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterEnumbase(this);
-}
-
-void ZigCCParser::EnumbaseContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitEnumbase(this);
-}
-
 
 std::any ZigCCParser::EnumbaseContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -11035,18 +9966,6 @@ tree::TerminalNode* ZigCCParser::EnumeratorListContext::Comma(size_t i) {
 
 size_t ZigCCParser::EnumeratorListContext::getRuleIndex() const {
   return ZigCCParser::RuleEnumeratorList;
-}
-
-void ZigCCParser::EnumeratorListContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterEnumeratorList(this);
-}
-
-void ZigCCParser::EnumeratorListContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitEnumeratorList(this);
 }
 
 
@@ -11121,18 +10040,6 @@ size_t ZigCCParser::EnumeratorDefinitionContext::getRuleIndex() const {
   return ZigCCParser::RuleEnumeratorDefinition;
 }
 
-void ZigCCParser::EnumeratorDefinitionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterEnumeratorDefinition(this);
-}
-
-void ZigCCParser::EnumeratorDefinitionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitEnumeratorDefinition(this);
-}
-
 
 std::any ZigCCParser::EnumeratorDefinitionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -11193,18 +10100,6 @@ size_t ZigCCParser::EnumeratorContext::getRuleIndex() const {
   return ZigCCParser::RuleEnumerator;
 }
 
-void ZigCCParser::EnumeratorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterEnumerator(this);
-}
-
-void ZigCCParser::EnumeratorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitEnumerator(this);
-}
-
 
 std::any ZigCCParser::EnumeratorContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -11256,18 +10151,6 @@ ZigCCParser::NamespaceAliasContext* ZigCCParser::NamespaceNameContext::namespace
 
 size_t ZigCCParser::NamespaceNameContext::getRuleIndex() const {
   return ZigCCParser::RuleNamespaceName;
-}
-
-void ZigCCParser::NamespaceNameContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNamespaceName(this);
-}
-
-void ZigCCParser::NamespaceNameContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNamespaceName(this);
 }
 
 
@@ -11334,18 +10217,6 @@ tree::TerminalNode* ZigCCParser::OriginalNamespaceNameContext::Identifier() {
 
 size_t ZigCCParser::OriginalNamespaceNameContext::getRuleIndex() const {
   return ZigCCParser::RuleOriginalNamespaceName;
-}
-
-void ZigCCParser::OriginalNamespaceNameContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterOriginalNamespaceName(this);
-}
-
-void ZigCCParser::OriginalNamespaceNameContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitOriginalNamespaceName(this);
 }
 
 
@@ -11419,18 +10290,6 @@ ZigCCParser::DeclarationseqContext* ZigCCParser::NamespaceDefinitionContext::dec
 
 size_t ZigCCParser::NamespaceDefinitionContext::getRuleIndex() const {
   return ZigCCParser::RuleNamespaceDefinition;
-}
-
-void ZigCCParser::NamespaceDefinitionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNamespaceDefinition(this);
-}
-
-void ZigCCParser::NamespaceDefinitionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNamespaceDefinition(this);
 }
 
 
@@ -11524,18 +10383,6 @@ size_t ZigCCParser::NamespaceAliasContext::getRuleIndex() const {
   return ZigCCParser::RuleNamespaceAlias;
 }
 
-void ZigCCParser::NamespaceAliasContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNamespaceAlias(this);
-}
-
-void ZigCCParser::NamespaceAliasContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNamespaceAlias(this);
-}
-
 
 std::any ZigCCParser::NamespaceAliasContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -11601,18 +10448,6 @@ size_t ZigCCParser::NamespaceAliasDefinitionContext::getRuleIndex() const {
   return ZigCCParser::RuleNamespaceAliasDefinition;
 }
 
-void ZigCCParser::NamespaceAliasDefinitionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNamespaceAliasDefinition(this);
-}
-
-void ZigCCParser::NamespaceAliasDefinitionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNamespaceAliasDefinition(this);
-}
-
 
 std::any ZigCCParser::NamespaceAliasDefinitionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -11672,18 +10507,6 @@ ZigCCParser::NestedNameSpecifierContext* ZigCCParser::Qualifiednamespacespecifie
 
 size_t ZigCCParser::QualifiednamespacespecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleQualifiednamespacespecifier;
-}
-
-void ZigCCParser::QualifiednamespacespecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterQualifiednamespacespecifier(this);
-}
-
-void ZigCCParser::QualifiednamespacespecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitQualifiednamespacespecifier(this);
 }
 
 
@@ -11766,18 +10589,6 @@ tree::TerminalNode* ZigCCParser::UsingDeclarationContext::Typename_() {
 
 size_t ZigCCParser::UsingDeclarationContext::getRuleIndex() const {
   return ZigCCParser::RuleUsingDeclaration;
-}
-
-void ZigCCParser::UsingDeclarationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterUsingDeclaration(this);
-}
-
-void ZigCCParser::UsingDeclarationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitUsingDeclaration(this);
 }
 
 
@@ -11880,18 +10691,6 @@ size_t ZigCCParser::UsingDirectiveContext::getRuleIndex() const {
   return ZigCCParser::RuleUsingDirective;
 }
 
-void ZigCCParser::UsingDirectiveContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterUsingDirective(this);
-}
-
-void ZigCCParser::UsingDirectiveContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitUsingDirective(this);
-}
-
 
 std::any ZigCCParser::UsingDirectiveContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -11985,18 +10784,6 @@ size_t ZigCCParser::AsmDefinitionContext::getRuleIndex() const {
   return ZigCCParser::RuleAsmDefinition;
 }
 
-void ZigCCParser::AsmDefinitionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAsmDefinition(this);
-}
-
-void ZigCCParser::AsmDefinitionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAsmDefinition(this);
-}
-
 
 std::any ZigCCParser::AsmDefinitionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -12072,18 +10859,6 @@ ZigCCParser::DeclarationseqContext* ZigCCParser::LinkageSpecificationContext::de
 
 size_t ZigCCParser::LinkageSpecificationContext::getRuleIndex() const {
   return ZigCCParser::RuleLinkageSpecification;
-}
-
-void ZigCCParser::LinkageSpecificationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterLinkageSpecification(this);
-}
-
-void ZigCCParser::LinkageSpecificationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitLinkageSpecification(this);
 }
 
 
@@ -12221,18 +10996,6 @@ size_t ZigCCParser::AttributeSpecifierSeqContext::getRuleIndex() const {
   return ZigCCParser::RuleAttributeSpecifierSeq;
 }
 
-void ZigCCParser::AttributeSpecifierSeqContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAttributeSpecifierSeq(this);
-}
-
-void ZigCCParser::AttributeSpecifierSeqContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAttributeSpecifierSeq(this);
-}
-
 
 std::any ZigCCParser::AttributeSpecifierSeqContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -12317,18 +11080,6 @@ ZigCCParser::AlignmentspecifierContext* ZigCCParser::AttributeSpecifierContext::
 
 size_t ZigCCParser::AttributeSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleAttributeSpecifier;
-}
-
-void ZigCCParser::AttributeSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAttributeSpecifier(this);
-}
-
-void ZigCCParser::AttributeSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAttributeSpecifier(this);
 }
 
 
@@ -12432,18 +11183,6 @@ size_t ZigCCParser::AlignmentspecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleAlignmentspecifier;
 }
 
-void ZigCCParser::AlignmentspecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAlignmentspecifier(this);
-}
-
-void ZigCCParser::AlignmentspecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAlignmentspecifier(this);
-}
-
 
 std::any ZigCCParser::AlignmentspecifierContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -12540,18 +11279,6 @@ size_t ZigCCParser::AttributeListContext::getRuleIndex() const {
   return ZigCCParser::RuleAttributeList;
 }
 
-void ZigCCParser::AttributeListContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAttributeList(this);
-}
-
-void ZigCCParser::AttributeListContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAttributeList(this);
-}
-
 
 std::any ZigCCParser::AttributeListContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -12634,18 +11361,6 @@ size_t ZigCCParser::AttributeContext::getRuleIndex() const {
   return ZigCCParser::RuleAttribute;
 }
 
-void ZigCCParser::AttributeContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAttribute(this);
-}
-
-void ZigCCParser::AttributeContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAttribute(this);
-}
-
 
 std::any ZigCCParser::AttributeContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -12719,18 +11434,6 @@ size_t ZigCCParser::AttributeNamespaceContext::getRuleIndex() const {
   return ZigCCParser::RuleAttributeNamespace;
 }
 
-void ZigCCParser::AttributeNamespaceContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAttributeNamespace(this);
-}
-
-void ZigCCParser::AttributeNamespaceContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAttributeNamespace(this);
-}
-
 
 std::any ZigCCParser::AttributeNamespaceContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -12786,18 +11489,6 @@ ZigCCParser::BalancedTokenSeqContext* ZigCCParser::AttributeArgumentClauseContex
 
 size_t ZigCCParser::AttributeArgumentClauseContext::getRuleIndex() const {
   return ZigCCParser::RuleAttributeArgumentClause;
-}
-
-void ZigCCParser::AttributeArgumentClauseContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAttributeArgumentClause(this);
-}
-
-void ZigCCParser::AttributeArgumentClauseContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAttributeArgumentClause(this);
 }
 
 
@@ -12865,18 +11556,6 @@ ZigCCParser::BalancedtokenContext* ZigCCParser::BalancedTokenSeqContext::balance
 
 size_t ZigCCParser::BalancedTokenSeqContext::getRuleIndex() const {
   return ZigCCParser::RuleBalancedTokenSeq;
-}
-
-void ZigCCParser::BalancedTokenSeqContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterBalancedTokenSeq(this);
-}
-
-void ZigCCParser::BalancedTokenSeqContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitBalancedTokenSeq(this);
 }
 
 
@@ -12986,18 +11665,6 @@ tree::TerminalNode* ZigCCParser::BalancedtokenContext::RightBrace(size_t i) {
 
 size_t ZigCCParser::BalancedtokenContext::getRuleIndex() const {
   return ZigCCParser::RuleBalancedtoken;
-}
-
-void ZigCCParser::BalancedtokenContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterBalancedtoken(this);
-}
-
-void ZigCCParser::BalancedtokenContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitBalancedtoken(this);
 }
 
 
@@ -13268,18 +11935,6 @@ size_t ZigCCParser::InitDeclaratorListContext::getRuleIndex() const {
   return ZigCCParser::RuleInitDeclaratorList;
 }
 
-void ZigCCParser::InitDeclaratorListContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterInitDeclaratorList(this);
-}
-
-void ZigCCParser::InitDeclaratorListContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitInitDeclaratorList(this);
-}
-
 
 std::any ZigCCParser::InitDeclaratorListContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -13344,18 +11999,6 @@ ZigCCParser::InitializerContext* ZigCCParser::InitDeclaratorContext::initializer
 
 size_t ZigCCParser::InitDeclaratorContext::getRuleIndex() const {
   return ZigCCParser::RuleInitDeclarator;
-}
-
-void ZigCCParser::InitDeclaratorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterInitDeclarator(this);
-}
-
-void ZigCCParser::InitDeclaratorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitInitDeclarator(this);
 }
 
 
@@ -13427,18 +12070,6 @@ ZigCCParser::TrailingReturnTypeContext* ZigCCParser::DeclaratorContext::trailing
 
 size_t ZigCCParser::DeclaratorContext::getRuleIndex() const {
   return ZigCCParser::RuleDeclarator;
-}
-
-void ZigCCParser::DeclaratorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterDeclarator(this);
-}
-
-void ZigCCParser::DeclaratorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitDeclarator(this);
 }
 
 
@@ -13525,18 +12156,6 @@ tree::TerminalNode* ZigCCParser::PointerDeclaratorContext::Const(size_t i) {
 
 size_t ZigCCParser::PointerDeclaratorContext::getRuleIndex() const {
   return ZigCCParser::RulePointerDeclarator;
-}
-
-void ZigCCParser::PointerDeclaratorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterPointerDeclarator(this);
-}
-
-void ZigCCParser::PointerDeclaratorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitPointerDeclarator(this);
 }
 
 
@@ -13644,18 +12263,6 @@ ZigCCParser::ConstantExpressionContext* ZigCCParser::NoPointerDeclaratorContext:
 
 size_t ZigCCParser::NoPointerDeclaratorContext::getRuleIndex() const {
   return ZigCCParser::RuleNoPointerDeclarator;
-}
-
-void ZigCCParser::NoPointerDeclaratorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNoPointerDeclarator(this);
-}
-
-void ZigCCParser::NoPointerDeclaratorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNoPointerDeclarator(this);
 }
 
 
@@ -13842,18 +12449,6 @@ size_t ZigCCParser::ParametersAndQualifiersContext::getRuleIndex() const {
   return ZigCCParser::RuleParametersAndQualifiers;
 }
 
-void ZigCCParser::ParametersAndQualifiersContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterParametersAndQualifiers(this);
-}
-
-void ZigCCParser::ParametersAndQualifiersContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitParametersAndQualifiers(this);
-}
-
 
 std::any ZigCCParser::ParametersAndQualifiersContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -13976,18 +12571,6 @@ size_t ZigCCParser::TrailingReturnTypeContext::getRuleIndex() const {
   return ZigCCParser::RuleTrailingReturnType;
 }
 
-void ZigCCParser::TrailingReturnTypeContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTrailingReturnType(this);
-}
-
-void ZigCCParser::TrailingReturnTypeContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTrailingReturnType(this);
-}
-
 
 std::any ZigCCParser::TrailingReturnTypeContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -14070,18 +12653,6 @@ ZigCCParser::CvqualifierseqContext* ZigCCParser::PointerOperatorContext::cvquali
 
 size_t ZigCCParser::PointerOperatorContext::getRuleIndex() const {
   return ZigCCParser::RulePointerOperator;
-}
-
-void ZigCCParser::PointerOperatorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterPointerOperator(this);
-}
-
-void ZigCCParser::PointerOperatorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitPointerOperator(this);
 }
 
 
@@ -14217,18 +12788,6 @@ size_t ZigCCParser::CvqualifierseqContext::getRuleIndex() const {
   return ZigCCParser::RuleCvqualifierseq;
 }
 
-void ZigCCParser::CvqualifierseqContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterCvqualifierseq(this);
-}
-
-void ZigCCParser::CvqualifierseqContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitCvqualifierseq(this);
-}
-
 
 std::any ZigCCParser::CvqualifierseqContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -14299,18 +12858,6 @@ size_t ZigCCParser::CvQualifierContext::getRuleIndex() const {
   return ZigCCParser::RuleCvQualifier;
 }
 
-void ZigCCParser::CvQualifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterCvQualifier(this);
-}
-
-void ZigCCParser::CvQualifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitCvQualifier(this);
-}
-
 
 std::any ZigCCParser::CvQualifierContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -14372,18 +12919,6 @@ tree::TerminalNode* ZigCCParser::RefqualifierContext::AndAnd() {
 
 size_t ZigCCParser::RefqualifierContext::getRuleIndex() const {
   return ZigCCParser::RuleRefqualifier;
-}
-
-void ZigCCParser::RefqualifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterRefqualifier(this);
-}
-
-void ZigCCParser::RefqualifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitRefqualifier(this);
 }
 
 
@@ -14449,18 +12984,6 @@ size_t ZigCCParser::DeclaratoridContext::getRuleIndex() const {
   return ZigCCParser::RuleDeclaratorid;
 }
 
-void ZigCCParser::DeclaratoridContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterDeclaratorid(this);
-}
-
-void ZigCCParser::DeclaratoridContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitDeclaratorid(this);
-}
-
 
 std::any ZigCCParser::DeclaratoridContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -14521,18 +13044,6 @@ ZigCCParser::AbstractDeclaratorContext* ZigCCParser::TheTypeIdContext::abstractD
 
 size_t ZigCCParser::TheTypeIdContext::getRuleIndex() const {
   return ZigCCParser::RuleTheTypeId;
-}
-
-void ZigCCParser::TheTypeIdContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTheTypeId(this);
-}
-
-void ZigCCParser::TheTypeIdContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTheTypeId(this);
 }
 
 
@@ -14611,18 +13122,6 @@ ZigCCParser::AbstractPackDeclaratorContext* ZigCCParser::AbstractDeclaratorConte
 
 size_t ZigCCParser::AbstractDeclaratorContext::getRuleIndex() const {
   return ZigCCParser::RuleAbstractDeclarator;
-}
-
-void ZigCCParser::AbstractDeclaratorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAbstractDeclarator(this);
-}
-
-void ZigCCParser::AbstractDeclaratorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAbstractDeclarator(this);
 }
 
 
@@ -14719,18 +13218,6 @@ ZigCCParser::PointerOperatorContext* ZigCCParser::PointerAbstractDeclaratorConte
 
 size_t ZigCCParser::PointerAbstractDeclaratorContext::getRuleIndex() const {
   return ZigCCParser::RulePointerAbstractDeclarator;
-}
-
-void ZigCCParser::PointerAbstractDeclaratorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterPointerAbstractDeclarator(this);
-}
-
-void ZigCCParser::PointerAbstractDeclaratorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitPointerAbstractDeclarator(this);
 }
 
 
@@ -14862,18 +13349,6 @@ ZigCCParser::NoPointerAbstractDeclaratorContext* ZigCCParser::NoPointerAbstractD
 
 size_t ZigCCParser::NoPointerAbstractDeclaratorContext::getRuleIndex() const {
   return ZigCCParser::RuleNoPointerAbstractDeclarator;
-}
-
-void ZigCCParser::NoPointerAbstractDeclaratorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNoPointerAbstractDeclarator(this);
-}
-
-void ZigCCParser::NoPointerAbstractDeclaratorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNoPointerAbstractDeclarator(this);
 }
 
 
@@ -15059,18 +13534,6 @@ size_t ZigCCParser::AbstractPackDeclaratorContext::getRuleIndex() const {
   return ZigCCParser::RuleAbstractPackDeclarator;
 }
 
-void ZigCCParser::AbstractPackDeclaratorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAbstractPackDeclarator(this);
-}
-
-void ZigCCParser::AbstractPackDeclaratorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAbstractPackDeclarator(this);
-}
-
 
 std::any ZigCCParser::AbstractPackDeclaratorContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -15154,18 +13617,6 @@ ZigCCParser::AttributeSpecifierSeqContext* ZigCCParser::NoPointerAbstractPackDec
 
 size_t ZigCCParser::NoPointerAbstractPackDeclaratorContext::getRuleIndex() const {
   return ZigCCParser::RuleNoPointerAbstractPackDeclarator;
-}
-
-void ZigCCParser::NoPointerAbstractPackDeclaratorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNoPointerAbstractPackDeclarator(this);
-}
-
-void ZigCCParser::NoPointerAbstractPackDeclaratorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNoPointerAbstractPackDeclarator(this);
 }
 
 
@@ -15298,18 +13749,6 @@ size_t ZigCCParser::ParameterDeclarationClauseContext::getRuleIndex() const {
   return ZigCCParser::RuleParameterDeclarationClause;
 }
 
-void ZigCCParser::ParameterDeclarationClauseContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterParameterDeclarationClause(this);
-}
-
-void ZigCCParser::ParameterDeclarationClauseContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitParameterDeclarationClause(this);
-}
-
 
 std::any ZigCCParser::ParameterDeclarationClauseContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -15388,18 +13827,6 @@ tree::TerminalNode* ZigCCParser::ParameterDeclarationListContext::Comma(size_t i
 
 size_t ZigCCParser::ParameterDeclarationListContext::getRuleIndex() const {
   return ZigCCParser::RuleParameterDeclarationList;
-}
-
-void ZigCCParser::ParameterDeclarationListContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterParameterDeclarationList(this);
-}
-
-void ZigCCParser::ParameterDeclarationListContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitParameterDeclarationList(this);
 }
 
 
@@ -15484,18 +13911,6 @@ ZigCCParser::AbstractDeclaratorContext* ZigCCParser::ParameterDeclarationContext
 
 size_t ZigCCParser::ParameterDeclarationContext::getRuleIndex() const {
   return ZigCCParser::RuleParameterDeclaration;
-}
-
-void ZigCCParser::ParameterDeclarationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterParameterDeclaration(this);
-}
-
-void ZigCCParser::ParameterDeclarationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitParameterDeclaration(this);
 }
 
 
@@ -15612,18 +14027,6 @@ size_t ZigCCParser::FunctionDefinitionContext::getRuleIndex() const {
   return ZigCCParser::RuleFunctionDefinition;
 }
 
-void ZigCCParser::FunctionDefinitionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterFunctionDefinition(this);
-}
-
-void ZigCCParser::FunctionDefinitionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitFunctionDefinition(this);
-}
-
 
 std::any ZigCCParser::FunctionDefinitionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -15729,18 +14132,6 @@ tree::TerminalNode* ZigCCParser::FunctionBodyContext::Delete() {
 
 size_t ZigCCParser::FunctionBodyContext::getRuleIndex() const {
   return ZigCCParser::RuleFunctionBody;
-}
-
-void ZigCCParser::FunctionBodyContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterFunctionBody(this);
-}
-
-void ZigCCParser::FunctionBodyContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitFunctionBody(this);
 }
 
 
@@ -15851,18 +14242,6 @@ size_t ZigCCParser::InitializerContext::getRuleIndex() const {
   return ZigCCParser::RuleInitializer;
 }
 
-void ZigCCParser::InitializerContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterInitializer(this);
-}
-
-void ZigCCParser::InitializerContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitInitializer(this);
-}
-
 
 std::any ZigCCParser::InitializerContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -15942,18 +14321,6 @@ size_t ZigCCParser::BraceOrEqualInitializerContext::getRuleIndex() const {
   return ZigCCParser::RuleBraceOrEqualInitializer;
 }
 
-void ZigCCParser::BraceOrEqualInitializerContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterBraceOrEqualInitializer(this);
-}
-
-void ZigCCParser::BraceOrEqualInitializerContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitBraceOrEqualInitializer(this);
-}
-
 
 std::any ZigCCParser::BraceOrEqualInitializerContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -16024,18 +14391,6 @@ ZigCCParser::BracedInitListContext* ZigCCParser::InitializerClauseContext::brace
 
 size_t ZigCCParser::InitializerClauseContext::getRuleIndex() const {
   return ZigCCParser::RuleInitializerClause;
-}
-
-void ZigCCParser::InitializerClauseContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterInitializerClause(this);
-}
-
-void ZigCCParser::InitializerClauseContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitInitializerClause(this);
 }
 
 
@@ -16172,18 +14527,6 @@ size_t ZigCCParser::InitializerListContext::getRuleIndex() const {
   return ZigCCParser::RuleInitializerList;
 }
 
-void ZigCCParser::InitializerListContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterInitializerList(this);
-}
-
-void ZigCCParser::InitializerListContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitInitializerList(this);
-}
-
 
 std::any ZigCCParser::InitializerListContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -16277,18 +14620,6 @@ size_t ZigCCParser::BracedInitListContext::getRuleIndex() const {
   return ZigCCParser::RuleBracedInitList;
 }
 
-void ZigCCParser::BracedInitListContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterBracedInitList(this);
-}
-
-void ZigCCParser::BracedInitListContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitBracedInitList(this);
-}
-
 
 std::any ZigCCParser::BracedInitListContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -16361,18 +14692,6 @@ ZigCCParser::SimpleTemplateIdContext* ZigCCParser::ClassNameContext::simpleTempl
 
 size_t ZigCCParser::ClassNameContext::getRuleIndex() const {
   return ZigCCParser::RuleClassName;
-}
-
-void ZigCCParser::ClassNameContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterClassName(this);
-}
-
-void ZigCCParser::ClassNameContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitClassName(this);
 }
 
 
@@ -16451,18 +14770,6 @@ ZigCCParser::MemberSpecificationContext* ZigCCParser::ClassSpecifierContext::mem
 
 size_t ZigCCParser::ClassSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleClassSpecifier;
-}
-
-void ZigCCParser::ClassSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterClassSpecifier(this);
-}
-
-void ZigCCParser::ClassSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitClassSpecifier(this);
 }
 
 
@@ -16547,18 +14854,6 @@ tree::TerminalNode* ZigCCParser::ClassHeadContext::Union() {
 
 size_t ZigCCParser::ClassHeadContext::getRuleIndex() const {
   return ZigCCParser::RuleClassHead;
-}
-
-void ZigCCParser::ClassHeadContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterClassHead(this);
-}
-
-void ZigCCParser::ClassHeadContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitClassHead(this);
 }
 
 
@@ -16693,18 +14988,6 @@ size_t ZigCCParser::ClassHeadNameContext::getRuleIndex() const {
   return ZigCCParser::RuleClassHeadName;
 }
 
-void ZigCCParser::ClassHeadNameContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterClassHeadName(this);
-}
-
-void ZigCCParser::ClassHeadNameContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitClassHeadName(this);
-}
-
 
 std::any ZigCCParser::ClassHeadNameContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -16767,18 +15050,6 @@ size_t ZigCCParser::ClassVirtSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleClassVirtSpecifier;
 }
 
-void ZigCCParser::ClassVirtSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterClassVirtSpecifier(this);
-}
-
-void ZigCCParser::ClassVirtSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitClassVirtSpecifier(this);
-}
-
 
 std::any ZigCCParser::ClassVirtSpecifierContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -16830,18 +15101,6 @@ tree::TerminalNode* ZigCCParser::ClassKeyContext::Struct() {
 
 size_t ZigCCParser::ClassKeyContext::getRuleIndex() const {
   return ZigCCParser::RuleClassKey;
-}
-
-void ZigCCParser::ClassKeyContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterClassKey(this);
-}
-
-void ZigCCParser::ClassKeyContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitClassKey(this);
 }
 
 
@@ -16921,18 +15180,6 @@ tree::TerminalNode* ZigCCParser::MemberSpecificationContext::Colon(size_t i) {
 
 size_t ZigCCParser::MemberSpecificationContext::getRuleIndex() const {
   return ZigCCParser::RuleMemberSpecification;
-}
-
-void ZigCCParser::MemberSpecificationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterMemberSpecification(this);
-}
-
-void ZigCCParser::MemberSpecificationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitMemberSpecification(this);
 }
 
 
@@ -17099,18 +15346,6 @@ size_t ZigCCParser::MemberdeclarationContext::getRuleIndex() const {
   return ZigCCParser::RuleMemberdeclaration;
 }
 
-void ZigCCParser::MemberdeclarationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterMemberdeclaration(this);
-}
-
-void ZigCCParser::MemberdeclarationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitMemberdeclaration(this);
-}
-
 
 std::any ZigCCParser::MemberdeclarationContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -17261,18 +15496,6 @@ size_t ZigCCParser::MemberDeclaratorListContext::getRuleIndex() const {
   return ZigCCParser::RuleMemberDeclaratorList;
 }
 
-void ZigCCParser::MemberDeclaratorListContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterMemberDeclaratorList(this);
-}
-
-void ZigCCParser::MemberDeclaratorListContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitMemberDeclaratorList(this);
-}
-
 
 std::any ZigCCParser::MemberDeclaratorListContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -17361,18 +15584,6 @@ ZigCCParser::AttributeSpecifierSeqContext* ZigCCParser::MemberDeclaratorContext:
 
 size_t ZigCCParser::MemberDeclaratorContext::getRuleIndex() const {
   return ZigCCParser::RuleMemberDeclarator;
-}
-
-void ZigCCParser::MemberDeclaratorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterMemberDeclarator(this);
-}
-
-void ZigCCParser::MemberDeclaratorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitMemberDeclarator(this);
 }
 
 
@@ -17506,18 +15717,6 @@ size_t ZigCCParser::VirtualSpecifierSeqContext::getRuleIndex() const {
   return ZigCCParser::RuleVirtualSpecifierSeq;
 }
 
-void ZigCCParser::VirtualSpecifierSeqContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterVirtualSpecifierSeq(this);
-}
-
-void ZigCCParser::VirtualSpecifierSeqContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitVirtualSpecifierSeq(this);
-}
-
 
 std::any ZigCCParser::VirtualSpecifierSeqContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -17580,18 +15779,6 @@ tree::TerminalNode* ZigCCParser::VirtualSpecifierContext::Final() {
 
 size_t ZigCCParser::VirtualSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleVirtualSpecifier;
-}
-
-void ZigCCParser::VirtualSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterVirtualSpecifier(this);
-}
-
-void ZigCCParser::VirtualSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitVirtualSpecifier(this);
 }
 
 
@@ -17657,18 +15844,6 @@ size_t ZigCCParser::PureSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RulePureSpecifier;
 }
 
-void ZigCCParser::PureSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterPureSpecifier(this);
-}
-
-void ZigCCParser::PureSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitPureSpecifier(this);
-}
-
 
 std::any ZigCCParser::PureSpecifierContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -17694,7 +15869,7 @@ ZigCCParser::PureSpecifierContext* ZigCCParser::pureSpecifier() {
     match(ZigCCParser::Assign);
     setState(1783);
     antlrcpp::downCast<PureSpecifierContext *>(_localctx)->val = match(ZigCCParser::OctalLiteral);
-    if((antlrcpp::downCast<PureSpecifierContext *>(_localctx)->val != nullptr ? antlrcpp::downCast<PureSpecifierContext *>(_localctx)->val->getText() : "").compareTo("0")!=0) throw new InputMismatchException(this);
+    if((antlrcpp::downCast<PureSpecifierContext *>(_localctx)->val != nullptr ? antlrcpp::downCast<PureSpecifierContext *>(_localctx)->val->getText() : "").compare("0")!=0) throw new InputMismatchException(this);
     		
    
   }
@@ -17724,18 +15899,6 @@ ZigCCParser::BaseSpecifierListContext* ZigCCParser::BaseClauseContext::baseSpeci
 
 size_t ZigCCParser::BaseClauseContext::getRuleIndex() const {
   return ZigCCParser::RuleBaseClause;
-}
-
-void ZigCCParser::BaseClauseContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterBaseClause(this);
-}
-
-void ZigCCParser::BaseClauseContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitBaseClause(this);
 }
 
 
@@ -17807,18 +15970,6 @@ tree::TerminalNode* ZigCCParser::BaseSpecifierListContext::Comma(size_t i) {
 
 size_t ZigCCParser::BaseSpecifierListContext::getRuleIndex() const {
   return ZigCCParser::RuleBaseSpecifierList;
-}
-
-void ZigCCParser::BaseSpecifierListContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterBaseSpecifierList(this);
-}
-
-void ZigCCParser::BaseSpecifierListContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitBaseSpecifierList(this);
 }
 
 
@@ -17909,18 +16060,6 @@ ZigCCParser::AttributeSpecifierSeqContext* ZigCCParser::BaseSpecifierContext::at
 
 size_t ZigCCParser::BaseSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleBaseSpecifier;
-}
-
-void ZigCCParser::BaseSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterBaseSpecifier(this);
-}
-
-void ZigCCParser::BaseSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitBaseSpecifier(this);
 }
 
 
@@ -18036,18 +16175,6 @@ size_t ZigCCParser::ClassOrDeclTypeContext::getRuleIndex() const {
   return ZigCCParser::RuleClassOrDeclType;
 }
 
-void ZigCCParser::ClassOrDeclTypeContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterClassOrDeclType(this);
-}
-
-void ZigCCParser::ClassOrDeclTypeContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitClassOrDeclType(this);
-}
-
 
 std::any ZigCCParser::ClassOrDeclTypeContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -18127,18 +16254,6 @@ size_t ZigCCParser::BaseTypeSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleBaseTypeSpecifier;
 }
 
-void ZigCCParser::BaseTypeSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterBaseTypeSpecifier(this);
-}
-
-void ZigCCParser::BaseTypeSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitBaseTypeSpecifier(this);
-}
-
 
 std::any ZigCCParser::BaseTypeSpecifierContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -18194,18 +16309,6 @@ tree::TerminalNode* ZigCCParser::AccessSpecifierContext::Public() {
 
 size_t ZigCCParser::AccessSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleAccessSpecifier;
-}
-
-void ZigCCParser::AccessSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterAccessSpecifier(this);
-}
-
-void ZigCCParser::AccessSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitAccessSpecifier(this);
 }
 
 
@@ -18270,18 +16373,6 @@ size_t ZigCCParser::ConversionFunctionIdContext::getRuleIndex() const {
   return ZigCCParser::RuleConversionFunctionId;
 }
 
-void ZigCCParser::ConversionFunctionIdContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterConversionFunctionId(this);
-}
-
-void ZigCCParser::ConversionFunctionIdContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitConversionFunctionId(this);
-}
-
 
 std::any ZigCCParser::ConversionFunctionIdContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -18335,18 +16426,6 @@ ZigCCParser::ConversionDeclaratorContext* ZigCCParser::ConversionTypeIdContext::
 
 size_t ZigCCParser::ConversionTypeIdContext::getRuleIndex() const {
   return ZigCCParser::RuleConversionTypeId;
-}
-
-void ZigCCParser::ConversionTypeIdContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterConversionTypeId(this);
-}
-
-void ZigCCParser::ConversionTypeIdContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitConversionTypeId(this);
 }
 
 
@@ -18415,18 +16494,6 @@ size_t ZigCCParser::ConversionDeclaratorContext::getRuleIndex() const {
   return ZigCCParser::RuleConversionDeclarator;
 }
 
-void ZigCCParser::ConversionDeclaratorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterConversionDeclarator(this);
-}
-
-void ZigCCParser::ConversionDeclaratorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitConversionDeclarator(this);
-}
-
 
 std::any ZigCCParser::ConversionDeclaratorContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -18491,18 +16558,6 @@ ZigCCParser::MemInitializerListContext* ZigCCParser::ConstructorInitializerConte
 
 size_t ZigCCParser::ConstructorInitializerContext::getRuleIndex() const {
   return ZigCCParser::RuleConstructorInitializer;
-}
-
-void ZigCCParser::ConstructorInitializerContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterConstructorInitializer(this);
-}
-
-void ZigCCParser::ConstructorInitializerContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitConstructorInitializer(this);
 }
 
 
@@ -18574,18 +16629,6 @@ tree::TerminalNode* ZigCCParser::MemInitializerListContext::Comma(size_t i) {
 
 size_t ZigCCParser::MemInitializerListContext::getRuleIndex() const {
   return ZigCCParser::RuleMemInitializerList;
-}
-
-void ZigCCParser::MemInitializerListContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterMemInitializerList(this);
-}
-
-void ZigCCParser::MemInitializerListContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitMemInitializerList(this);
 }
 
 
@@ -18682,18 +16725,6 @@ size_t ZigCCParser::MemInitializerContext::getRuleIndex() const {
   return ZigCCParser::RuleMemInitializer;
 }
 
-void ZigCCParser::MemInitializerContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterMemInitializer(this);
-}
-
-void ZigCCParser::MemInitializerContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitMemInitializer(this);
-}
-
 
 std::any ZigCCParser::MemInitializerContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -18778,18 +16809,6 @@ size_t ZigCCParser::MeminitializeridContext::getRuleIndex() const {
   return ZigCCParser::RuleMeminitializerid;
 }
 
-void ZigCCParser::MeminitializeridContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterMeminitializerid(this);
-}
-
-void ZigCCParser::MeminitializeridContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitMeminitializerid(this);
-}
-
 
 std::any ZigCCParser::MeminitializeridContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -18860,18 +16879,6 @@ size_t ZigCCParser::OperatorFunctionIdContext::getRuleIndex() const {
   return ZigCCParser::RuleOperatorFunctionId;
 }
 
-void ZigCCParser::OperatorFunctionIdContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterOperatorFunctionId(this);
-}
-
-void ZigCCParser::OperatorFunctionIdContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitOperatorFunctionId(this);
-}
-
 
 std::any ZigCCParser::OperatorFunctionIdContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -18933,18 +16940,6 @@ tree::TerminalNode* ZigCCParser::LiteralOperatorIdContext::UserDefinedStringLite
 
 size_t ZigCCParser::LiteralOperatorIdContext::getRuleIndex() const {
   return ZigCCParser::RuleLiteralOperatorId;
-}
-
-void ZigCCParser::LiteralOperatorIdContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterLiteralOperatorId(this);
-}
-
-void ZigCCParser::LiteralOperatorIdContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitLiteralOperatorId(this);
 }
 
 
@@ -19032,18 +17027,6 @@ size_t ZigCCParser::TemplateDeclarationContext::getRuleIndex() const {
   return ZigCCParser::RuleTemplateDeclaration;
 }
 
-void ZigCCParser::TemplateDeclarationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTemplateDeclaration(this);
-}
-
-void ZigCCParser::TemplateDeclarationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTemplateDeclaration(this);
-}
-
 
 std::any ZigCCParser::TemplateDeclarationContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -19113,18 +17096,6 @@ size_t ZigCCParser::TemplateparameterListContext::getRuleIndex() const {
   return ZigCCParser::RuleTemplateparameterList;
 }
 
-void ZigCCParser::TemplateparameterListContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTemplateparameterList(this);
-}
-
-void ZigCCParser::TemplateparameterListContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTemplateparameterList(this);
-}
-
 
 std::any ZigCCParser::TemplateparameterListContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -19189,18 +17160,6 @@ ZigCCParser::ParameterDeclarationContext* ZigCCParser::TemplateParameterContext:
 
 size_t ZigCCParser::TemplateParameterContext::getRuleIndex() const {
   return ZigCCParser::RuleTemplateParameter;
-}
-
-void ZigCCParser::TemplateParameterContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTemplateParameter(this);
-}
-
-void ZigCCParser::TemplateParameterContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTemplateParameter(this);
 }
 
 
@@ -19303,18 +17262,6 @@ tree::TerminalNode* ZigCCParser::TypeParameterContext::Identifier() {
 
 size_t ZigCCParser::TypeParameterContext::getRuleIndex() const {
   return ZigCCParser::RuleTypeParameter;
-}
-
-void ZigCCParser::TypeParameterContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTypeParameter(this);
-}
-
-void ZigCCParser::TypeParameterContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTypeParameter(this);
 }
 
 
@@ -19452,18 +17399,6 @@ size_t ZigCCParser::SimpleTemplateIdContext::getRuleIndex() const {
   return ZigCCParser::RuleSimpleTemplateId;
 }
 
-void ZigCCParser::SimpleTemplateIdContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterSimpleTemplateId(this);
-}
-
-void ZigCCParser::SimpleTemplateIdContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitSimpleTemplateId(this);
-}
-
 
 std::any ZigCCParser::SimpleTemplateIdContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -19546,18 +17481,6 @@ ZigCCParser::TemplateArgumentListContext* ZigCCParser::TemplateIdContext::templa
 
 size_t ZigCCParser::TemplateIdContext::getRuleIndex() const {
   return ZigCCParser::RuleTemplateId;
-}
-
-void ZigCCParser::TemplateIdContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTemplateId(this);
-}
-
-void ZigCCParser::TemplateIdContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTemplateId(this);
 }
 
 
@@ -19657,18 +17580,6 @@ size_t ZigCCParser::TemplateNameContext::getRuleIndex() const {
   return ZigCCParser::RuleTemplateName;
 }
 
-void ZigCCParser::TemplateNameContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTemplateName(this);
-}
-
-void ZigCCParser::TemplateNameContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTemplateName(this);
-}
-
 
 std::any ZigCCParser::TemplateNameContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -19736,18 +17647,6 @@ tree::TerminalNode* ZigCCParser::TemplateArgumentListContext::Comma(size_t i) {
 
 size_t ZigCCParser::TemplateArgumentListContext::getRuleIndex() const {
   return ZigCCParser::RuleTemplateArgumentList;
-}
-
-void ZigCCParser::TemplateArgumentListContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTemplateArgumentList(this);
-}
-
-void ZigCCParser::TemplateArgumentListContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTemplateArgumentList(this);
 }
 
 
@@ -19834,18 +17733,6 @@ ZigCCParser::IdExpressionContext* ZigCCParser::TemplateArgumentContext::idExpres
 
 size_t ZigCCParser::TemplateArgumentContext::getRuleIndex() const {
   return ZigCCParser::RuleTemplateArgument;
-}
-
-void ZigCCParser::TemplateArgumentContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTemplateArgument(this);
-}
-
-void ZigCCParser::TemplateArgumentContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTemplateArgument(this);
 }
 
 
@@ -19937,18 +17824,6 @@ size_t ZigCCParser::TypeNameSpecifierContext::getRuleIndex() const {
   return ZigCCParser::RuleTypeNameSpecifier;
 }
 
-void ZigCCParser::TypeNameSpecifierContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTypeNameSpecifier(this);
-}
-
-void ZigCCParser::TypeNameSpecifierContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTypeNameSpecifier(this);
-}
-
 
 std::any ZigCCParser::TypeNameSpecifierContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -20035,18 +17910,6 @@ size_t ZigCCParser::ExplicitInstantiationContext::getRuleIndex() const {
   return ZigCCParser::RuleExplicitInstantiation;
 }
 
-void ZigCCParser::ExplicitInstantiationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterExplicitInstantiation(this);
-}
-
-void ZigCCParser::ExplicitInstantiationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitExplicitInstantiation(this);
-}
-
 
 std::any ZigCCParser::ExplicitInstantiationContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -20119,18 +17982,6 @@ size_t ZigCCParser::ExplicitSpecializationContext::getRuleIndex() const {
   return ZigCCParser::RuleExplicitSpecialization;
 }
 
-void ZigCCParser::ExplicitSpecializationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterExplicitSpecialization(this);
-}
-
-void ZigCCParser::ExplicitSpecializationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitExplicitSpecialization(this);
-}
-
 
 std::any ZigCCParser::ExplicitSpecializationContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -20192,18 +18043,6 @@ ZigCCParser::HandlerSeqContext* ZigCCParser::TryBlockContext::handlerSeq() {
 
 size_t ZigCCParser::TryBlockContext::getRuleIndex() const {
   return ZigCCParser::RuleTryBlock;
-}
-
-void ZigCCParser::TryBlockContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTryBlock(this);
-}
-
-void ZigCCParser::TryBlockContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTryBlock(this);
 }
 
 
@@ -20271,18 +18110,6 @@ size_t ZigCCParser::FunctionTryBlockContext::getRuleIndex() const {
   return ZigCCParser::RuleFunctionTryBlock;
 }
 
-void ZigCCParser::FunctionTryBlockContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterFunctionTryBlock(this);
-}
-
-void ZigCCParser::FunctionTryBlockContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitFunctionTryBlock(this);
-}
-
 
 std::any ZigCCParser::FunctionTryBlockContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -20347,18 +18174,6 @@ ZigCCParser::HandlerContext* ZigCCParser::HandlerSeqContext::handler(size_t i) {
 
 size_t ZigCCParser::HandlerSeqContext::getRuleIndex() const {
   return ZigCCParser::RuleHandlerSeq;
-}
-
-void ZigCCParser::HandlerSeqContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterHandlerSeq(this);
-}
-
-void ZigCCParser::HandlerSeqContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitHandlerSeq(this);
 }
 
 
@@ -20435,18 +18250,6 @@ size_t ZigCCParser::HandlerContext::getRuleIndex() const {
   return ZigCCParser::RuleHandler;
 }
 
-void ZigCCParser::HandlerContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterHandler(this);
-}
-
-void ZigCCParser::HandlerContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitHandler(this);
-}
-
 
 std::any ZigCCParser::HandlerContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -20518,18 +18321,6 @@ tree::TerminalNode* ZigCCParser::ExceptionDeclarationContext::Ellipsis() {
 
 size_t ZigCCParser::ExceptionDeclarationContext::getRuleIndex() const {
   return ZigCCParser::RuleExceptionDeclaration;
-}
-
-void ZigCCParser::ExceptionDeclarationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterExceptionDeclaration(this);
-}
-
-void ZigCCParser::ExceptionDeclarationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitExceptionDeclaration(this);
 }
 
 
@@ -20655,18 +18446,6 @@ size_t ZigCCParser::ThrowExpressionContext::getRuleIndex() const {
   return ZigCCParser::RuleThrowExpression;
 }
 
-void ZigCCParser::ThrowExpressionContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterThrowExpression(this);
-}
-
-void ZigCCParser::ThrowExpressionContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitThrowExpression(this);
-}
-
 
 std::any ZigCCParser::ThrowExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<ZigCCParserVisitor*>(visitor))
@@ -20729,18 +18508,6 @@ ZigCCParser::NoeExceptSpecificationContext* ZigCCParser::ExceptionSpecificationC
 
 size_t ZigCCParser::ExceptionSpecificationContext::getRuleIndex() const {
   return ZigCCParser::RuleExceptionSpecification;
-}
-
-void ZigCCParser::ExceptionSpecificationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterExceptionSpecification(this);
-}
-
-void ZigCCParser::ExceptionSpecificationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitExceptionSpecification(this);
 }
 
 
@@ -20819,18 +18586,6 @@ ZigCCParser::TypeIdListContext* ZigCCParser::DynamicExceptionSpecificationContex
 
 size_t ZigCCParser::DynamicExceptionSpecificationContext::getRuleIndex() const {
   return ZigCCParser::RuleDynamicExceptionSpecification;
-}
-
-void ZigCCParser::DynamicExceptionSpecificationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterDynamicExceptionSpecification(this);
-}
-
-void ZigCCParser::DynamicExceptionSpecificationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitDynamicExceptionSpecification(this);
 }
 
 
@@ -20915,18 +18670,6 @@ tree::TerminalNode* ZigCCParser::TypeIdListContext::Comma(size_t i) {
 
 size_t ZigCCParser::TypeIdListContext::getRuleIndex() const {
   return ZigCCParser::RuleTypeIdList;
-}
-
-void ZigCCParser::TypeIdListContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTypeIdList(this);
-}
-
-void ZigCCParser::TypeIdListContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTypeIdList(this);
 }
 
 
@@ -21017,18 +18760,6 @@ tree::TerminalNode* ZigCCParser::NoeExceptSpecificationContext::RightParen() {
 
 size_t ZigCCParser::NoeExceptSpecificationContext::getRuleIndex() const {
   return ZigCCParser::RuleNoeExceptSpecification;
-}
-
-void ZigCCParser::NoeExceptSpecificationContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterNoeExceptSpecification(this);
-}
-
-void ZigCCParser::NoeExceptSpecificationContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitNoeExceptSpecification(this);
 }
 
 
@@ -21261,18 +18992,6 @@ tree::TerminalNode* ZigCCParser::TheOperatorContext::RightParen() {
 
 size_t ZigCCParser::TheOperatorContext::getRuleIndex() const {
   return ZigCCParser::RuleTheOperator;
-}
-
-void ZigCCParser::TheOperatorContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterTheOperator(this);
-}
-
-void ZigCCParser::TheOperatorContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitTheOperator(this);
 }
 
 
@@ -21660,18 +19379,6 @@ tree::TerminalNode* ZigCCParser::LiteralContext::UserDefinedLiteral() {
 
 size_t ZigCCParser::LiteralContext::getRuleIndex() const {
   return ZigCCParser::RuleLiteral;
-}
-
-void ZigCCParser::LiteralContext::enterRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->enterLiteral(this);
-}
-
-void ZigCCParser::LiteralContext::exitRule(tree::ParseTreeListener *listener) {
-  auto parserListener = dynamic_cast<ZigCCParserListener *>(listener);
-  if (parserListener != nullptr)
-    parserListener->exitLiteral(this);
 }
 
 

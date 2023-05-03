@@ -5,7 +5,7 @@
 
 
 #include "antlr4-runtime.h"
-#include "ZigCCParser.h"
+#include "grammar/ZigCCParser.h"
 
 
 namespace antlrcpptest {

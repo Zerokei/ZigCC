@@ -21,8 +21,8 @@ set -o errexit
 #    Furthermore is assumed that the antlr3 folder is located side-by-side with the antlr4 folder. Adjust CLASSPATH if not.
 #    This approach is especially useful if you are working on a target stg file, as it doesn't require to regenerate the
 #    antlr jar over and over again.
-CLASSPATH=../lib/antlr-4.12.0-complete.jar
+CLASSPATH=./jar/antlr-4.12.0-complete.jar
 
-java -cp $CLASSPATH org.antlr.v4.Tool -Dlanguage=Cpp -listener -visitor -o generated/ -package antlrcpptest ZigCCLexer.g4 ZigCCParser.g4
+java -cp $CLASSPATH org.antlr.v4.Tool -Dlanguage=Cpp -no-listener -visitor -o generated/ -package antlrcpptest ZigCCLexer.g4 ZigCCParser.g4
 #java -cp $CLASSPATH org.antlr.v4.Tool -Dlanguage=Cpp -listener -visitor -o generated/ -package antlrcpptest -XdbgST TLexer.g4 TParser.g4
 #java -cp $CLASSPATH org.antlr.v4.Tool -Dlanguage=Java -listener -visitor -o generated/ TLexer.g4 TParser.g4

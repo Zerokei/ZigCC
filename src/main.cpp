@@ -10,7 +10,6 @@
 #include "Visitor.h"
 #include "grammar/ZigCCLexer.h"
 #include "grammar/ZigCCParser.h"
-#include "grammar/ZigCCParserBaseVisitor.h"
 
 using namespace antlr4;
 using namespace antlrcpptest;
@@ -65,14 +64,6 @@ const SyntaxModel::Program* Parse(ifstream& fs)
     return nullptr;
 }
 
-const StaticAnalysis::StaticAnalyser* StaticAnalysis(const SyntaxModel::Program* ast)
-{
-    cout << "# Solve variable scopes and run static analysis" << endl;
-    auto analyser = new StaticAnalysis::StaticAnalyser(ast);
-    analyser->Analyse();
-    return analyser;
-}
-
 int main(int argc, char* argv[])
 {
     std::string InputFile;
@@ -118,7 +109,8 @@ int main(int argc, char* argv[])
         std::cout << "compilation terminated." << std::endl;
         return EXIT_FAILURE;
     }
-    const StaticAnalysis::StaticAnalyser * analyser = StaticAnalysis(program);
+    StaticAnalysis::StaticAnalyser* analyser = new StaticAnalysis::StaticAnalyser(program);
+    analyser->Analyse();
     IR::ControlFlowGraph cfg = IR::ControlFlowGraph(program, analyser, TargetFile);
     
     delete analyser;

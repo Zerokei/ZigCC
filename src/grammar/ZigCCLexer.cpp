@@ -2,7 +2,7 @@
 // Generated from ZigCCLexer.g4 by ANTLR 4.12.0
 
 
-#include "ZigCCLexer.h"
+#include "grammar/ZigCCLexer.h"
 
 
 using namespace antlr4;

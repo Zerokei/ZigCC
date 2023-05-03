@@ -11,12 +11,12 @@ CC = g++
 # Command used to remove files
 RM = -rm -f
 # Compiler and pre-processor options
-CPPFLAGS = -Wall -std=c++14 -O0
+CPPFLAGS = -Wall -std=c++17 -O1
 # Add -Ofast for opt
 # Debug flags
 DEBUGFLAGS = -ggdb
 # Resulting program file name
-EXE_NAME = c_compiler
+EXE_NAME = ZigCC
 # The source file extentions
 SRC_EXT = cpp
 # The header file types
@@ -36,11 +36,7 @@ DEBUGDIR = debug
 # Dependency files directory
 DEPDIR = dep
 # Libraries (defines different library path if '.MAC' file is found in directory)
-ifneq ("$(wildcard ./.MAC)","")
-LIBS = -L./antlr/mac_antlr4-runtime/lib/ -lantlr4-runtime
-else
-LIBS = -L./antlr/runtime_source/dist/ -l:libantlr4-runtime.a
-endif
+# LIBS = -L./antlr/runtime_source/dist/ -l:libantlr4-runtime.a
 # List of include paths
 INCLUDES = -I ./$(INCDIR) -I ./antlr4/include
 
@@ -71,7 +67,7 @@ all: $(BUILD_PATH)/$(EXE_NAME)
 clean:
 	@$(RM) $(BUILD_PATH) -r
 	@$(RM) ./include/antlr -r
-	@$(RM) ./source/antlr -r
+	@$(RM) ./src/antlr -r
 
 compile_grammar:
 	./compile_grammar.sh
