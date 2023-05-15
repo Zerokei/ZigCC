@@ -4,65 +4,9 @@
 #include <typeinfo>
 
 #include "antlr4-runtime.h"
-#include "IR/IR.h"
-#include "StaticAnalysis.h"
-#include "SyntaxModel/SyntaxModel.h"
-#include "Visitor.h"
-#include "grammar/ZigCCLexer.h"
-#include "grammar/ZigCCParser.h"
+#include "grammar/FrontEnd.h"
 
 using namespace antlr4;
-using namespace antlrcpptest;
-
-const SyntaxModel::Program* Parse(ifstream& fs)
-{
-    // Stream it to lexer
-#ifdef DEBUG
-    cout << "# Executing lexer" << endl;
-#endif
-    ANTLRInputStream input(fs);
-    ZigCCLexer lexer(&input);
-
-    // Print tokens
-    CommonTokenStream tokens(&lexer);
-    tokens.fill();
-    if (lexer.getNumberOfSyntaxErrors() > 0) {
-        cout << "Lexer errors : " << lexer.getNumberOfSyntaxErrors() << endl;
-        return nullptr;
-    }
-#ifdef DEBUG
-    for (auto token : tokens.getTokens()) {
-        cout << token->toString() << endl;
-    }
-
-    // Parse tokens
-    cout << "# Parsing tokens to obtain AST" << endl;
-#endif
-    ZigCCParser parser(&tokens);
-    tree::ParseTree* tree = parser.translationUnit();
-#ifdef DEBUG
-    cout << tree->toStringTree(&parser) << endl;
-#endif
-    if (parser.getNumberOfSyntaxErrors() > 0) {
-        cout << "Parser errors : " << parser.getNumberOfSyntaxErrors() << endl;
-        return nullptr;
-    }
-
-    // Build syntaxic model (AST)
-#ifdef DEBUG
-    cout << "# Translate Antlr context AST to SyntaxModel AST with Visitor class" << endl;
-#endif
-    Visitor v;
-    antlrcpp::Any ast = v.visit(tree);
-    if (ast.is<SyntaxModel::Program*>()) {
-        auto prog = ast.as<SyntaxModel::Program*>();
-#ifdef DEBUG
-        cout << *prog << endl;
-#endif
-        return prog;
-    }
-    return nullptr;
-}
 
 int main(int argc, char* argv[])
 {
@@ -98,22 +42,19 @@ int main(int argc, char* argv[])
 
     // Open source file and compile it
     std::ifstream fs(InputFile);
-    const SyntaxModel::Program* program;
+    ZigCC::FrontEnd FE;
     if (fs.is_open()) {
-        program = Parse(fs);
-        if (program == nullptr)
-            return EXIT_FAILURE;
+        FE.parse(fs);
         fs.close();
     } else {
         std::cout << "ZigCC: error: " << InputFile << ": No such file or directory" << std::endl;
         std::cout << "compilation terminated." << std::endl;
         return EXIT_FAILURE;
     }
-    StaticAnalysis::StaticAnalyser* analyser = new StaticAnalysis::StaticAnalyser(program);
-    analyser->Analyse();
-    IR::ControlFlowGraph cfg = IR::ControlFlowGraph(program, analyser, TargetFile);
+    // StaticAnalysis::StaticAnalyser* analyser = new StaticAnalysis::StaticAnalyser(program);
+    // analyser->Analyse();
+    // IR::ControlFlowGraph cfg = IR::ControlFlowGraph(program, analyser, TargetFile);
     
-    delete analyser;
-    delete program;
+    // delete analyser;
     return EXIT_SUCCESS;
 }

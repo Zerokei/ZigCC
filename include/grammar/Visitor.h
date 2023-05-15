@@ -1,6 +1,5 @@
 #pragma once
 
-#include "SyntaxModel/SyntaxModel.h"
 #include "antlr4-runtime.h"
 #include "grammar/ZigCCParserBaseVisitor.h"
 #include "utils.h"
@@ -200,59 +199,4 @@ public:
     virtual std::any visitNoeExceptSpecification(ZigCCParser::NoeExceptSpecificationContext *ctx) override;
     virtual std::any visitTheOperator(ZigCCParser::TheOperatorContext *ctx) override;
     virtual std::any visitLiteral(ZigCCParser::LiteralContext *ctx) override;
-
-private:
-    template <typename CTX>
-    antlrcpp::Any visitBinaryOp(CTX* ctx, SyntaxModel::BinaryOp::Op op)
-    {
-        const auto& exprs = ctx->expression();
-        auto left_expr = visit_single<SyntaxModel::Expression>(exprs[0]);
-        auto right_expr = visit_single<SyntaxModel::Expression>(exprs[1]);
-        return static_cast<SyntaxModel::Expression*>(new SyntaxModel::BinaryOp(ctx->getSourceInterval(), left_expr, right_expr, op));
-    }
-
-    template <class CTX>
-    inline antlrcpp::Any visitUnaryAffectation(SyntaxModel::Affectation::Op op, CTX* ctx)
-    {
-        // array_indexing is nullptr if we don't affect to an array element
-        auto var_name = SyntaxModel::Identifier(ctx->IDENTIFIER());
-        auto array_index = visit_single<SyntaxModel::Expression>(ctx->expression());
-        return static_cast<SyntaxModel::Expression*>(new SyntaxModel::Affectation(ctx->getSourceInterval(), op, var_name, array_index));
-    }
-
-    template <class CTX>
-    inline antlrcpp::Any visitBinaryAffectation(SyntaxModel::Affectation::Op op, CTX* ctx)
-    {
-        // array_indexing is nullptr if we don't affect to an array element
-        auto var_name = SyntaxModel::Identifier(ctx->IDENTIFIER());
-        auto expressions = ctx->expression();
-        auto array_index = (expressions.size() > 1) ? visit_single<SyntaxModel::Expression>(ctx->expression(0)) : nullptr;
-        auto value = visit_single<SyntaxModel::Expression>(expressions.back());
-        return static_cast<SyntaxModel::Expression*>(new SyntaxModel::Affectation(ctx->getSourceInterval(), op, var_name, array_index, value));
-    }
-
-    template <class T, class CTX>
-    inline T* visit_single(CTX* context)
-    {
-        if (context != nullptr)
-            return static_cast<T*>(visit(context));
-        return nullptr;
-    }
-
-    template <class T, class CTX>
-    inline std::list<const T*> visit_all(const std::vector<CTX*>& contexts)
-    {
-        std::list<const T*> syntax_nodes;
-        for (auto* ctx : contexts) {
-            if (ctx != nullptr) {
-                auto visited = visit(ctx);
-                if (visited.isNotNull())
-                    syntax_nodes.push_back(static_cast<T*>(visited));
-            }
-        }
-        return syntax_nodes;
-    }
-
-    static inline const std::list<const SyntaxModel::Definition::size_constant*> parseArraySizes(const std::vector<antlr4::tree::TerminalNode*>& integers);
-    static inline std::vector<utils::TerminalInfo> make_all_terminals(const std::vector<antlr4::tree::TerminalNode*>& contexts);
 };

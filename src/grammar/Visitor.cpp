@@ -2,15 +2,11 @@
 #include <string>
 #include <vector>
 
-#include "SyntaxModel/SyntaxModel.h"
-#include "Visitor.h"
-
-namespace SM = SyntaxModel;
-using PT = SM::PrimitiveType;
+#include "grammar/Visitor.h"
 
 std::any visitTranslationUnit(ZigCCParser::TranslationUnitContext *ctx)
 {
-    
+    visitDeclarationseq(ctx->declarationseq());
 }
 
 std::any visitPrimaryExpression(ZigCCParser::PrimaryExpressionContext *ctx)
@@ -310,12 +306,31 @@ std::any visitDeclarationStatement(ZigCCParser::DeclarationStatementContext *ctx
 
 std::any visitDeclarationseq(ZigCCParser::DeclarationseqContext *ctx)
 {
-
+    for (auto decl : ctx->declaration())
+        visitDeclaration(decl);
 }
 
 std::any visitDeclaration(ZigCCParser::DeclarationContext *ctx)
 {
-
+    if (auto BlockDeclaration = ctx->blockDeclaration()) {
+        visitBlockDeclaration(BlockDeclaration);
+    } else if (auto FunctionDefinition = ctx->functionDefinition()) {
+        visitFunctionDefinition(FunctionDefinition);
+    } else if (auto TemplateDeclaration = ctx->templateDeclaration()) {
+        visitTemplateDeclaration(TemplateDeclaration);
+    } else if (auto ExplicitInstantiation = ctx->explicitInstantiation()) {
+        visitExplicitInstantiation(ExplicitInstantiation);
+    } else if (auto ExplicitSpecialization = ctx->explicitSpecialization()) {
+        visitExplicitSpecialization(ExplicitSpecialization);
+    } else if (auto LinkageSpecification = ctx->linkageSpecification()) {
+        visitLinkageSpecification(LinkageSpecification);
+    } else if (auto NamespaceDefinition = ctx->namespaceDefinition()) {
+        visitNamespaceDefinition(NamespaceDefinition);
+    } else if (auto EmptyDeclaration = ctx->emptyDeclaration()) {
+        visitEmptyDeclaration(EmptyDeclaration);
+    } else if (auto AttributeDeclaration = ctx->attributeDeclaration()) {
+        visitAttributeDeclaration(AttributeDeclaration);
+    }
 }
 
 std::any visitBlockDeclaration(ZigCCParser::BlockDeclarationContext *ctx)
@@ -961,13 +976,4 @@ std::any visitTheOperator(ZigCCParser::TheOperatorContext *ctx)
 std::any visitLiteral(ZigCCParser::LiteralContext *ctx)
 {
 
-}
-
-std::vector<utils::TerminalInfo> Visitor::make_all_terminals(const std::vector<antlr4::tree::TerminalNode*>& contexts)
-{
-    std::vector<utils::TerminalInfo> syntax_nodes;
-    syntax_nodes.reserve(contexts.size());
-    for (auto* ctx : contexts)
-        syntax_nodes.emplace_back(ctx);
-    return syntax_nodes;
 }
