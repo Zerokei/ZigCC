@@ -335,21 +335,21 @@ std::any visitDeclaration(ZigCCParser::DeclarationContext *ctx)
 
 std::any visitBlockDeclaration(ZigCCParser::BlockDeclarationContext *ctx)
 {
-    if(auto SimpleDeclaration = ctx->simpleDeclaration()) {
+    if (auto SimpleDeclaration = ctx->simpleDeclaration()) {
         visitSimpleDeclaration(SimpleDeclaration);
-    } else if(auto AsmDefinition = ctx->asmDefinition()) {
+    } else if (auto AsmDefinition = ctx->asmDefinition()) {
         visitAsmDefinition(AsmDefinition);
-    } else if(auto NamespaceAliasDefinition = ctx->namespaceAliasDefinition()) {
+    } else if (auto NamespaceAliasDefinition = ctx->namespaceAliasDefinition()) {
         visitNamespaceAliasDefinition(NamespaceAliasDefinition);
-    } else if(auto UsingDeclaration = ctx->usingDeclaration()) {
+    } else if (auto UsingDeclaration = ctx->usingDeclaration()) {
         visitUsingDeclaration(UsingDeclaration);
-    } else if(auto UsingDirective = ctx->usingDirective()) {
+    } else if (auto UsingDirective = ctx->usingDirective()) {
         visitUsingDirective(UsingDirective);
-    } else if(auto StaticAssertDeclaration = ctx->staticAssertDeclaration()) {
+    } else if (auto StaticAssertDeclaration = ctx->staticAssertDeclaration()) {
         visitStaticAssertDeclaration(StaticAssertDeclaration);
-    } else if(auto AliasDeclaration = ctx->aliasDeclaration()) {
+    } else if (auto AliasDeclaration = ctx->aliasDeclaration()) {
         visitAliasDeclaration(AliasDeclaration);
-    } else if(auto OpaqueEnumDeclaration = ctx->opaqueEnumDeclaration()) {
+    } else if (auto OpaqueEnumDeclaration = ctx->opaqueEnumDeclaration()) {
         visitOpaqueEnumDeclaration(OpaqueEnumDeclaration);
     }
 }
