@@ -1,13 +1,26 @@
 #pragma once
 
 #include "antlr4-runtime.h"
+#include <vector>
+#include <string>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Type.h>
+#include "semantic/Scope.h"
 #include "grammar/ZigCCParserBaseVisitor.h"
 #include "utils.h"
 
 using namespace antlrcpptest;
+using namespace ZigCC;
 
 class Visitor : public ZigCCParserBaseVisitor {
 public:
+    std::unique_ptr<llvm::LLVMContext> llvm_context;
+    llvm::IRBuilder<> builder;
+    std::unique_ptr<llvm::Module> module;
+    std::vector<Scope> scopes;
+    
+    Scope &currentScope();
+
     virtual std::any visitTranslationUnit(ZigCCParser::TranslationUnitContext *ctx) override;
     virtual std::any visitPrimaryExpression(ZigCCParser::PrimaryExpressionContext *ctx) override;
     virtual std::any visitIdExpression(ZigCCParser::IdExpressionContext *ctx) override;
