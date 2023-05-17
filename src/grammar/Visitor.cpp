@@ -335,7 +335,23 @@ std::any visitDeclaration(ZigCCParser::DeclarationContext *ctx)
 
 std::any visitBlockDeclaration(ZigCCParser::BlockDeclarationContext *ctx)
 {
-
+    if (auto SimpleDeclaration = ctx->simpleDeclaration()) {
+        visitSimpleDeclaration(SimpleDeclaration);
+    } else if (auto AsmDefinition = ctx->asmDefinition()) {
+        visitAsmDefinition(AsmDefinition);
+    } else if (auto NamespaceAliasDefinition = ctx->namespaceAliasDefinition()) {
+        visitNamespaceAliasDefinition(NamespaceAliasDefinition);
+    } else if (auto UsingDeclaration = ctx->usingDeclaration()) {
+        visitUsingDeclaration(UsingDeclaration);
+    } else if (auto UsingDirective = ctx->usingDirective()) {
+        visitUsingDirective(UsingDirective);
+    } else if (auto StaticAssertDeclaration = ctx->staticAssertDeclaration()) {
+        visitStaticAssertDeclaration(StaticAssertDeclaration);
+    } else if (auto AliasDeclaration = ctx->aliasDeclaration()) {
+        visitAliasDeclaration(AliasDeclaration);
+    } else if (auto OpaqueEnumDeclaration = ctx->opaqueEnumDeclaration()) {
+        visitOpaqueEnumDeclaration(OpaqueEnumDeclaration);
+    }
 }
 
 std::any visitAliasDeclaration(ZigCCParser::AliasDeclarationContext *ctx)
@@ -363,9 +379,22 @@ std::any visitAttributeDeclaration(ZigCCParser::AttributeDeclarationContext *ctx
 
 }
 
+[[deprecated("Terminal not implemented")]]
 std::any visitDeclSpecifier(ZigCCParser::DeclSpecifierContext *ctx)
 {
-
+    if (auto StorageClassSpecifier = ctx->storageClassSpecifier()) {
+        visitStorageClassSpecifier(StorageClassSpecifier);
+    } else if (auto TypeSpecifier = ctx->typeSpecifier()) {
+        visitTypeSpecifier(TypeSpecifier);
+    } else if (auto FunctionSpecifier = ctx->functionSpecifier()) {
+        visitFunctionSpecifier(FunctionSpecifier);
+    } else if (auto Friend = ctx->Friend()) {
+        
+    } else if (auto Typedef = ctx->Typedef()) {
+        
+    } else if (auto Constexpr = ctx->Constexpr()) {
+        
+    }
 }
 
 std::any visitDeclSpecifierSeq(ZigCCParser::DeclSpecifierSeqContext *ctx)
@@ -390,12 +419,26 @@ std::any visitTypedefName(ZigCCParser::TypedefNameContext *ctx)
 
 std::any visitTypeSpecifier(ZigCCParser::TypeSpecifierContext *ctx)
 {
-
+    if (auto TrailingTypeSpecifier = ctx->trailingTypeSpecifier()) {
+	visitTrailingTypeSpecifier(TrailingTypeSpecifier);
+    } else if (auto ClassSpecifier = ctx->classSpecifier()) {
+        visitClassSpecifier(ClassSpecifier);
+    } else if (auto EnumSpecifier = ctx->enumSpecifier()) {
+        visitEnumSpecifier(EnumSpecifier);
+    }
 }
 
 std::any visitTrailingTypeSpecifier(ZigCCParser::TrailingTypeSpecifierContext *ctx)
 {
-
+    if (auto SimpleTypeSpecifier = ctx->simpleTypeSpecifier()) {
+        visitSimpleTypeSpecifier(SimpleTypeSpecifier);
+    } else if (auto ElaboratedTypeSpecifier = ctx->elaboratedTypeSpecifier()) {
+        visitElaboratedTypeSpecifier(ElaboratedTypeSpecifier);
+    } else if (auto TypeNameSpecifier = ctx->typeNameSpecifier()) {
+        visitTypeNameSpecifier(TypeNameSpecifier);
+    } else if (auto CvQualifier = ctx->cvQualifier()) {
+        visitCvQualifier(CvQualifier);
+    }
 }
 
 std::any visitTypeSpecifierSeq(ZigCCParser::TypeSpecifierSeqContext *ctx)
@@ -425,7 +468,15 @@ std::any visitSimpleTypeSpecifier(ZigCCParser::SimpleTypeSpecifierContext *ctx)
 
 std::any visitTheTypeName(ZigCCParser::TheTypeNameContext *ctx)
 {
-
+    if (auto ClassName = ctx->className()) {
+        visitClassName(ClassName);
+    } else if (auto EnumName = ctx->enumName()) {
+        visitEnumName(EnumName);
+    } else if (auto TypedefName = ctx->typedefName()) {
+        visitTypedefName(TypedefName);
+    } else if (auto SimpleTemplateId = ctx->simpleTemplateId()) {
+        visitSimpleTemplateId(SimpleTemplateId);
+    }
 }
 
 std::any visitDecltypeSpecifier(ZigCCParser::DecltypeSpecifierContext *ctx)
@@ -753,9 +804,24 @@ std::any visitMemberSpecification(ZigCCParser::MemberSpecificationContext *ctx)
 
 }
 
+[[deprecated("First rule not implemented")]]
 std::any visitMemberdeclaration(ZigCCParser::MemberdeclarationContext *ctx)
 {
-
+    if(1) {
+        
+    } else if (auto FunctionDefinition = ctx->functionDefinition()) {
+        visitFunctionDefinition(FunctionDefinition);
+    } else if (auto UsingDeclaration = ctx->usingDeclaration()) {
+        visitUsingDeclaration(UsingDeclaration);
+    } else if (auto StaticAssertDeclaration = ctx->staticAssertDeclaration()) {
+        visitStaticAssertDeclaration(StaticAssertDeclaration);
+    } else if (auto TemplateDeclaration = ctx->templateDeclaration()) {
+        visitTemplateDeclaration(TemplateDeclaration);
+    } else if (auto AliasDeclaration = ctx->aliasDeclaration()) {
+        visitAliasDeclaration(AliasDeclaration);
+    } else if (auto EmptyDeclaration = ctx->emptyDeclaration()) {
+        visitEmptyDeclaration(EmptyDeclaration);
+    }
 }
 
 std::any visitMemberDeclaratorList(ZigCCParser::MemberDeclaratorListContext *ctx)
