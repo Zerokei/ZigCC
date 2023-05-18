@@ -19,3 +19,8 @@
 - test：测试文件
 
 ## 编译运行
+
+```bash
+# 根据 dockerfile 生成运行时环境
+$ docker build -t zigcc:v1.0 .
+```
