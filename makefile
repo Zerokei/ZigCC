@@ -1,26 +1,20 @@
-############################################################################################
-################################## GENERIC MAKEFILE ########################################
-############################################################################################
-# TODO: gèrer les extentions .hpp, .cxx, ...
-
 # Debug mode (comment this line to build project in release mode)
-DEBUG = true
+DEBUG = false
 
 # Compiler
 CC = g++
 # Command used to remove files
 RM = -rm -f
 # Compiler and pre-processor options
-CPPFLAGS = -Wall -std=c++17 -O1
+CPPFLAGS = -Wall -std=c++14 -O1
 # Add -Ofast for opt
 # Debug flags
 DEBUGFLAGS = -ggdb
 # Resulting program file name
-EXE_NAME = ZigCC
+EXE_NAME = zigcc
 # The source file extentions
 SRC_EXT = cpp
 # The header file types
-# TODO allow .hpp header files
 HDR_EXT = h
 
 # Source directory
@@ -36,7 +30,7 @@ DEBUGDIR = debug
 # Dependency files directory
 DEPDIR = dep
 # Libraries (defines different library path if '.MAC' file is found in directory)
-# LIBS = -L./antlr/runtime_source/dist/ -l:libantlr4-runtime.a
+LIBS = -L./antlr4/dist/ -l:libantlr4-runtime.so.4.12.0
 # List of include paths
 INCLUDES = -I ./$(INCDIR) -I ./antlr4/include
 
