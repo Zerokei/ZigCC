@@ -16,7 +16,7 @@ class ObjectEmitter
 public:
     static void emit(const std::unique_ptr<llvm::Module> &module, const std::string &filename, std::string &error)
     {
-        auto targetTriple = llvm::sys::getDefaultTargetTriple();
+        auto targetTriple = "riscv64-unknown-linux-gnu";
         auto target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
         if (!target) return;
 
