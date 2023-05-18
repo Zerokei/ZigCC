@@ -6,7 +6,7 @@ CC = g++
 # Command used to remove files
 RM = -rm -f
 # Compiler and pre-processor options
-CPPFLAGS = -Wall -std=c++14 -O1
+CPPFLAGS = -Wall -std=c++17 -O1 -lLLVM-14
 # Add -Ofast for opt
 # Debug flags
 DEBUGFLAGS = -ggdb
@@ -30,9 +30,9 @@ DEBUGDIR = debug
 # Dependency files directory
 DEPDIR = dep
 # Libraries (defines different library path if '.MAC' file is found in directory)
-LIBS = -L./antlr4/dist/ -l:libantlr4-runtime.so.4.12.0
+LIBS = -L./antlr4/dist/ -l:libantlr4-runtime.so.4.12.0 -lLLVM-14
 # List of include paths
-INCLUDES = -I ./$(INCDIR) -I ./antlr4/include
+INCLUDES = -I ./$(INCDIR) -I ./antlr4/include -I /usr/lib/llvm-14/include
 
 ifdef DEBUG
 BUILD_PATH = ./$(OUTPUT_DIR)/$(DEBUGDIR)
