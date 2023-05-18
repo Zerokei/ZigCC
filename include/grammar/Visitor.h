@@ -5,6 +5,7 @@
 #include <string>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Type.h>
+#include <llvm/Support/raw_ostream.h>
 #include "semantic/Scope.h"
 #include "grammar/ZigCCParserBaseVisitor.h"
 #include "utils.h"
@@ -19,6 +20,10 @@ public:
     std::unique_ptr<llvm::Module> module;
     std::vector<Scope> scopes;
     
+    Visitor() : llvm_context(std::make_unique<llvm::LLVMContext>()),
+                builder(*this->llvm_context),
+                module(std::make_unique<llvm::Module>("output", *this->llvm_context)) {}
+
     Scope &currentScope();
 
     virtual std::any visitTranslationUnit(ZigCCParser::TranslationUnitContext *ctx) override;

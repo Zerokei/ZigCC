@@ -51,6 +51,7 @@ int main(int argc, char* argv[])
         std::cout << "compilation terminated." << std::endl;
         return EXIT_FAILURE;
     }
+    
     // StaticAnalysis::StaticAnalyser* analyser = new StaticAnalysis::StaticAnalyser(program);
     // analyser->Analyse();
     // IR::ControlFlowGraph cfg = IR::ControlFlowGraph(program, analyser, TargetFile);

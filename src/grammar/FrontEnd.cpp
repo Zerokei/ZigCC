@@ -48,6 +48,12 @@ void FrontEnd::parse(std::ifstream& fs) {
 #endif
     Visitor v;
     antlrcpp::Any ast = v.visit(tree);
+
+    // 将 IR 输出到文件用于下一步验证正确性
+    std::error_code EC;
+    llvm::raw_fd_ostream out("ZigCCTest.ll", EC);
+    v.module->print(out, nullptr);
+    out.close();
 }
 
 }

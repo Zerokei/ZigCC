@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "grammar/Visitor.h"
+#include "exceptions/NotImplementedException.h"
 
 Scope &Visitor::currentScope()
 {
@@ -17,7 +18,8 @@ std::any Visitor::visitTranslationUnit(ZigCCParser::TranslationUnitContext *ctx)
 
 std::any Visitor::visitPrimaryExpression(ZigCCParser::PrimaryExpressionContext *ctx)
 {
-    
+    for (auto Literal : ctx->literal())
+        return visitLiteral(Literal);
 }
 
 std::any Visitor::visitIdExpression(ZigCCParser::IdExpressionContext *ctx)
@@ -101,7 +103,9 @@ std::any Visitor::visitLambdaDeclarator(ZigCCParser::LambdaDeclaratorContext *ct
 
 std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *ctx)
 {
-
+    if (auto PrimaryExpression = ctx->primaryExpression()) {
+        return visitPrimaryExpression(PrimaryExpression);
+    }
 }
 
 std::any Visitor::visitTypeIdOfTheTypeId(ZigCCParser::TypeIdOfTheTypeIdContext *ctx)
@@ -121,7 +125,21 @@ std::any Visitor::visitPseudoDestructorName(ZigCCParser::PseudoDestructorNameCon
 
 std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
 {
-
+    if (auto PostfixExpression = ctx->postfixExpression()) {
+        return visitPostfixExpression(PostfixExpression);
+    } else if (auto UnaryOperator = ctx->unaryOperator()) {
+        return visitUnaryOperator(UnaryOperator);
+    } else if (auto NewExpression = ctx->newExpression()) {
+        return visitNewExpression(NewExpression);
+    } else if (auto DeleteExpression = ctx->deleteExpression()) {
+        return visitDeleteExpression(DeleteExpression);
+    } else if (auto NoExceptExpression = ctx->noExceptExpression()) {
+        return visitNoExceptExpression(NoExceptExpression);
+    } else if (auto TheTypeId = ctx->theTypeId()) {
+        return visitTheTypeId(TheTypeId);
+    } else if (auto UnaryExpression = ctx->unaryExpression()) {
+        return visitUnaryExpression(UnaryExpression);
+    }
 }
 
 std::any Visitor::visitUnaryOperator(ZigCCParser::UnaryOperatorContext *ctx)
@@ -171,126 +189,142 @@ std::any Visitor::visitNoExceptExpression(ZigCCParser::NoExceptExpressionContext
 
 std::any Visitor::visitCastExpression(ZigCCParser::CastExpressionContext *ctx)
 {
-
+    if (auto UnaryExpression = ctx->unaryExpression()) {
+        return visitUnaryExpression(UnaryExpression);
+    }
 }
 
 std::any Visitor::visitPointerMemberExpression(ZigCCParser::PointerMemberExpressionContext *ctx)
 {
-
+    for (auto CastExpression : ctx->castExpression())
+        return visitCastExpression(CastExpression);
 }
 
 std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpressionContext *ctx)
 {
-
+    for (auto PMExpression : ctx->pointerMemberExpression())
+        return visitPointerMemberExpression(PMExpression);
 }
 
 std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext *ctx)
 {
-
+    for (auto MultiplicativeExpression : ctx->multiplicativeExpression())
+        return visitMultiplicativeExpression(MultiplicativeExpression);
 }
 
 std::any Visitor::visitShiftExpression(ZigCCParser::ShiftExpressionContext *ctx)
 {
-
+    for (auto AdditiveExpression : ctx->additiveExpression())
+        return visitAdditiveExpression(AdditiveExpression);
 }
 
 std::any Visitor::visitShiftOperator(ZigCCParser::ShiftOperatorContext *ctx)
 {
-
+    
 }
 
 std::any Visitor::visitRelationalExpression(ZigCCParser::RelationalExpressionContext *ctx)
 {
-
+    for (auto ShiftExpression : ctx->shiftExpression())
+        return visitShiftExpression(ShiftExpression);
 }
 
 std::any Visitor::visitEqualityExpression(ZigCCParser::EqualityExpressionContext *ctx)
 {
-
+    for (auto RelationalExpression : ctx->relationalExpression())
+        return visitRelationalExpression(RelationalExpression);
 }
 
 std::any Visitor::visitAndExpression(ZigCCParser::AndExpressionContext *ctx)
 {
-
+    for (auto EqualityExpression : ctx->equalityExpression())
+        return visitEqualityExpression(EqualityExpression);
 }
 
 std::any Visitor::visitExclusiveOrExpression(ZigCCParser::ExclusiveOrExpressionContext *ctx)
 {
-
+    for (auto AndExpression : ctx->andExpression())
+        return visitAndExpression(AndExpression);
 }
 
 std::any Visitor::visitInclusiveOrExpression(ZigCCParser::InclusiveOrExpressionContext *ctx)
 {
-
+    for (auto ExclusiveOrExpression : ctx->exclusiveOrExpression())
+        return visitExclusiveOrExpression(ExclusiveOrExpression);
 }
 
 std::any Visitor::visitLogicalAndExpression(ZigCCParser::LogicalAndExpressionContext *ctx)
 {
-
+    for (auto InclusiveOrExpression : ctx->inclusiveOrExpression())
+        return visitInclusiveOrExpression(InclusiveOrExpression);
 }
 
 std::any Visitor::visitLogicalOrExpression(ZigCCParser::LogicalOrExpressionContext *ctx)
 {
-
+    // TODO: 肯定不能这么写，先假定只有一个
+    for (auto LogicalAndExpression : ctx->logicalAndExpression())
+        return visitLogicalAndExpression(LogicalAndExpression);
 }
 
 std::any Visitor::visitConditionalExpression(ZigCCParser::ConditionalExpressionContext *ctx)
 {
-
+    if (auto LogicalOrExpression = ctx->logicalOrExpression()) {
+        return visitLogicalOrExpression(LogicalOrExpression);
+    } else if (auto Expression = ctx->expression()) {
+        return visitExpression(Expression);
+    } else if (auto AssignmentExpression = ctx->assignmentExpression()) {
+        return visitAssignmentExpression(AssignmentExpression);
+    } // TODO: 还有 ?: 运算符要考虑
 }
 
 std::any Visitor::visitAssignmentExpression(ZigCCParser::AssignmentExpressionContext *ctx)
 {
     if (auto AssignmentOperator = ctx->assignmentOperator()) {
         std::string AssignOp = std::any_cast<std::string>(visitAssignmentOperator(AssignmentOperator));
+        auto lhs = std::any_cast<std::string>(visitLogicalOrExpression(ctx->logicalOrExpression()));
+        // 判断该变量是否是之前处理过的
+        llvm::Value* alloca;
+        if (this->currentScope().getVariable(lhs) == nullptr) {
+            std::cout << "error: use of undeclared identifier '" << lhs << "'" << std::endl;
+            // TODO: Exception
+        } else {
+            alloca = this->currentScope().getVariable(lhs);
+        }
+        auto rhs = std::any_cast<llvm::Value*>(visitInitializerClause(ctx->initializerClause()));
+        auto value = builder.CreateLoad(alloca->getType(), alloca);
+        // 判断赋值号右边的变量是否初始化过（有待改进，不知道是哪个变量）
+        if (value == nullptr) {
+            std::cout << "error: use of uninitialized variable" << std::endl;
+        }
         if (AssignOp == "=") {
-            auto lhs = std::any_cast<std::string>(visitLogicalOrExpression(ctx->logicalOrExpression()));
-            auto rhs = std::any_cast<llvm::Value*>(visitInitializerClause(ctx->initializerClause()));
-            auto alloca = this->currentScope().getVariable(lhs);
             builder.CreateStore(rhs, alloca);
             return rhs;
-        } else if (AssignOp == "*=") {
-            auto lhs = std::any_cast<std::string>(visitLogicalOrExpression(ctx->logicalOrExpression()));
-            auto rhs = std::any_cast<llvm::Value*>(visitInitializerClause(ctx->initializerClause()));
-            auto alloca = this->currentScope().getVariable(lhs);
-            auto value = builder.CreateLoad(alloca);
-            auto result = builder.CreateMul(value, rhs, "multmp");
+        } else {
+            llvm::Value* result;
+            if (AssignOp == "*=") {
+                auto result = builder.CreateMul(value, rhs, "multmp");
+            } else if (AssignOp == "/=") {
+                auto result = builder.CreateSDiv(value, rhs, "divtmp");
+            } else if (AssignOp == "%=") {
+                auto result = builder.CreateSRem(value, rhs, "modtmp");
+            } else if (AssignOp == "+=") {
+                auto result = builder.CreateAdd(value, rhs, "addtmp");
+            } else if (AssignOp == "-=") {
+                auto result = builder.CreateSub(value, rhs, "subtmp");
+            } else if (AssignOp == ">>=") {
+                auto result = builder.CreateAShr(value, rhs, "shrtmp");
+            } else if (AssignOp == "<<=") {
+                auto result = builder.CreateShl(value, rhs, "shltmp");
+            } else if (AssignOp == "&=") {
+                auto result = builder.CreateAnd(value, rhs, "andtmp");
+            } else if (AssignOp == "^=") {
+                auto result = builder.CreateXor(value, rhs, "xortmp");
+            } else if (AssignOp == "|=") {
+                auto result = builder.CreateOr(value, rhs, "ortmp");
+            }
             builder.CreateStore(result, alloca);
             return result;
-        } else if (AssignOp == "/=") {
-            auto lhs = std::any_cast<std::string>(visitLogicalOrExpression(ctx->logicalOrExpression()));
-            auto rhs = std::any_cast<llvm::Value*>(visitInitializerClause(ctx->initializerClause()));
-            auto alloca = this->currentScope().getVariable(lhs);
-            auto value = builder.CreateLoad(alloca);
-            auto result = builder.CreateSDiv(value, rhs, "divtmp");
-            builder.CreateStore(result, alloca);
-            return result;
-        } else if (AssignOp == "%=") {
-            auto lhs = std::any_cast<std::string>(visitLogicalOrExpression(ctx->logicalOrExpression()));
-            auto rhs = std::any_cast<llvm::Value*>(visitInitializerClause(ctx->initializerClause()));
-            auto alloca = this->currentScope().getVariable(lhs);
-            auto value = builder.CreateLoad(alloca);
-            auto result = builder.CreateSRem(value, rhs, "modtmp");
-            builder.CreateStore(result, alloca);
-            return result;
-        } else if (AssignOp == "+=") {
-            auto lhs = std::any_cast<std::string>(visitLogicalOrExpression(ctx->logicalOrExpression()));
-            auto rhs = std::any_cast<llvm::Value*>(visitInitializerClause(ctx->initializerClause()));
-            auto alloca = this->currentScope().getVariable(lhs);
-            auto value = builder.CreateLoad(alloca);
-            auto result = builder.CreateAdd(value, rhs, "addtmp");
-            builder.CreateStore(result, alloca);
-            return result;
-        } else if (AssignOp == "-=") {
-            auto lhs = std::any_cast<std::string>(visitLogicalOrExpression(ctx->logicalOrExpression()));
-            auto rhs = std::any_cast<llvm::Value*>(visitInitializerClause(ctx->initializerClause()));
-            auto alloca = this->currentScope().getVariable(lhs);
-            auto value = builder.CreateLoad(alloca);
-            auto result = builder.CreateSub(value, rhs, "subtmp");
-            builder.CreateStore(result, alloca);
-            return result;
-        } else if (AssignOp == ">>=") {
-            
+        }
     } else if (auto ConditionalExpression = ctx->conditionalExpression()) {
         return visitConditionalExpression(ConditionalExpression);
     } else if (auto LogicalOrExpression = ctx->logicalOrExpression()) {
@@ -299,7 +333,7 @@ std::any Visitor::visitAssignmentExpression(ZigCCParser::AssignmentExpressionCon
         return visitThrowExpression(ThrowExpression);
     } else if (auto InitializerClause = ctx->initializerClause()) {
         return visitInitializerClause(InitializerClause);
-    }
+    } // TODO: 其他情况有待完善
 }
 
 std::any Visitor::visitAssignmentOperator(ZigCCParser::AssignmentOperatorContext *ctx)
@@ -525,11 +559,11 @@ std::any Visitor::visitDeclSpecifier(ZigCCParser::DeclSpecifierContext *ctx)
     } else if (auto FunctionSpecifier = ctx->functionSpecifier()) {
         return visitFunctionSpecifier(FunctionSpecifier);
     } else if (auto Friend = ctx->Friend()) {
-        
+        return "";
     } else if (auto Typedef = ctx->Typedef()) {
-        
+        return "";
     } else if (auto Constexpr = ctx->Constexpr()) {
-        
+        return "";
     }
 }
 
@@ -1242,5 +1276,19 @@ std::any Visitor::visitTheOperator(ZigCCParser::TheOperatorContext *ctx)
 
 std::any Visitor::visitLiteral(ZigCCParser::LiteralContext *ctx)
 {
-
+    if (ctx->IntegerLiteral() != nullptr) {
+        return llvm::ConstantInt::get(llvm::Type::getInt32Ty(*llvm_context), std::stoi(ctx->IntegerLiteral()->getText()));
+    } else if (ctx->CharacterLiteral() != nullptr) {
+        return llvm::ConstantInt::get(llvm::Type::getInt8Ty(*llvm_context), ctx->CharacterLiteral()->getText()[1]);
+    } else if (ctx->FloatingLiteral() != nullptr) {
+        return llvm::ConstantFP::get(llvm::Type::getFloatTy(*llvm_context), std::stof(ctx->FloatingLiteral()->getText()));
+    } else if (ctx->StringLiteral() != nullptr) {
+        return builder.CreateGlobalStringPtr(ctx->StringLiteral()->getText());
+    } else if (ctx->BooleanLiteral() != nullptr) {
+        return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*llvm_context), ctx->BooleanLiteral()->getText() == "true");
+    } else if (ctx->PointerLiteral() != nullptr) {
+        return llvm::ConstantPointerNull::get(llvm::Type::getInt8PtrTy(*llvm_context));
+    } else if (ctx->UserDefinedLiteral() != nullptr) {
+        return nullptr; // TODO: UserDefinedLiteral
+    }
 }
