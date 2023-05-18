@@ -8,7 +8,6 @@
 #include <llvm/Support/raw_ostream.h>
 #include "semantic/Scope.h"
 #include "grammar/ZigCCParserBaseVisitor.h"
-#include "utils.h"
 
 using namespace antlrcpptest;
 using namespace ZigCC;

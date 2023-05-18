@@ -2,16 +2,20 @@
 #include <iostream>
 #include <string>
 #include <typeinfo>
+#include <llvm/Support/TargetSelect.h>
 
 #include "antlr4-runtime.h"
 #include "grammar/FrontEnd.h"
+#include "grammar/Visitor.h"
+#include "ObjectEmitter.h"
+#include "JIT.h"
 
 using namespace antlr4;
 
 int main(int argc, char* argv[])
 {
     std::string InputFile;
-    std::string TargetFile = "a.s";
+    std::string TargetFile = "a.o";
 
     // Deal with the input argument
     int InvalidArg = 0;
@@ -40,7 +44,13 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    // Open source file and compile it
+    llvm::InitializeAllTargetInfos();
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmParsers();
+    llvm::InitializeAllAsmPrinters();
+
+    // Open source file and compile it（生成 LLVM IR）
     std::ifstream fs(InputFile);
     ZigCC::FrontEnd FE;
     if (fs.is_open()) {
@@ -51,11 +61,32 @@ int main(int argc, char* argv[])
         std::cout << "compilation terminated." << std::endl;
         return EXIT_FAILURE;
     }
-    
-    // StaticAnalysis::StaticAnalyser* analyser = new StaticAnalysis::StaticAnalyser(program);
-    // analyser->Analyse();
-    // IR::ControlFlowGraph cfg = IR::ControlFlowGraph(program, analyser, TargetFile);
-    
-    // delete analyser;
+
+    // 输出并编译 LLVM IR
+    std::string error;
+    ZigCC::ObjectEmitter::emit(FE.visitor.module, TargetFile, error);
+    if (!error.empty()) {
+        llvm::errs() << error;
+    }
+
+    // JIT（动态链接库相关）
+    auto jit = ZigCC::JIT::create(FE.visitor.module, FE.visitor.llvm_context);
+    // 使用 registerSymbols() 函数注册需要用到的符号（Symbol），并将它们与对应的函数指针关联起来
+    // 在这个例子中，将 printf 函数与字符串 "printf" 关联起来（后续可以继续添加）
+    jit->registerSymbols(
+        [&](llvm::orc::MangleAndInterner interner) {
+            llvm::orc::SymbolMap symbolMap;
+            // Add symbols here（可以动态解析这些函数）
+            symbolMap[interner("printf")] = llvm::JITEvaluatedSymbol::fromPointer(printf);
+            symbolMap[interner("scanf")] = llvm::JITEvaluatedSymbol::fromPointer(scanf);
+            return symbolMap;
+        });
+
+    // 使用 lookup() 函数查找名为 "main" 的函数，并将其转换为一个函数指针类型（int()）。
+    auto entry = jit->lookup<int()>("main");
+    if (!entry) {
+        llvm::errs() << entry.takeError();
+    }
+    entry.get()();
     return EXIT_SUCCESS;
 }

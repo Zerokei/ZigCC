@@ -2,7 +2,6 @@
 #include "grammar/ZigCCLexer.h"
 #include "grammar/ZigCCParser.h"
 #include "antlr4-runtime.h"
-#include "grammar/Visitor.h"
 #include "llvm/Support/Debug.h"
 
 using namespace antlr4;
@@ -46,14 +45,7 @@ void FrontEnd::parse(std::ifstream& fs) {
 #ifdef DEBUG
     std::cout << "# Translate Antlr context AST to SyntaxModel AST with Visitor class" << std::endl;
 #endif
-    Visitor v;
-    antlrcpp::Any ast = v.visit(tree);
-
-    // 将 IR 输出到文件用于下一步验证正确性
-    std::error_code EC;
-    llvm::raw_fd_ostream out("ZigCCTest.ll", EC);
-    v.module->print(out, nullptr);
-    out.close();
+    antlrcpp::Any ast = visitor.visit(tree);
 }
 
 }
