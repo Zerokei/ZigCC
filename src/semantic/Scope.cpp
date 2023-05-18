@@ -2,10 +2,13 @@
 
 using namespace ZigCC;
 
-llvm::Value *Scope::setVariable(const std::string &name, llvm::Value *value)
+bool Scope::setVariable(const std::string &name, llvm::Value *value)
 {
+    if (this->variables.find(name) != this->variables.end()) {
+        return false;
+    }
     this->variables[name] = value;
-    return value;
+    return true;
 }
 
 llvm::Value *Scope::getVariable(const std::string &name)

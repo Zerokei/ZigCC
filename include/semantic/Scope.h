@@ -8,10 +8,10 @@ class Scope
 {
 public:
     std::unordered_map<std::string, llvm::Value *> variables;
-    llvm::Function *currentFunction = nullptr;
+    llvm::Function *currentFunction = nullptr; // 如果是 nullptr 则说明当前是全局变量的 scope（有且仅有一个这样的 scope）
     
     Scope(llvm::Function *_currentFunction = nullptr) : currentFunction(_currentFunction) {}
-    llvm::Value *setVariable(const std::string &name, llvm::Value *);
+    bool setVariable(const std::string &name, llvm::Value *);
     llvm::Value *getVariable(const std::string &name);
 };
 }

@@ -38,11 +38,12 @@ int main(int argc, char* argv[])
             NoInputFile = 0;
     }
     if (NoInputFile)
-        std::cout << "ZigCC: fatal error: no input files" << std::endl;
-    if (InvalidArg || NoInputFile) {
-        std::cout << "compilation terminated." << std::endl;
-        return EXIT_FAILURE;
-    }
+        // std::cout << "ZigCC: fatal error: no input files" << std::endl;
+        InputFile = "1-vardecl.cpp";
+    // if (InvalidArg || NoInputFile) {
+    //     std::cout << "compilation terminated." << std::endl;
+    //     return EXIT_FAILURE;
+    // }
 
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargets();

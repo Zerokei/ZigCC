@@ -20,7 +20,7 @@ public:
         auto target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
         if (!target) return;
 
-        auto cpu = "generic";
+        auto cpu = "generic-rv64";
         auto features = "";
 
         llvm::TargetOptions opt;
@@ -31,6 +31,10 @@ public:
         module->setTargetTriple(targetTriple);
 
         std::error_code ec;
+        llvm::raw_fd_ostream ir("ir.ll", ec, llvm::sys::fs::OF_None);
+        module->print(ir, nullptr);
+        ir.close();
+
         llvm::raw_fd_ostream dest(filename, ec, llvm::sys::fs::OF_None);
         if (ec) {
             error = "Could not open file: " + ec.message();

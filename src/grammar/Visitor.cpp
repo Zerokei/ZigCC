@@ -440,6 +440,9 @@ std::any Visitor::visitDeclarationStatement(ZigCCParser::DeclarationStatementCon
 
 std::any Visitor::visitDeclarationseq(ZigCCParser::DeclarationseqContext *ctx)
 {
+    // 建立全局变量所在的 scope（有且仅有一个），其 currentFunction = nullptr
+    // 此后 scopes[0] 就是全局的 scope 的代名词，所有这里面的变量都是可以在局部使用的，同时需要注意被覆盖的可能
+    scopes.push_back(Scope());
     for (auto decl : ctx->declaration())
         visitDeclaration(decl);
     return nullptr;
@@ -506,10 +509,13 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
        因此我们称这些函数是合作关系，在语法树上体现出分叉的特点），并在栈帧中开辟空间存储，
        分解的过程需要使用更底层的 visitor 函数返回需要的类型/变量名
     */
-    // 目前没有想到一行中有两种类型的情况，所以暂时不考虑
+    // TODO: 目前暂未考虑一行中有两种类型的情况（const int 之类的）
     // 当前只考虑 int x, y = 0; int x = y = 0; 这种情况，enum 以及 class 等复杂类型之后再作处理（添加分支处理（？））
     // 还有强制类型转换可以做（感觉应该不难）
-    llvm::Type* type = std::any_cast<llvm::Type*>(visitDeclSpecifierSeq(ctx->declSpecifierSeq()));
+    llvm::Type* type = nullptr;
+    if (auto DeclSpecifierSeq = ctx->declSpecifierSeq()) {
+        type = std::any_cast<llvm::Type*>(visitDeclSpecifierSeq(DeclSpecifierSeq));
+    }
     std::vector<std::string> names;
     std::vector<llvm::Value*> values;
     for (auto decl : ctx->initDeclaratorList()->initDeclarator()) {
@@ -524,14 +530,43 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
             values.push_back(nullptr);
         }
     }
-    for (int i = 0; i < names.size(); i++) {
-        // CreateAlloca 函数将类型为 type 的变量 name 加入栈帧，对齐方式 nullptr（可能 struct 类型有用？）
-        auto alloca = builder.CreateAlloca(type, nullptr, names[i]);
-        // 当进行了初始化时，CreateStore 函数将赋值的表达式存入上一步开辟的地址空间 alloca 中
-        if (values[i] != nullptr)
-            builder.CreateStore(values[i], alloca);
-        this->currentScope().setVariable(names[i], alloca);
+    if (currentScope().currentFunction != nullptr) { // 局部变量的情况
+        if (type == nullptr) { // 此时找现有的变量是否已经定义过
+            for (auto name : names) {
+                if (this->currentScope().getVariable(name) != nullptr) {
+                    type = this->currentScope().getVariable(name)->getType();
+                } else if (scopes[0].getVariable(name) != nullptr) {
+                    type = scopes[0].getVariable(name)->getType();
+                } else {
+                    std::cout << "Error: Undefined variable '" << name << "'" << std::endl;
+                    return nullptr;
+                }
+            }
+        } // TODO: 可以做类型检查
+        for (int i = 0; i < names.size(); i++) {
+            // CreateAlloca 函数将类型为 type 的变量 name 加入栈帧，对齐方式 nullptr（可能 struct 类型有用？）
+            auto alloca = builder.CreateAlloca(type, nullptr, names[i]);
+            // 当进行了初始化时，CreateStore 函数将赋值的表达式存入上一步开辟的地址空间 alloca 中
+            if (values[i] != nullptr)
+                builder.CreateStore(values[i], alloca);
+            this->currentScope().setVariable(names[i], alloca);
+        }
+    } else { // 全局变量的情况
+        if (type == nullptr) { // 注意全局变量不允许出现在全局 scope 中赋值
+            std::cout << "Error: Expected type specifier" << std::endl;
+            return nullptr;
+        }
+        for (int i = 0; i < names.size(); i++) {
+            // 先不考虑 const 的情况
+            auto alloca = new llvm::GlobalVariable(*module, type, false, llvm::Function::ExternalLinkage, 
+                                                    (llvm::Constant *)values[i], names[i]);
+            if (!this->currentScope().setVariable(names[i], alloca)) {
+                std::cout << "Error: Redefinition of '" << names[i] << "'" << std::endl;
+                alloca->eraseFromParent();
+            }
+        }
     }
+    return nullptr;
 }
 
 std::any Visitor::visitStaticAssertDeclaration(ZigCCParser::StaticAssertDeclarationContext *ctx)
@@ -638,23 +673,23 @@ std::any Visitor::visitSimpleTypeSpecifier(ZigCCParser::SimpleTypeSpecifierConte
 {
     // TODO: 除了基本类型之外的函数
     if (ctx->Char() != nullptr) {
-        return llvm::Type::getInt8Ty(*llvm_context);
+        return (llvm::Type *)llvm::Type::getInt8Ty(*llvm_context);
     } else if (ctx->Char16() != nullptr) {
-        return llvm::Type::getInt16Ty(*llvm_context);
+        return (llvm::Type *)llvm::Type::getInt16Ty(*llvm_context);
     } else if (ctx->Char32() != nullptr) {
-        return llvm::Type::getInt32Ty(*llvm_context);
+        return (llvm::Type *)llvm::Type::getInt32Ty(*llvm_context);
     } else if (ctx->Wchar() != nullptr) {
-        return llvm::Type::getInt32Ty(*llvm_context);
+        return (llvm::Type *)llvm::Type::getInt32Ty(*llvm_context);
     } else if (ctx->Bool() != nullptr) {
-        return llvm::Type::getInt1Ty(*llvm_context);
+        return (llvm::Type *)llvm::Type::getInt1Ty(*llvm_context);
     } else if (ctx->Int() != nullptr) {
-        return llvm::Type::getInt32Ty(*llvm_context);
+        return (llvm::Type *)llvm::Type::getInt32Ty(*llvm_context);
     } else if (ctx->Float() != nullptr) {
-        return llvm::Type::getFloatTy(*llvm_context);
+        return (llvm::Type *)llvm::Type::getFloatTy(*llvm_context);
     } else if (ctx->Double() != nullptr) {
-        return llvm::Type::getDoubleTy(*llvm_context);
+        return (llvm::Type *)llvm::Type::getDoubleTy(*llvm_context);
     } else if (ctx->Void() != nullptr) {
-        return llvm::Type::getVoidTy(*llvm_context);
+        return (llvm::Type *)llvm::Type::getVoidTy(*llvm_context);
     } else if (ctx->Auto() != nullptr) {
         // TODO: auto
     } else {
@@ -1277,17 +1312,18 @@ std::any Visitor::visitTheOperator(ZigCCParser::TheOperatorContext *ctx)
 std::any Visitor::visitLiteral(ZigCCParser::LiteralContext *ctx)
 {
     if (ctx->IntegerLiteral() != nullptr) {
-        return llvm::ConstantInt::get(llvm::Type::getInt32Ty(*llvm_context), std::stoi(ctx->IntegerLiteral()->getText()));
+        return (llvm::Value *)llvm::ConstantInt::get(llvm::Type::getInt32Ty(*llvm_context), std::stoi(ctx->IntegerLiteral()->getText()));
     } else if (ctx->CharacterLiteral() != nullptr) {
-        return llvm::ConstantInt::get(llvm::Type::getInt8Ty(*llvm_context), ctx->CharacterLiteral()->getText()[1]);
+        return (llvm::Value *)llvm::ConstantInt::get(llvm::Type::getInt8Ty(*llvm_context), ctx->CharacterLiteral()->getText()[1]);
     } else if (ctx->FloatingLiteral() != nullptr) {
-        return llvm::ConstantFP::get(llvm::Type::getFloatTy(*llvm_context), std::stof(ctx->FloatingLiteral()->getText()));
+        return (llvm::Value *)llvm::ConstantFP::get(llvm::Type::getFloatTy(*llvm_context), std::stof(ctx->FloatingLiteral()->getText()));
     } else if (ctx->StringLiteral() != nullptr) {
-        return builder.CreateGlobalStringPtr(ctx->StringLiteral()->getText());
+        return (llvm::Value *)builder.CreateGlobalStringPtr(ctx->StringLiteral()->getText());
     } else if (ctx->BooleanLiteral() != nullptr) {
-        return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*llvm_context), ctx->BooleanLiteral()->getText() == "true");
+        return (llvm::Value *)llvm::ConstantInt::get(llvm::Type::getInt1Ty(*llvm_context), ctx->BooleanLiteral()->getText() == "true");
     } else if (ctx->PointerLiteral() != nullptr) {
-        return llvm::ConstantPointerNull::get(llvm::Type::getInt8PtrTy(*llvm_context));
+        // TODO: 不一定是 NULL
+        return (llvm::Value *)llvm::ConstantPointerNull::get(llvm::Type::getInt8PtrTy(*llvm_context));
     } else if (ctx->UserDefinedLiteral() != nullptr) {
         return nullptr; // TODO: UserDefinedLiteral
     }
