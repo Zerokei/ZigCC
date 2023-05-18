@@ -27,6 +27,6 @@ RUN apt-get install -y vim
 # 设置环境变量（示例） 
 # ENV ENV_VARIABLE=value 
 # 定义容器启动时要执行的命令 
-CMD ["make"] 
+# CMD ["make"] 
 # 暴露容器的端口（示例） 
 # EXPOSE 8080
