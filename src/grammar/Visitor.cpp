@@ -909,7 +909,9 @@ std::any Visitor::visitNoPointerDeclarator(ZigCCParser::NoPointerDeclaratorConte
 
 std::any Visitor::visitParametersAndQualifiers(ZigCCParser::ParametersAndQualifiersContext *ctx)
 {
-
+    if (auto parameterDeclarationClause = ctx->parameterDeclarationClause()) {
+        return visitParameterDeclarationClause(parameterDeclarationClause);
+    }
 }
 
 std::any Visitor::visitTrailingReturnType(ZigCCParser::TrailingReturnTypeContext *ctx)
@@ -978,12 +980,25 @@ std::any Visitor::visitNoPointerAbstractPackDeclarator(ZigCCParser::NoPointerAbs
 
 std::any Visitor::visitParameterDeclarationClause(ZigCCParser::ParameterDeclarationClauseContext *ctx)
 {
-
+    if (auto parameterDeclarationList = ctx->parameterDeclarationList()) {
+        return visitParameterDeclarationList(parameterDeclarationList);
+    }
 }
 
 std::any Visitor::visitParameterDeclarationList(ZigCCParser::ParameterDeclarationListContext *ctx)
 {
+    auto param_list = ctx->parameterDeclaration();
+    std::vector< std::pair< std::string, llvm::Type* > > params;
 
+    for(const auto& param_dec_ctx: param_list) {
+        auto dec_specifier = param_dec_ctx->declSpecifierSeq();
+        llvm::Type *type = std::any_cast<llvm::Type *>(visitDeclSpecifierSeq(dec_specifier));
+        auto declarator = param_dec_ctx->declarator();
+        std::string name= std::any_cast<std::string>(visitDeclarator(declarator));
+        params.push_back(std::pair< std::string, llvm::Type * >(name, type));
+    }
+
+    return params;
 }
 
 std::any Visitor::visitParameterDeclaration(ZigCCParser::ParameterDeclarationContext *ctx)
@@ -1027,6 +1042,10 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     Scope fun_scope = Scope(function);
     this->scopes.push_back(fun_scope);
 
+    auto block = llvm::BasicBlock::Create(builder.getContext());
+    block->insertInto(function);
+    builder.SetInsertPoint(block);
+
     // 添加参数列表中的参数到 var_list 中
     // NOTE: 参数列表中的参数，认为是先前没有声明过的局部变量
     //      （不需要检查 scope 中是否已经有同名变量）
@@ -1037,10 +1056,6 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
         // NOTE: 初步实现的是不做初始化参数
         fun_scope.setVariable(param_name, alloca);
     }
-
-
-    // TODO: 处理 block 相关，没有读懂
-
 
     // BODY
     auto functionBody = ctx->functionBody();
