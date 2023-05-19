@@ -376,7 +376,7 @@ std::any Visitor::visitConstantExpression(ZigCCParser::ConstantExpressionContext
 
 std::any Visitor::visitStatement(ZigCCParser::StatementContext *ctx)
 {
-
+    
 }
 
 std::any Visitor::visitLabeledStatement(ZigCCParser::LabeledStatementContext *ctx)
@@ -391,12 +391,19 @@ std::any Visitor::visitExpressionStatement(ZigCCParser::ExpressionStatementConte
 
 std::any Visitor::visitCompoundStatement(ZigCCParser::CompoundStatementContext *ctx)
 {
-
+    if (auto statementSeq = ctx->statementSeq()) {
+        return visitStatementSeq(statementSeq);
+    }
 }
 
 std::any Visitor::visitStatementSeq(ZigCCParser::StatementSeqContext *ctx)
 {
+    auto statement = ctx->statement();
+    for(const auto& statement_ctx: statement) {
+        visitStatement(statement_ctx);
+    }
 
+    return nullptr;
 }
 
 std::any Visitor::visitSelectionStatement(ZigCCParser::SelectionStatementContext *ctx)
@@ -1070,7 +1077,9 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
 
 std::any Visitor::visitFunctionBody(ZigCCParser::FunctionBodyContext *ctx)
 {
-
+    if (auto compoundStatement = ctx->compoundStatement()) {
+        return visitCompoundStatement(compoundStatement);
+    }
 }
 
 std::any Visitor::visitInitializer(ZigCCParser::InitializerContext *ctx)
