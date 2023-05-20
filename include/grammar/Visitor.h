@@ -1,7 +1,9 @@
 #pragma once
 
 #include "antlr4-runtime.h"
+#include <utility>
 #include <vector>
+#include <tuple>
 #include <string>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Type.h>
@@ -24,6 +26,14 @@ public:
                 module(std::make_unique<llvm::Module>("output", *this->llvm_context)) {}
 
     Scope &currentScope();
+    llvm::Value *getVariable(const std::string &name);
+
+    // 类型转换相关函数
+    bool TypeCheck(llvm::Type* LHS, llvm::Type* RHS);
+    llvm::Value* Cast2I1(llvm::Value* Value);
+    llvm::Value* TypeCasting(llvm::Value* Value, llvm::Type* Type);
+    llvm::Value* TypeUpgrading(llvm::Value* Value, llvm::Type* Type);
+    bool TypeUpgrading(llvm::Value*& Value1, llvm::Value*& Value2);
 
     virtual std::any visitTranslationUnit(ZigCCParser::TranslationUnitContext *ctx) override;
     virtual std::any visitPrimaryExpression(ZigCCParser::PrimaryExpressionContext *ctx) override;

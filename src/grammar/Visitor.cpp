@@ -11,6 +11,175 @@ Scope &Visitor::currentScope()
     return this->scopes.back();
 }
 
+llvm::Value *Visitor::getVariable(const std::string &name)
+{
+    for (auto it = this->scopes.rbegin(); it != this->scopes.rend(); it++) {
+        auto variable = it->getVariable(name);
+        if (variable) {
+            return variable;
+        }
+    }
+    return nullptr;
+}
+
+bool Visitor::TypeCheck(llvm::Type* LHS, llvm::Type* RHS)
+{
+    if (LHS == RHS)
+        return true;
+    else if (LHS->isIntegerTy() && RHS->isIntegerTy())
+        return true;
+    else if (LHS->isFloatingPointTy() && RHS->isFloatingPointTy())
+        return true;
+    else if (LHS->isPointerTy() && RHS->isPointerTy())
+        return true;
+    else if (LHS->isPointerTy() && RHS->isIntegerTy())
+        return true;
+    else if (LHS->isIntegerTy() && RHS->isPointerTy())
+        return true;
+    else if (LHS->isIntegerTy() && RHS->isFloatingPointTy())
+        return true;
+    else if (LHS->isFloatingPointTy() && RHS->isIntegerTy())
+        return true;
+    else return false;
+}
+
+// Cast a integer, or a floating-point number, or a pointer to i1 integer.
+// Return NULL if failed.
+// This function is very useful when generating a condition value for "if", "while", "for" statements.
+llvm::Value* Visitor::Cast2I1(llvm::Value* Value) {
+	if (Value->getType() == builder.getInt1Ty())
+		return Value;
+	else if (Value->getType()->isIntegerTy())
+		return builder.CreateICmpNE(Value, llvm::ConstantInt::get((llvm::IntegerType*)Value->getType(), 0, true));
+	else if (Value->getType()->isFloatingPointTy())
+		return builder.CreateFCmpONE(Value, llvm::ConstantFP::get(Value->getType(), 0.0));
+	else if (Value->getType()->isPointerTy())
+		return builder.CreateICmpNE(builder.CreatePtrToInt(Value, builder.getInt64Ty()), builder.getInt64(0));
+	else {
+		throw std::logic_error("Cannot cast to bool type.");
+		return NULL;
+	}
+}
+
+// Type casting
+// Supported:
+// 1. Int -> Int, FP, Pointer
+// 2. FP -> Int, FP
+// 3. Pointer -> Int, Pointer
+//Other types are not supported, and will return NULL.
+llvm::Value* Visitor::TypeCasting(llvm::Value* Value, llvm::Type* Type) {
+	if (Value->getType() == Type) {
+		return Value;
+	}
+	else if (Type == builder.getInt1Ty()) {	//Int1 (bool) is special.
+		return Cast2I1(Value);
+	}
+	else if (Value->getType()->isIntegerTy() && Type->isIntegerTy()) {
+		return builder.CreateIntCast(Value, Type, !Value->getType()->isIntegerTy(1));
+	}
+	else if (Value->getType()->isIntegerTy() && Type->isFloatingPointTy()) {
+		return Value->getType()->isIntegerTy(1) ?
+			builder.CreateUIToFP(Value, Type) : builder.CreateSIToFP(Value, Type);
+	}
+	else if (Value->getType()->isIntegerTy() && Type->isPointerTy()) {
+		return builder.CreateIntToPtr(Value, Type);
+	}
+	else if (Value->getType()->isFloatingPointTy() && Type->isIntegerTy()) {
+		return builder.CreateFPToSI(Value, Type);
+	}
+	else if (Value->getType()->isFloatingPointTy() && Type->isFloatingPointTy()) {
+		return builder.CreateFPCast(Value, Type);
+	}
+	else if (Value->getType()->isPointerTy() && Type->isIntegerTy()) {
+		return builder.CreatePtrToInt(Value, Type);
+	}
+	else if (Value->getType()->isPointerTy() && Type->isPointerTy()) {
+		return builder.CreatePointerCast(Value, Type);
+	}
+	else {
+		return NULL;
+	}
+}
+
+//Upgrade the type, given another type.
+//1. int1
+//2. int8
+//3. int16
+//4. int32
+//5. int64
+//6. float
+//7. double
+//Return NULL if failed.
+//For example,
+//	TypeUpgrading(int16, int32) -> int32
+//	TypeUpgrading(int32, double) -> double
+//	TypeUpgrading(int64, float) -> float
+llvm::Value* Visitor::TypeUpgrading(llvm::Value* Value, llvm::Type* Type) {
+	if (Value->getType()->isIntegerTy() && Type->isIntegerTy()) {
+		size_t Bit1 = ((llvm::IntegerType*)Value->getType())->getBitWidth();
+		size_t Bit2 = ((llvm::IntegerType*)Type)->getBitWidth();
+		if (Bit1 < Bit2)
+			return builder.CreateIntCast(Value, Type, Bit1 != 1);
+		else return Value;
+	}
+	else if (Value->getType()->isFloatingPointTy() && Type->isFloatingPointTy()) {
+		if (Value->getType()->isFloatTy() && Type->isDoubleTy())
+			return builder.CreateFPCast(Value, Type);
+		else return Value;
+	}
+	else if (Value->getType()->isIntegerTy() && Type->isFloatingPointTy()) {
+		return Value->getType()->isIntegerTy(1) ?
+			builder.CreateUIToFP(Value, Type) : builder.CreateSIToFP(Value, Type);
+	}
+	else if (Value->getType()->isFloatingPointTy() && Type->isIntegerTy()) {
+		return Value;
+	}
+	else return NULL;
+}
+
+//Upgrade two types at the same time.
+//1. int1
+//2. int8
+//3. int16
+//4. int32
+//5. int64
+//6. float
+//7. double
+//Return false if failed.
+//For example,
+//	TypeUpgrading(int16, int32) -> int32
+//	TypeUpgrading(int32, double) -> double
+//	TypeUpgrading(int64, float) -> float
+bool Visitor::TypeUpgrading(llvm::Value*& Value1, llvm::Value*& Value2) {
+	if (Value1->getType()->isIntegerTy() && Value2->getType()->isIntegerTy()) {
+		size_t Bit1 = ((llvm::IntegerType*)Value1->getType())->getBitWidth();
+		size_t Bit2 = ((llvm::IntegerType*)Value2->getType())->getBitWidth();
+		if (Bit1 < Bit2)
+			Value1 = builder.CreateIntCast(Value1, Value2->getType(), Bit1 != 1);
+		else if (Bit1 > Bit2)
+			Value2 = builder.CreateIntCast(Value2, Value1->getType(), Bit2 != 1);
+		return true;
+	}
+	else if (Value1->getType()->isFloatingPointTy() && Value2->getType()->isFloatingPointTy()) {
+		if (Value1->getType()->isFloatTy() && Value2->getType()->isDoubleTy())
+			Value1 = builder.CreateFPCast(Value1, builder.getDoubleTy());
+		else if (Value1->getType()->isDoubleTy() && Value2->getType()->isFloatTy())
+			Value2 = builder.CreateFPCast(Value2, builder.getDoubleTy());
+		return true;
+	}
+	else if (Value1->getType()->isIntegerTy() && Value2->getType()->isFloatingPointTy()) {
+		Value1 = Value1->getType()->isIntegerTy(1) ?
+			builder.CreateUIToFP(Value1, Value2->getType()) : builder.CreateSIToFP(Value1, Value2->getType());
+		return true;
+	}
+	else if (Value1->getType()->isFloatingPointTy() && Value2->getType()->isIntegerTy()) {
+		Value2 = Value2->getType()->isIntegerTy(1) ?
+			builder.CreateUIToFP(Value2, Value1->getType()) : builder.CreateSIToFP(Value2, Value1->getType());
+		return true;
+	}
+	else return false;
+}
+
 std::any Visitor::visitTranslationUnit(ZigCCParser::TranslationUnitContext *ctx)
 {
     visitDeclarationseq(ctx->declarationseq());
@@ -209,8 +378,19 @@ std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpre
 
 std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext *ctx)
 {
-    for (auto MultiplicativeExpression : ctx->multiplicativeExpression())
-        return visitMultiplicativeExpression(MultiplicativeExpression);
+    llvm::Value* result = std::any_cast<llvm::Value*>(visitMultiplicativeExpression(ctx->multiplicativeExpression(0)));
+    if (visitMultiplicativeExpression(ctx->multiplicativeExpression(0)).__is_valid_cast<std::string>()) {
+        
+    }
+    for (size_t i = 1; i < ctx->multiplicativeExpression().size(); i++) {
+        llvm::Value* operand = std::any_cast<llvm::Value*>(visitMultiplicativeExpression(ctx->multiplicativeExpression(i)));
+        if (ctx->Plus(i - 1)) {
+            result = builder.CreateAdd(result, operand, "addtmp");
+        } else {
+            result = builder.CreateSub(result, operand, "subtmp");
+        }
+    }
+    return result;
 }
 
 std::any Visitor::visitShiftExpression(ZigCCParser::ShiftExpressionContext *ctx)
@@ -366,7 +546,9 @@ std::any Visitor::visitAssignmentOperator(ZigCCParser::AssignmentOperatorContext
 
 std::any Visitor::visitExpression(ZigCCParser::ExpressionContext *ctx)
 {
-
+    // TODO: 暂时只实现了只有单个赋值的情况
+    for (auto AssignmentExpression : ctx->assignmentExpression())
+        return visitAssignmentExpression(AssignmentExpression);
 }
 
 std::any Visitor::visitConstantExpression(ZigCCParser::ConstantExpressionContext *ctx)
@@ -376,7 +558,26 @@ std::any Visitor::visitConstantExpression(ZigCCParser::ConstantExpressionContext
 
 std::any Visitor::visitStatement(ZigCCParser::StatementContext *ctx)
 {
-    
+    if (auto LabeledStatement = ctx->labeledStatement()) {
+        visitLabeledStatement(LabeledStatement);
+    } else if (auto ExpressionStatement = ctx->expressionStatement()) {
+        visitExpressionStatement(ExpressionStatement);
+    } else if (auto CompoundStatement = ctx->compoundStatement()) {
+        visitCompoundStatement(CompoundStatement);
+    } else if (auto SelectionStatement = ctx->selectionStatement()) {
+        visitSelectionStatement(SelectionStatement);
+    } else if (auto IterationStatement = ctx->iterationStatement()) {
+        visitIterationStatement(IterationStatement);
+    } else if (auto JumpStatement = ctx->jumpStatement()) {
+        visitJumpStatement(JumpStatement);
+    } else if (auto DeclarationStatement = ctx->declarationStatement()) {
+        visitDeclarationStatement(DeclarationStatement);
+    } else if (auto TryBlock = ctx->tryBlock()) {
+        visitTryBlock(TryBlock);
+    } else if (auto AttributeSpecifierSeq = ctx->attributeSpecifierSeq()) {
+        visitAttributeSpecifierSeq(AttributeSpecifierSeq);
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitLabeledStatement(ZigCCParser::LabeledStatementContext *ctx)
@@ -392,8 +593,9 @@ std::any Visitor::visitExpressionStatement(ZigCCParser::ExpressionStatementConte
 std::any Visitor::visitCompoundStatement(ZigCCParser::CompoundStatementContext *ctx)
 {
     if (auto statementSeq = ctx->statementSeq()) {
-        return visitStatementSeq(statementSeq);
+        visitStatementSeq(statementSeq);
     }
+    return nullptr;
 }
 
 std::any Visitor::visitStatementSeq(ZigCCParser::StatementSeqContext *ctx)
@@ -438,12 +640,42 @@ std::any Visitor::visitForRangeInitializer(ZigCCParser::ForRangeInitializerConte
 
 std::any Visitor::visitJumpStatement(ZigCCParser::JumpStatementContext *ctx)
 {
+    if (ctx->Break() != nullptr) {
 
+    } else if (ctx->Continue() != nullptr) {
+
+    } else if (ctx->Return() != nullptr) {
+        llvm::Function* function = currentScope().currentFunction;
+        if (function == nullptr) {
+            std::cout << "Error: Return statement not within a function" << std::endl;
+            return nullptr;
+        }
+        if (ctx->expression() != nullptr) {
+            llvm::Value* value = std::any_cast<llvm::Value*>(visitExpression(ctx->expression()));
+            if (!TypeCheck(value->getType(), function->getReturnType())) {
+                std::cout << "Error: Return type mismatch." << std::endl;
+                return nullptr;
+            }
+            builder.CreateRet(value);
+        } else {
+            if (function->getReturnType() != builder.getVoidTy()) {
+                std::cout << "Error: Expected an expression after return statement." << std::endl;
+                return nullptr;
+            }
+            builder.CreateRetVoid();
+        }
+    } else if (ctx->Goto() != nullptr) {
+
+    } else if (ctx->Identifier() != nullptr) {
+
+    }
 }
 
 std::any Visitor::visitDeclarationStatement(ZigCCParser::DeclarationStatementContext *ctx)
 {
-
+    if (auto BlockDeclaration = ctx->blockDeclaration()) {
+        visitBlockDeclaration(BlockDeclaration);
+    }
 }
 
 std::any Visitor::visitDeclarationseq(ZigCCParser::DeclarationseqContext *ctx)
@@ -524,52 +756,54 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     if (auto DeclSpecifierSeq = ctx->declSpecifierSeq()) {
         type = std::any_cast<llvm::Type*>(visitDeclSpecifierSeq(DeclSpecifierSeq));
     }
-    std::vector<std::string> names;
-    std::vector<llvm::Value*> values;
+    std::vector< std::pair<std::string, llvm::Value*> > vars;
     for (auto decl : ctx->initDeclaratorList()->initDeclarator()) {
         // visitDeclarator 函数返回变量名
-        auto name = std::any_cast<std::string>(visitDeclarator(decl->declarator()));
-        names.push_back(name);
+        std::string name = std::any_cast<std::string>(visitDeclarator(decl->declarator()));
         // 如果进行了初始化，则将初始化的值存入 values 中
+        llvm::Value* value = nullptr;
         if (auto Initializer = decl->initializer()) {
-            auto value = std::any_cast<llvm::Value*>(visitInitializer(Initializer));
-            values.push_back(value);
-        } else { // 否则存入 nullptr
-            values.push_back(nullptr);
+            value = std::any_cast<llvm::Value*>(visitInitializer(Initializer));
         }
+        vars.push_back(std::make_pair(name, value));
     }
     if (currentScope().currentFunction != nullptr) { // 局部变量的情况
         if (type == nullptr) { // 此时找现有的变量是否已经定义过
-            for (auto name : names) {
-                if (this->currentScope().getVariable(name) != nullptr) {
-                    type = this->currentScope().getVariable(name)->getType();
-                } else if (scopes[0].getVariable(name) != nullptr) {
-                    type = scopes[0].getVariable(name)->getType();
-                } else {
-                    std::cout << "Error: Undefined variable '" << name << "'" << std::endl;
-                    return nullptr;
-                }
+            if (getVariable(vars[0].first) != nullptr) {
+                std::cout << "Error: Variable " + vars[0].first + " is not defined before." << std::endl;
+                return nullptr;
             }
-        } // TODO: 可以做类型检查
-        for (int i = 0; i < names.size(); i++) {
+        } 
+        for (auto var : vars) {
+            // 类型检查
+            if (std::get<1>(var) != nullptr && !TypeCheck(var.second->getType(), type)) {
+                std::cout << "Error: Type mismatch" << std::endl;
+                return nullptr;
+            }
             // CreateAlloca 函数将类型为 type 的变量 name 加入栈帧，对齐方式 nullptr（可能 struct 类型有用？）
-            auto alloca = builder.CreateAlloca(type, nullptr, names[i]);
+            auto alloca = builder.CreateAlloca(type, nullptr, std::get<0>(var));
             // 当进行了初始化时，CreateStore 函数将赋值的表达式存入上一步开辟的地址空间 alloca 中
-            if (values[i] != nullptr)
-                builder.CreateStore(values[i], alloca);
-            this->currentScope().setVariable(names[i], alloca);
+            if (std::get<1>(var) != nullptr) {
+                builder.CreateStore(var.second, alloca);
+            }
+            this->currentScope().setVariable(std::get<0>(var), alloca);
         }
     } else { // 全局变量的情况
         if (type == nullptr) { // 注意全局变量不允许出现在全局 scope 中赋值
             std::cout << "Error: Expected type specifier" << std::endl;
             return nullptr;
         }
-        for (int i = 0; i < names.size(); i++) {
+        for (auto var : vars) {
+            // 类型检查
+            if (var.second != nullptr && !TypeCheck(var.second->getType(), type)) {
+                std::cout << "Error: Type mismatch" << std::endl;
+                return nullptr;
+            }
             // 先不考虑 const 的情况
             auto alloca = new llvm::GlobalVariable(*module, type, false, llvm::Function::ExternalLinkage, 
-                                                    (llvm::Constant *)values[i], names[i]);
-            if (!this->currentScope().setVariable(names[i], alloca)) {
-                std::cout << "Error: Redefinition of '" << names[i] << "'" << std::endl;
+                                                    (llvm::Constant *)var.second, std::get<0>(var));
+            if (!this->currentScope().setVariable(std::get<0>(var), alloca)) {
+                std::cout << "Error: Redefinition of '" << std::get<0>(var) << "'" << std::endl;
                 alloca->eraseFromParent();
             }
         }
@@ -1030,7 +1264,7 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     params = std::any_cast<std::vector< std::pair<std::string, llvm::Type *> > >
             (visitParametersAndQualifiers(parametersAndQualifiers));
     std::vector<llvm::Type *> param_types;
-    for(const auto& param: params) {
+    for (const auto& param: params) {
         param_types.push_back(param.second);
     }
 
@@ -1049,14 +1283,13 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     Scope fun_scope = Scope(function);
     this->scopes.push_back(fun_scope);
 
-    auto block = llvm::BasicBlock::Create(builder.getContext());
-    block->insertInto(function);
+    auto block = llvm::BasicBlock::Create(builder.getContext(), "entry", function);
     builder.SetInsertPoint(block);
 
     // 添加参数列表中的参数到 var_list 中
     // NOTE: 参数列表中的参数，认为是先前没有声明过的局部变量
     //      （不需要检查 scope 中是否已经有同名变量）
-    for(const auto& param: params) {
+    for (const auto& param: params) {
         std::string param_name = param.first;
         llvm::Type *param_type = param.second;
         auto alloca = this->builder.CreateAlloca(param_type, nullptr, param_name);
@@ -1078,8 +1311,9 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
 std::any Visitor::visitFunctionBody(ZigCCParser::FunctionBodyContext *ctx)
 {
     if (auto compoundStatement = ctx->compoundStatement()) {
-        return visitCompoundStatement(compoundStatement);
+        visitCompoundStatement(compoundStatement);
     }
+    return nullptr;
 }
 
 std::any Visitor::visitInitializer(ZigCCParser::InitializerContext *ctx)
@@ -1404,9 +1638,10 @@ std::any Visitor::visitLiteral(ZigCCParser::LiteralContext *ctx)
     } else if (ctx->BooleanLiteral() != nullptr) {
         return (llvm::Value *)llvm::ConstantInt::get(llvm::Type::getInt1Ty(*llvm_context), ctx->BooleanLiteral()->getText() == "true");
     } else if (ctx->PointerLiteral() != nullptr) {
-        // TODO: 不一定是 NULL
+        // TODO: 不一定是 i8 也不一定是 NULL
         return (llvm::Value *)llvm::ConstantPointerNull::get(llvm::Type::getInt8PtrTy(*llvm_context));
     } else if (ctx->UserDefinedLiteral() != nullptr) {
-        return nullptr; // TODO: UserDefinedLiteral
+        // TODO: UserDefinedLiteral
+        return nullptr;
     }
 }
