@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "grammar/Visitor.h"
 #include "exceptions/NotImplementedException.h"
@@ -375,7 +376,7 @@ std::any Visitor::visitConstantExpression(ZigCCParser::ConstantExpressionContext
 
 std::any Visitor::visitStatement(ZigCCParser::StatementContext *ctx)
 {
-
+    
 }
 
 std::any Visitor::visitLabeledStatement(ZigCCParser::LabeledStatementContext *ctx)
@@ -390,12 +391,19 @@ std::any Visitor::visitExpressionStatement(ZigCCParser::ExpressionStatementConte
 
 std::any Visitor::visitCompoundStatement(ZigCCParser::CompoundStatementContext *ctx)
 {
-
+    if (auto statementSeq = ctx->statementSeq()) {
+        return visitStatementSeq(statementSeq);
+    }
 }
 
 std::any Visitor::visitStatementSeq(ZigCCParser::StatementSeqContext *ctx)
 {
+    auto statement = ctx->statement();
+    for(const auto& statement_ctx: statement) {
+        visitStatement(statement_ctx);
+    }
 
+    return nullptr;
 }
 
 std::any Visitor::visitSelectionStatement(ZigCCParser::SelectionStatementContext *ctx)
@@ -908,7 +916,9 @@ std::any Visitor::visitNoPointerDeclarator(ZigCCParser::NoPointerDeclaratorConte
 
 std::any Visitor::visitParametersAndQualifiers(ZigCCParser::ParametersAndQualifiersContext *ctx)
 {
-
+    if (auto parameterDeclarationClause = ctx->parameterDeclarationClause()) {
+        return visitParameterDeclarationClause(parameterDeclarationClause);
+    }
 }
 
 std::any Visitor::visitTrailingReturnType(ZigCCParser::TrailingReturnTypeContext *ctx)
@@ -977,12 +987,25 @@ std::any Visitor::visitNoPointerAbstractPackDeclarator(ZigCCParser::NoPointerAbs
 
 std::any Visitor::visitParameterDeclarationClause(ZigCCParser::ParameterDeclarationClauseContext *ctx)
 {
-
+    if (auto parameterDeclarationList = ctx->parameterDeclarationList()) {
+        return visitParameterDeclarationList(parameterDeclarationList);
+    }
 }
 
 std::any Visitor::visitParameterDeclarationList(ZigCCParser::ParameterDeclarationListContext *ctx)
 {
+    auto param_list = ctx->parameterDeclaration();
+    std::vector< std::pair< std::string, llvm::Type* > > params;
 
+    for(const auto& param_dec_ctx: param_list) {
+        auto dec_specifier = param_dec_ctx->declSpecifierSeq();
+        llvm::Type *type = std::any_cast<llvm::Type *>(visitDeclSpecifierSeq(dec_specifier));
+        auto declarator = param_dec_ctx->declarator();
+        std::string name= std::any_cast<std::string>(visitDeclarator(declarator));
+        params.push_back(std::pair< std::string, llvm::Type * >(name, type));
+    }
+
+    return params;
 }
 
 std::any Visitor::visitParameterDeclaration(ZigCCParser::ParameterDeclarationContext *ctx)
@@ -992,12 +1015,71 @@ std::any Visitor::visitParameterDeclaration(ZigCCParser::ParameterDeclarationCon
 
 std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext *ctx)
 {
+    // 默认返回值类型 int32
+    llvm::Type *type = (llvm::Type *)llvm::Type::getInt32Ty(*llvm_context);
+    if (auto declSpecifierSeq = ctx->declSpecifierSeq()) {
+        type = std::any_cast<llvm::Type *>(visitDeclSpecifierSeq(declSpecifierSeq));
+    }
 
+    auto declarator = ctx->declarator();
+    std::string fun_name = std::any_cast<std::string>(visitDeclarator(declarator));
+    
+    // 获得参数列表
+    std::vector< std::pair<std::string, llvm::Type *> > params;
+    auto parametersAndQualifiers = ctx->declarator()->pointerDeclarator()->noPointerDeclarator()->parametersAndQualifiers();
+    params = std::any_cast<std::vector< std::pair<std::string, llvm::Type *> > >
+            (visitParametersAndQualifiers(parametersAndQualifiers));
+    std::vector<llvm::Type *> param_types;
+    for(const auto& param: params) {
+        param_types.push_back(param.second);
+    }
+
+    // 添加 Function
+    llvm::FunctionType *function_type;
+    function_type = llvm::FunctionType::get(type, 
+                                   llvm::ArrayRef<llvm::Type *>(param_types),
+                                   false);
+    llvm::Function *function;
+    function = llvm::Function::Create(function_type,
+                                      llvm::GlobalValue::LinkageTypes::ExternalLinkage,
+                                      fun_name,
+                                      this->module.get());
+    
+    // 加入到 scopes 作为接下来 body 中的作用域
+    Scope fun_scope = Scope(function);
+    this->scopes.push_back(fun_scope);
+
+    auto block = llvm::BasicBlock::Create(builder.getContext());
+    block->insertInto(function);
+    builder.SetInsertPoint(block);
+
+    // 添加参数列表中的参数到 var_list 中
+    // NOTE: 参数列表中的参数，认为是先前没有声明过的局部变量
+    //      （不需要检查 scope 中是否已经有同名变量）
+    for(const auto& param: params) {
+        std::string param_name = param.first;
+        llvm::Type *param_type = param.second;
+        auto alloca = this->builder.CreateAlloca(param_type, nullptr, param_name);
+        // NOTE: 初步实现的是不做初始化参数
+        fun_scope.setVariable(param_name, alloca);
+    }
+
+    // BODY
+    auto functionBody = ctx->functionBody();
+    visitFunctionBody(functionBody);
+
+    // 抛出当前 scope，开始分析全局 / 下一个函数体
+    this->scopes.pop_back();
+
+    // NOTE: What to return?
+    return nullptr;
 }
 
 std::any Visitor::visitFunctionBody(ZigCCParser::FunctionBodyContext *ctx)
 {
-
+    if (auto compoundStatement = ctx->compoundStatement()) {
+        return visitCompoundStatement(compoundStatement);
+    }
 }
 
 std::any Visitor::visitInitializer(ZigCCParser::InitializerContext *ctx)
