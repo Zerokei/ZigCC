@@ -27,13 +27,34 @@ public:
 
     Scope &currentScope();
     llvm::Value *getVariable(const std::string &name);
-
+    llvm::BranchInst* TerminateBlockByBr(llvm::BasicBlock* BB);
+    
     // 类型转换相关函数
     bool TypeCheck(llvm::Type* LHS, llvm::Type* RHS);
     llvm::Value* Cast2I1(llvm::Value* Value);
     llvm::Value* TypeCasting(llvm::Value* Value, llvm::Type* Type);
     llvm::Value* TypeUpgrading(llvm::Value* Value, llvm::Type* Type);
     bool TypeUpgrading(llvm::Value*& Value1, llvm::Value*& Value2);
+
+    // 带类型检查与转换的运算相关函数
+    llvm::Value* CreateCmpEQ(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateCmpNEQ(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateCmpLT(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateCmpGT(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateCmpLE(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateCmpGE(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateAdd(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateSub(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateMul(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateDiv(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateMod(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateBitwiseAND(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateBitwiseOR(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateBitwiseXOR(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateShl(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateShr(llvm::Value* LHS, llvm::Value* RHS);
+    llvm::Value* CreateAssignment(llvm::Value* pLHS, llvm::Value* RHS);
+    llvm::Value* CreateLoad(llvm::Value* pLHS);
 
     virtual std::any visitTranslationUnit(ZigCCParser::TranslationUnitContext *ctx) override;
     virtual std::any visitPrimaryExpression(ZigCCParser::PrimaryExpressionContext *ctx) override;

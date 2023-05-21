@@ -22,6 +22,24 @@ llvm::Value *Visitor::getVariable(const std::string &name)
     return nullptr;
 }
 
+//Create an unconditional branch if the current block doesn't have a terminator.
+//This function is safer than builder.CreateBr(llvm::BasicBlock* BB),
+//because if the current block already has a terminator, it does nothing.
+//For example, when generating if-statement, we create three blocks: ThenBB, ElseBB, MergeBB.
+//At the end of ThenBB and ElseBB, an unconditional branch to MergeBB needs to be created respectively,
+//UNLESS ThenBB or ElseBB is already terminated.
+//e.g.
+//	if (i) break;
+//	else continue;
+llvm::BranchInst* Visitor::TerminateBlockByBr(llvm::BasicBlock* BB)
+{
+	//If not terminated, jump to the target block
+	if (!builder.GetInsertBlock()->getTerminator())
+		return builder.CreateBr(BB);
+	else
+		return nullptr;
+}
+
 bool Visitor::TypeCheck(llvm::Type* LHS, llvm::Type* RHS)
 {
     if (LHS == RHS)
@@ -57,7 +75,7 @@ llvm::Value* Visitor::Cast2I1(llvm::Value* Value) {
 		return builder.CreateICmpNE(builder.CreatePtrToInt(Value, builder.getInt64Ty()), builder.getInt64(0));
 	else {
 		throw std::logic_error("Cannot cast to bool type.");
-		return NULL;
+		return nullptr;
 	}
 }
 
@@ -97,7 +115,7 @@ llvm::Value* Visitor::TypeCasting(llvm::Value* Value, llvm::Type* Type) {
 		return builder.CreatePointerCast(Value, Type);
 	}
 	else {
-		return NULL;
+		return nullptr;
 	}
 }
 
@@ -134,7 +152,7 @@ llvm::Value* Visitor::TypeUpgrading(llvm::Value* Value, llvm::Type* Type) {
 	else if (Value->getType()->isFloatingPointTy() && Type->isIntegerTy()) {
 		return Value;
 	}
-	else return NULL;
+	else return nullptr;
 }
 
 //Upgrade two types at the same time.
@@ -178,6 +196,406 @@ bool Visitor::TypeUpgrading(llvm::Value*& Value1, llvm::Value*& Value2) {
 		return true;
 	}
 	else return false;
+}
+
+//Create an equal-comparison instruction. This function will automatically do type casting
+//if the two input values are not of the same type.
+llvm::Value* Visitor::CreateCmpEQ(llvm::Value* LHS, llvm::Value* RHS) {
+	//Arithmatic compare
+	if (TypeUpgrading(LHS, RHS)) {
+		if (LHS->getType()->isIntegerTy())
+			return builder.CreateICmpEQ(LHS, RHS);
+		else
+			return builder.CreateFCmpOEQ(LHS, RHS);
+	}
+	//Pointer compare
+	if (LHS->getType()->isPointerTy() && LHS->getType() == RHS->getType()) {
+		return builder.CreateICmpEQ(
+			builder.CreatePtrToInt(LHS, builder.getInt64Ty()),
+			builder.CreatePtrToInt(RHS, builder.getInt64Ty())
+		);
+	}
+	else if (LHS->getType()->isPointerTy() && RHS->getType()->isIntegerTy()) {
+		return builder.CreateICmpEQ(
+			builder.CreatePtrToInt(LHS, builder.getInt64Ty()),
+			TypeUpgrading(RHS, builder.getInt64Ty())
+		);
+	}
+	else if (LHS->getType()->isIntegerTy() && RHS->getType()->isPointerTy()) {
+		return builder.CreateICmpEQ(
+			TypeUpgrading(LHS, builder.getInt64Ty()),
+			builder.CreatePtrToInt(RHS, builder.getInt64Ty())
+		);
+	}
+	throw std::domain_error("Comparison \"==\" using unsupported type combination.");
+	return nullptr;
+}
+
+llvm::Value* Visitor::CreateCmpNEQ(llvm::Value* LHS, llvm::Value* RHS)
+{
+    if (TypeUpgrading(LHS, RHS)) {
+        if (LHS->getType()->isIntegerTy())
+            return builder.CreateICmpNE(LHS, RHS);
+        else
+            return builder.CreateFCmpONE(LHS, RHS);
+    }
+    //Pointer compare
+    if (LHS->getType()->isPointerTy() && LHS->getType() == RHS->getType()) {
+        return builder.CreateICmpNE(
+            builder.CreatePtrToInt(LHS, builder.getInt64Ty()),
+            builder.CreatePtrToInt(RHS, builder.getInt64Ty())
+        );
+    }
+    else if (LHS->getType()->isPointerTy() && RHS->getType()->isIntegerTy()) {
+        return builder.CreateICmpNE(
+            builder.CreatePtrToInt(LHS, builder.getInt64Ty()),
+            TypeUpgrading(RHS, builder.getInt64Ty())
+        );
+    }
+    else if (LHS->getType()->isIntegerTy() && RHS->getType()->isPointerTy()) {
+        return builder.CreateICmpNE(
+            TypeUpgrading(LHS, builder.getInt64Ty()),
+            builder.CreatePtrToInt(RHS, builder.getInt64Ty())
+        );
+    }
+    throw std::domain_error("Comparison \"!=\" using unsupported type combination.");
+    return nullptr;
+}
+
+llvm::Value* Visitor::CreateCmpGT(llvm::Value* LHS, llvm::Value* RHS)
+{
+    //Arithmatic compare
+    if (TypeUpgrading(LHS, RHS)) {
+        if (LHS->getType()->isIntegerTy())
+            return builder.CreateICmpSGT(LHS, RHS);
+        else
+            return builder.CreateFCmpOGT(LHS, RHS);
+    }
+    //Pointer compare
+    if (LHS->getType()->isPointerTy() && LHS->getType() == RHS->getType()) {
+        return builder.CreateICmpUGT(
+            builder.CreatePtrToInt(LHS, builder.getInt64Ty()),
+            builder.CreatePtrToInt(RHS, builder.getInt64Ty())
+        );
+    }
+    else if (LHS->getType()->isPointerTy() && RHS->getType()->isIntegerTy()) {
+        return builder.CreateICmpUGT(
+            builder.CreatePtrToInt(LHS, builder.getInt64Ty()),
+            TypeUpgrading(RHS, builder.getInt64Ty())
+        );
+    }
+    else if (LHS->getType()->isIntegerTy() && RHS->getType()->isPointerTy()) {
+        return builder.CreateICmpUGT(
+            TypeUpgrading(LHS, builder.getInt64Ty()),
+            builder.CreatePtrToInt(RHS, builder.getInt64Ty())
+        );
+    }
+    throw std::domain_error("Comparison \">\" using unsupported type combination.");
+    return nullptr;
+}
+
+llvm::Value* Visitor::CreateCmpGE(llvm::Value* LHS, llvm::Value* RHS)
+{
+    //Arithmatic compare
+    if (TypeUpgrading(LHS, RHS)) {
+        if (LHS->getType()->isIntegerTy())
+            return builder.CreateICmpSGE(LHS, RHS);
+        else
+            return builder.CreateFCmpOGE(LHS, RHS);
+    }
+    //Pointer compare
+    if (LHS->getType()->isPointerTy() && LHS->getType() == RHS->getType()) {
+        return builder.CreateICmpUGE(
+            builder.CreatePtrToInt(LHS, builder.getInt64Ty()),
+            builder.CreatePtrToInt(RHS, builder.getInt64Ty())
+        );
+    }
+    else if (LHS->getType()->isPointerTy() && RHS->getType()->isIntegerTy()) {
+        return builder.CreateICmpUGE(
+            builder.CreatePtrToInt(LHS, builder.getInt64Ty()),
+            TypeUpgrading(RHS, builder.getInt64Ty())
+        );
+    }
+    else if (LHS->getType()->isIntegerTy() && RHS->getType()->isPointerTy()) {
+        return builder.CreateICmpUGE(
+            TypeUpgrading(LHS, builder.getInt64Ty()),
+            builder.CreatePtrToInt(RHS, builder.getInt64Ty())
+        );
+    }
+    throw std::domain_error("Comparison \">=\" using unsupported type combination.");
+    return nullptr;
+}
+
+llvm::Value* Visitor::CreateCmpLT(llvm::Value* LHS, llvm::Value* RHS)
+{
+    //Arithmatic compare
+    if (TypeUpgrading(LHS, RHS)) {
+        if (LHS->getType()->isIntegerTy())
+            return builder.CreateICmpSLT(LHS, RHS);
+        else
+            return builder.CreateFCmpOLT(LHS, RHS);
+    }
+    //Pointer compare
+    if (LHS->getType()->isPointerTy() && LHS->getType() == RHS->getType()) {
+        return builder.CreateICmpULT(
+            builder.CreatePtrToInt(LHS, builder.getInt64Ty()),
+            builder.CreatePtrToInt(RHS, builder.getInt64Ty())
+        );
+    }
+    else if (LHS->getType()->isPointerTy() && RHS->getType()->isIntegerTy()) {
+        return builder.CreateICmpULT(
+            builder.CreatePtrToInt(LHS, builder.getInt64Ty()),
+            TypeUpgrading(RHS, builder.getInt64Ty())
+        );
+    }
+    else if (LHS->getType()->isIntegerTy() && RHS->getType()->isPointerTy()) {
+        return builder.CreateICmpULT(
+            TypeUpgrading(LHS, builder.getInt64Ty()),
+            builder.CreatePtrToInt(RHS, builder.getInt64Ty())
+        );
+    }
+    throw std::domain_error("Comparison \"<\" using unsupported type combination.");
+    return nullptr;
+}
+
+llvm::Value* Visitor::CreateCmpLE(llvm::Value* LHS, llvm::Value* RHS)
+{
+    //Arithmatic compare
+    if (TypeUpgrading(LHS, RHS)) {
+        if (LHS->getType()->isIntegerTy())
+            return builder.CreateICmpSLE(LHS, RHS);
+        else
+            return builder.CreateFCmpOLE(LHS, RHS);
+    }
+    //Pointer compare
+    if (LHS->getType()->isPointerTy() && LHS->getType() == RHS->getType()) {
+        return builder.CreateICmpULE(
+            builder.CreatePtrToInt(LHS, builder.getInt64Ty()),
+            builder.CreatePtrToInt(RHS, builder.getInt64Ty())
+        );
+    }
+    else if (LHS->getType()->isPointerTy() && RHS->getType()->isIntegerTy()) {
+        return builder.CreateICmpULE(
+            builder.CreatePtrToInt(LHS, builder.getInt64Ty()),
+            TypeUpgrading(RHS, builder.getInt64Ty())
+        );
+    }
+    else if (LHS->getType()->isIntegerTy() && RHS->getType()->isPointerTy()) {
+        return builder.CreateICmpULE(
+            TypeUpgrading(LHS, builder.getInt64Ty()),
+            builder.CreatePtrToInt(RHS, builder.getInt64Ty())
+        );
+    }
+    throw std::domain_error("Comparison \"<=\" using unsupported type combination.");
+    return nullptr;
+}
+
+//Create an addition instruction. This function will automatically do type casting
+//if the two input values are not of the same type.
+//Supported:
+//1. Int + Int -> Int			(TypeUpgrading)
+//2. Int + FP -> FP				(TypeUpgrading)
+//3. Int + Pointer -> Pointer
+//4. FP + Int -> FP				(TypeUpgrading)
+//2. FP + FP -> FP				(TypeUpgrading)
+//3. Pointer + Int -> Pointer
+llvm::Value* Visitor::CreateAdd(llvm::Value* LHS, llvm::Value* RHS) {
+	if (TypeUpgrading(LHS, RHS)) {
+		if (LHS->getType()->isIntegerTy())
+			return builder.CreateAdd(LHS, RHS);
+		else
+			return builder.CreateFAdd(LHS, RHS);
+	}
+	if (LHS->getType()->isIntegerTy() && RHS->getType()->isPointerTy()) {
+		auto TMP = LHS;
+		LHS = RHS;
+		RHS = TMP;
+	}
+	if (LHS->getType()->isPointerTy() && RHS->getType()->isIntegerTy()) {
+		return builder.CreateGEP(LHS->getType()->getNonOpaquePointerElementType(), LHS, RHS);
+	}
+	throw std::logic_error("Addition using unsupported type combination.");
+	return nullptr;
+}
+
+//Create a subtraction instruction. This function will automatically do type casting
+//if the two input values are not of the same type.
+//Supported:
+//1. Int - Int -> Int			(TypeUpgrading)
+//2. Int - FP -> FP				(TypeUpgrading)
+//3. FP - Int -> FP				(TypeUpgrading)
+//4. FP - FP -> FP				(TypeUpgrading)
+//5. Pointer - Int -> Pointer
+//6. Pointer - Pointer -> Int64
+llvm::Value* Visitor::CreateSub(llvm::Value* LHS, llvm::Value* RHS) {
+	if (TypeUpgrading(LHS, RHS)) {
+		if (LHS->getType()->isIntegerTy())
+			return builder.CreateSub(LHS, RHS);
+		else
+			return builder.CreateFSub(LHS, RHS);
+	}
+	if (LHS->getType()->isPointerTy() && RHS->getType()->isIntegerTy()) {
+		return builder.CreateGEP(LHS->getType()->getNonOpaquePointerElementType(), LHS, builder.CreateNeg(RHS));
+	}
+	if (LHS->getType()->isPointerTy() && LHS->getType() == RHS->getType())
+		return builder.CreatePtrDiff(LHS->getType()->getNonOpaquePointerElementType(), LHS, RHS);
+	throw std::logic_error("Subtraction using unsupported type combination.");
+	return nullptr;
+}
+
+//Create a multiplication instruction. This function will automatically do type casting
+//if the two input values are not of the same type.
+//Supported:
+//1. Int * Int -> Int			(TypeUpgrading)
+//2. Int * FP -> FP				(TypeUpgrading)
+//3. FP * Int -> FP				(TypeUpgrading)
+//4. FP * FP -> FP				(TypeUpgrading)
+llvm::Value* Visitor::CreateMul(llvm::Value* LHS, llvm::Value* RHS) {
+	if (TypeUpgrading(LHS, RHS)) {
+		if (LHS->getType()->isIntegerTy())
+			return builder.CreateMul(LHS, RHS);
+		else
+			return builder.CreateFMul(LHS, RHS);
+	}
+	else {
+		throw std::logic_error("Multiplication operator \"*\" must only be applied to integers or floating-point numbers.");
+		return nullptr;
+	}
+}
+
+//Create a division instruction. This function will automatically do type casting
+//if the two input values are not of the same type.
+//Supported:
+//1. Int / Int -> Int			(TypeUpgrading)
+//2. Int / FP -> FP				(TypeUpgrading)
+//3. FP / Int -> FP				(TypeUpgrading)
+//4. FP / FP -> FP				(TypeUpgrading)
+llvm::Value* Visitor::CreateDiv(llvm::Value* LHS, llvm::Value* RHS) {
+	if (TypeUpgrading(LHS, RHS)) {
+		if (LHS->getType()->isIntegerTy())
+			return builder.CreateSDiv(LHS, RHS);
+		else
+			return builder.CreateFDiv(LHS, RHS);
+	}
+	else {
+		throw std::logic_error("Division operator \"/\" must only be applied to integers or floating-point numbers.");
+		return nullptr;
+	}
+}
+
+//Create a modulo instruction. This function will automatically do type casting
+//if the two input values are not of the same type.
+//Supported:
+//1. Int % Int -> Int			(TypeUpgrading)
+llvm::Value* Visitor::CreateMod(llvm::Value* LHS, llvm::Value* RHS) {
+	if (!(LHS->getType()->isIntegerTy() && RHS->getType()->isIntegerTy())) {
+		throw std::domain_error("Modulo operator \"%\" must be applied to 2 integers.");
+		return nullptr;
+	}
+	TypeUpgrading(LHS, RHS);
+	return builder.CreateSRem(LHS, RHS);
+}
+
+//Create a shl instruction. This function will automatically do type casting
+//if the two input values are not of the same type.
+//Supported:
+//1. Int << Int -> Int			(TypeUpgrading)
+llvm::Value* Visitor::CreateShl(llvm::Value* LHS, llvm::Value* RHS) {
+	if (!(LHS->getType()->isIntegerTy() && RHS->getType()->isIntegerTy())) {
+		throw std::domain_error("Left shifting operator \"<<\" must be applied to 2 integers.");
+		return nullptr;
+	}
+	TypeUpgrading(LHS, RHS);
+	return builder.CreateShl(LHS, RHS);
+}
+
+//Create a shr instruction. This function will automatically do type casting
+//if the two input values are not of the same type.
+//Supported:
+//1. Int >> Int -> Int			(TypeUpgrading)
+llvm::Value* Visitor::CreateShr(llvm::Value* LHS, llvm::Value* RHS) {
+	if (!(LHS->getType()->isIntegerTy() && RHS->getType()->isIntegerTy())) {
+		throw std::domain_error("Left shifting operator \"<<\" must be applied to 2 integers.");
+		return nullptr;
+	}
+	TypeUpgrading(LHS, RHS);
+	return builder.CreateAShr(LHS, RHS);
+}
+
+//Create a bitwise AND instruction. This function will automatically do type casting
+//if the two input values are not of the same type.
+//Supported:
+//1. Int & Int -> Int			(TypeUpgrading)
+llvm::Value* Visitor::CreateBitwiseAND(llvm::Value* LHS, llvm::Value* RHS) {
+	if (!(LHS->getType()->isIntegerTy() && RHS->getType()->isIntegerTy())) {
+		throw std::domain_error("Bitwise AND operator \"&\" must be applied to 2 integers.");
+		return nullptr;
+	}
+	TypeUpgrading(LHS, RHS);
+	return builder.CreateAnd(LHS, RHS);
+}
+
+//Create a bitwise OR instruction. This function will automatically do type casting
+//if the two input values are not of the same type.
+//Supported:
+//1. Int | Int -> Int			(TypeUpgrading)
+llvm::Value* Visitor::CreateBitwiseOR(llvm::Value* LHS, llvm::Value* RHS) {
+	if (!(LHS->getType()->isIntegerTy() && RHS->getType()->isIntegerTy())) {
+		throw std::domain_error("Bitwise OR operator \"|\" must be applied to 2 integers.");
+		return nullptr;
+	}
+	TypeUpgrading(LHS, RHS);
+	return builder.CreateOr(LHS, RHS);
+}
+
+//Create a bitwise XOR instruction. This function will automatically do type casting
+//if the two input values are not of the same type.
+//Supported:
+//1. Int ^ Int -> Int			(TypeUpgrading)
+llvm::Value* Visitor::CreateBitwiseXOR(llvm::Value* LHS, llvm::Value* RHS) {
+	if (!(LHS->getType()->isIntegerTy() && RHS->getType()->isIntegerTy())) {
+		throw std::domain_error("Bitwise XOR operator \"^\" must be applied to 2 integers.");
+		return nullptr;
+	}
+	TypeUpgrading(LHS, RHS);
+	return builder.CreateXor(LHS, RHS);
+}
+
+//Create an assignment. This function will automatically do type casting
+//if the two input values are not of the same type.
+//Supported:
+//1. Int = FP
+//2. Int = Int
+//3. Int = Pointer
+//4. FP = Int
+//5. FP = FP
+//6. Pointer = Int
+//7. Pointer = Pointer
+//8. Exactly the same type assignment
+//The "pLHS" argument should be a pointer pointing to the variable (the left-value in C)
+llvm::Value* Visitor::CreateAssignment(llvm::Value* pLHS, llvm::Value* RHS) {
+	RHS = TypeCasting(RHS, pLHS->getType()->getNonOpaquePointerElementType());
+	if (RHS == nullptr) {
+		throw std::domain_error("Assignment with values that cannot be cast to the target type.");
+		return nullptr;
+	}
+	builder.CreateStore(RHS, pLHS);
+	return pLHS;
+}
+
+//Create a load instruction.
+//This is different to builder.CreateLoad.
+//If the argument is a pointer to an array, this function will
+//return a pointer to its first element, instead of loading an array.
+//This compiles with the C standard. For example:
+//int a[10];
+//int * b = a;	//When used as a right value, "a" is an integer pointer instead of an array. 
+llvm::Value* Visitor::CreateLoad(llvm::Value* pLHS) {
+	//For array types, return the pointer to its first element
+	if (pLHS->getType()->getNonOpaquePointerElementType()->isArrayTy())
+		return builder.CreatePointerCast(pLHS, pLHS->getType()->getNonOpaquePointerElementType()->getArrayElementType()->getPointerTo());
+	else
+		return builder.CreateLoad(pLHS->getType()->getNonOpaquePointerElementType(), pLHS);
 }
 
 std::any Visitor::visitTranslationUnit(ZigCCParser::TranslationUnitContext *ctx)
@@ -372,22 +790,74 @@ std::any Visitor::visitPointerMemberExpression(ZigCCParser::PointerMemberExpress
 
 std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpressionContext *ctx)
 {
-    for (auto PMExpression : ctx->pointerMemberExpression())
-        return visitPointerMemberExpression(PMExpression);
+    // 此处 * 是作为乘号的情况，作为解引用是一元运算符
+    llvm::Value* result = nullptr;
+    // 判断返回的是变量名 string 还是表达式 llvm::Value
+    if (visitPointerMemberExpression(ctx->pointerMemberExpression(0)).__is_valid_cast<std::string>()) {
+        std::string name = std::any_cast<std::string>(visitPointerMemberExpression(ctx->pointerMemberExpression(0)));
+        result = this->getVariable(name);
+        if (result == nullptr) {
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitPointerMemberExpression(ctx->pointerMemberExpression(0))) << "'" << std::endl;
+            return nullptr;
+        }
+    } else if (visitPointerMemberExpression(ctx->pointerMemberExpression(0)).__is_valid_cast<llvm::Value*>()) {
+        result = std::any_cast<llvm::Value*>(visitPointerMemberExpression(ctx->pointerMemberExpression(0)));
+    }
+    for (size_t i = 1; i < ctx->pointerMemberExpression().size(); i++) {
+        llvm::Value* operand = nullptr;
+        if (visitPointerMemberExpression(ctx->pointerMemberExpression(i)).__is_valid_cast<std::string>()) {
+            std::string name = std::any_cast<std::string>(visitPointerMemberExpression(ctx->pointerMemberExpression(i)));
+            operand = this->getVariable(name);
+            if (operand == nullptr) {
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitPointerMemberExpression(ctx->pointerMemberExpression(i))) << "'" << std::endl;
+                return nullptr;
+            }
+        } else if (visitPointerMemberExpression(ctx->pointerMemberExpression(i)).__is_valid_cast<llvm::Value*>()) {
+            operand = std::any_cast<llvm::Value*>(visitPointerMemberExpression(ctx->pointerMemberExpression(i)));
+        }
+        // 类型检查与转化
+        if (ctx->Star(i - 1)) {
+            result = this->CreateMul(result, operand);
+        } else if (ctx->Div(i - 1)) {
+            result = this->CreateDiv(result, operand);
+        } else if (ctx->Mod(i - 1)) {
+            result = this->CreateMod(result, operand);
+        }
+    }
+    return result;
 }
 
 std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext *ctx)
 {
-    llvm::Value* result = std::any_cast<llvm::Value*>(visitMultiplicativeExpression(ctx->multiplicativeExpression(0)));
+    llvm::Value* result = nullptr;
+    // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (visitMultiplicativeExpression(ctx->multiplicativeExpression(0)).__is_valid_cast<std::string>()) {
-        
+        std::string name = std::any_cast<std::string>(visitMultiplicativeExpression(ctx->multiplicativeExpression(0)));
+        result = this->getVariable(name);
+        if (result == nullptr) {
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitMultiplicativeExpression(ctx->multiplicativeExpression(0))) << "'" << std::endl;
+            return nullptr;
+        }
+    } else if (visitMultiplicativeExpression(ctx->multiplicativeExpression(0)).__is_valid_cast<llvm::Value*>()) {
+        result = std::any_cast<llvm::Value*>(visitMultiplicativeExpression(ctx->multiplicativeExpression(0)));
     }
     for (size_t i = 1; i < ctx->multiplicativeExpression().size(); i++) {
-        llvm::Value* operand = std::any_cast<llvm::Value*>(visitMultiplicativeExpression(ctx->multiplicativeExpression(i)));
+        llvm::Value* operand = nullptr;
+        if (visitMultiplicativeExpression(ctx->multiplicativeExpression(i)).__is_valid_cast<std::string>()) {
+            std::string name = std::any_cast<std::string>(visitMultiplicativeExpression(ctx->multiplicativeExpression(i)));
+            operand = this->getVariable(name);
+            if (operand == nullptr) {
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitMultiplicativeExpression(ctx->multiplicativeExpression(i))) << "'" << std::endl;
+                return nullptr;
+            }
+        } else if (visitMultiplicativeExpression(ctx->multiplicativeExpression(i)).__is_valid_cast<llvm::Value*>()) {
+            operand = std::any_cast<llvm::Value*>(visitMultiplicativeExpression(ctx->multiplicativeExpression(i)));
+        }
+        // 类型检查与转化
         if (ctx->Plus(i - 1)) {
-            result = builder.CreateAdd(result, operand, "addtmp");
+            result = this->CreateAdd(result, operand);
         } else {
-            result = builder.CreateSub(result, operand, "subtmp");
+            result = this->CreateSub(result, operand);
         }
     }
     return result;
@@ -395,56 +865,315 @@ std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext
 
 std::any Visitor::visitShiftExpression(ZigCCParser::ShiftExpressionContext *ctx)
 {
-    for (auto AdditiveExpression : ctx->additiveExpression())
-        return visitAdditiveExpression(AdditiveExpression);
+    llvm::Value* result = nullptr;
+    // 判断返回的是变量名 string 还是表达式 llvm::Value
+    if (visitAdditiveExpression(ctx->additiveExpression(0)).__is_valid_cast<std::string>()) {
+        std::string name = std::any_cast<std::string>(visitAdditiveExpression(ctx->additiveExpression(0)));
+        result = this->getVariable(name);
+        if (result == nullptr) {
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitAdditiveExpression(ctx->additiveExpression(0))) << "'" << std::endl;
+            return nullptr;
+        }
+    } else if (visitAdditiveExpression(ctx->additiveExpression(0)).__is_valid_cast<llvm::Value*>()) {
+        result = std::any_cast<llvm::Value*>(visitAdditiveExpression(ctx->additiveExpression(0)));
+    }
+    for (size_t i = 1; i < ctx->additiveExpression().size(); i++) {
+        llvm::Value* operand = nullptr;
+        if (visitAdditiveExpression(ctx->additiveExpression(i)).__is_valid_cast<std::string>()) {
+            std::string name = std::any_cast<std::string>(visitAdditiveExpression(ctx->additiveExpression(i)));
+            operand = this->getVariable(name);
+            if (operand == nullptr) {
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitAdditiveExpression(ctx->additiveExpression(i))) << "'" << std::endl;
+                return nullptr;
+            }
+        } else if (visitAdditiveExpression(ctx->additiveExpression(i)).__is_valid_cast<llvm::Value*>()) {
+            operand = std::any_cast<llvm::Value*>(visitAdditiveExpression(ctx->additiveExpression(i)));
+        }
+        // 类型检查与转化
+        // TODO: 算术右移和逻辑右移
+        if (std::any_cast<std::string>(ctx->shiftOperator()) == ">>") {
+            result = this->CreateShr(result, operand);
+        } else if (std::any_cast<std::string>(ctx->shiftOperator()) == "<<") {
+            result = this->CreateShl(result, operand);
+        }
+    }
+    return result;
 }
 
 std::any Visitor::visitShiftOperator(ZigCCParser::ShiftOperatorContext *ctx)
 {
-    
+    // TODO: 暂时只考虑了 << >> 这两种情况
+    std::string result = "";
+    if (ctx->Greater(0) != nullptr) {
+        result = ">>";
+    } else if (ctx->Less(0) != nullptr) {
+        result = "<<";
+    } else {
+        std::cout << "Error: Unknown shift operator" << std::endl;
+    }
+    return result;
 }
 
 std::any Visitor::visitRelationalExpression(ZigCCParser::RelationalExpressionContext *ctx)
 {
-    for (auto ShiftExpression : ctx->shiftExpression())
-        return visitShiftExpression(ShiftExpression);
+    llvm::Value* result = nullptr;
+    // 判断返回的是变量名 string 还是表达式 llvm::Value
+    if (visitShiftExpression(ctx->shiftExpression(0)).__is_valid_cast<std::string>()) {
+        std::string name = std::any_cast<std::string>(visitShiftExpression(ctx->shiftExpression(0)));
+        result = this->getVariable(name);
+        if (result == nullptr) {
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitShiftExpression(ctx->shiftExpression(0))) << "'" << std::endl;
+            return nullptr;
+        }
+    } else if (visitShiftExpression(ctx->shiftExpression(0)).__is_valid_cast<llvm::Value*>()) {
+        result = std::any_cast<llvm::Value*>(visitShiftExpression(ctx->shiftExpression(0)));
+    }
+    for (size_t i = 1; i < ctx->shiftExpression().size(); i++) {
+        llvm::Value* operand = nullptr;
+        if (visitShiftExpression(ctx->shiftExpression(i)).__is_valid_cast<std::string>()) {
+            std::string name = std::any_cast<std::string>(visitShiftExpression(ctx->shiftExpression(i)));
+            operand = this->getVariable(name);
+            if (operand == nullptr) {
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitShiftExpression(ctx->shiftExpression(i))) << "'" << std::endl;
+                return nullptr;
+            }
+        } else if (visitShiftExpression(ctx->shiftExpression(i)).__is_valid_cast<llvm::Value*>()) {
+            operand = std::any_cast<llvm::Value*>(visitShiftExpression(ctx->shiftExpression(i)));
+        }
+        // 类型检查与转化
+        if (ctx->Less(i - 1)) {
+            result = this->CreateCmpLT(result, operand);
+        } else if (ctx->Greater(i - 1)) {
+            result = this->CreateCmpGT(result, operand);
+        } else if (ctx->LessEqual(i - 1)) {
+            result = this->CreateCmpLE(result, operand);
+        } else if (ctx->GreaterEqual(i - 1)) {
+            result = this->CreateCmpGE(result, operand);
+        }
+    }
+    return result;
 }
 
 std::any Visitor::visitEqualityExpression(ZigCCParser::EqualityExpressionContext *ctx)
 {
-    for (auto RelationalExpression : ctx->relationalExpression())
-        return visitRelationalExpression(RelationalExpression);
+    llvm::Value* result = nullptr;
+    // 判断返回的是变量名 string 还是表达式 llvm::Value
+    if (visitRelationalExpression(ctx->relationalExpression(0)).__is_valid_cast<std::string>()) {
+        std::string name = std::any_cast<std::string>(visitRelationalExpression(ctx->relationalExpression(0)));
+        result = this->getVariable(name);
+        if (result == nullptr) {
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitRelationalExpression(ctx->relationalExpression(0))) << "'" << std::endl;
+            return nullptr;
+        }
+    } else if (visitRelationalExpression(ctx->relationalExpression(0)).__is_valid_cast<llvm::Value*>()) {
+        result = std::any_cast<llvm::Value*>(visitRelationalExpression(ctx->relationalExpression(0)));
+    }
+    for (size_t i = 1; i < ctx->relationalExpression().size(); i++) {
+        llvm::Value* operand = nullptr;
+        if (visitRelationalExpression(ctx->relationalExpression(i)).__is_valid_cast<std::string>()) {
+            std::string name = std::any_cast<std::string>(visitRelationalExpression(ctx->relationalExpression(i)));
+            operand = this->getVariable(name);
+            if (operand == nullptr) {
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitRelationalExpression(ctx->relationalExpression(i))) << "'" << std::endl;
+                return nullptr;
+            }
+        } else if (visitRelationalExpression(ctx->relationalExpression(i)).__is_valid_cast<llvm::Value*>()) {
+            operand = std::any_cast<llvm::Value*>(visitRelationalExpression(ctx->relationalExpression(i)));
+        }
+        // 类型检查与转化
+        if (ctx->Equal(i - 1)) {
+            result = this->CreateCmpEQ(result, operand);
+        } else if (ctx->NotEqual(i - 1)) {
+            result = this->CreateCmpNEQ(result, operand);
+        }
+    }
+    return result;
 }
 
 std::any Visitor::visitAndExpression(ZigCCParser::AndExpressionContext *ctx)
 {
-    for (auto EqualityExpression : ctx->equalityExpression())
-        return visitEqualityExpression(EqualityExpression);
+    llvm::Value* result = nullptr;
+    // 判断返回的是变量名 string 还是表达式 llvm::Value
+    if (visitEqualityExpression(ctx->equalityExpression(0)).__is_valid_cast<std::string>()) {
+        std::string name = std::any_cast<std::string>(visitEqualityExpression(ctx->equalityExpression(0)));
+        result = this->getVariable(name);
+        if (result == nullptr) {
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitEqualityExpression(ctx->equalityExpression(0))) << "'" << std::endl;
+            return nullptr;
+        }
+    } else if (visitEqualityExpression(ctx->equalityExpression(0)).__is_valid_cast<llvm::Value*>()) {
+        result = std::any_cast<llvm::Value*>(visitEqualityExpression(ctx->equalityExpression(0)));
+    }
+    for (size_t i = 1; i < ctx->equalityExpression().size(); i++) {
+        llvm::Value* operand = nullptr;
+        if (visitEqualityExpression(ctx->equalityExpression(i)).__is_valid_cast<std::string>()) {
+            std::string name = std::any_cast<std::string>(visitEqualityExpression(ctx->equalityExpression(i)));
+            operand = this->getVariable(name);
+            if (operand == nullptr) {
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitEqualityExpression(ctx->equalityExpression(i))) << "'" << std::endl;
+                return nullptr;
+            }
+        } else if (visitEqualityExpression(ctx->equalityExpression(i)).__is_valid_cast<llvm::Value*>()) {
+            operand = std::any_cast<llvm::Value*>(visitEqualityExpression(ctx->equalityExpression(i)));
+        }
+        // 类型检查与转化
+        result = this->CreateBitwiseAND(result, operand);
+    }
+    return result;
 }
 
 std::any Visitor::visitExclusiveOrExpression(ZigCCParser::ExclusiveOrExpressionContext *ctx)
 {
-    for (auto AndExpression : ctx->andExpression())
-        return visitAndExpression(AndExpression);
+    llvm::Value* result = nullptr;
+    // 判断返回的是变量名 string 还是表达式 llvm::Value
+    if (visitAndExpression(ctx->andExpression(0)).__is_valid_cast<std::string>()) {
+        std::string name = std::any_cast<std::string>(visitAndExpression(ctx->andExpression(0)));
+        result = this->getVariable(name);
+        if (result == nullptr) {
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitAndExpression(ctx->andExpression(0))) << "'" << std::endl;
+            return nullptr;
+        }
+    } else if (visitAndExpression(ctx->andExpression(0)).__is_valid_cast<llvm::Value*>()) {
+        result = std::any_cast<llvm::Value*>(visitAndExpression(ctx->andExpression(0)));
+    }
+    for (size_t i = 1; i < ctx->andExpression().size(); i++) {
+        llvm::Value* operand = nullptr;
+        if (visitAndExpression(ctx->andExpression(i)).__is_valid_cast<std::string>()) {
+            std::string name = std::any_cast<std::string>(visitAndExpression(ctx->andExpression(i)));
+            operand = this->getVariable(name);
+            if (operand == nullptr) {
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitAndExpression(ctx->andExpression(i))) << "'" << std::endl;
+                return nullptr;
+            }
+        } else if (visitAndExpression(ctx->andExpression(i)).__is_valid_cast<llvm::Value*>()) {
+            operand = std::any_cast<llvm::Value*>(visitAndExpression(ctx->andExpression(i)));
+        }
+        // 类型检查与转化
+        result = this->CreateBitwiseXOR(result, operand);
+    }
+    return result;
 }
 
 std::any Visitor::visitInclusiveOrExpression(ZigCCParser::InclusiveOrExpressionContext *ctx)
 {
-    for (auto ExclusiveOrExpression : ctx->exclusiveOrExpression())
-        return visitExclusiveOrExpression(ExclusiveOrExpression);
+   llvm::Value* result = nullptr;
+    // 判断返回的是变量名 string 还是表达式 llvm::Value
+    if (visitExclusiveOrExpression(ctx->exclusiveOrExpression(0)).__is_valid_cast<std::string>()) {
+        std::string name = std::any_cast<std::string>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(0)));
+        result = this->getVariable(name);
+        if (result == nullptr) {
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(0))) << "'" << std::endl;
+            return nullptr;
+        }
+    } else if (visitExclusiveOrExpression(ctx->exclusiveOrExpression(0)).__is_valid_cast<llvm::Value*>()) {
+        result = std::any_cast<llvm::Value*>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(0)));
+    }
+    for (size_t i = 1; i < ctx->exclusiveOrExpression().size(); i++) {
+        llvm::Value* operand = nullptr;
+        if (visitExclusiveOrExpression(ctx->exclusiveOrExpression(i)).__is_valid_cast<std::string>()) {
+            std::string name = std::any_cast<std::string>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(i)));
+            operand = this->getVariable(name);
+            if (operand == nullptr) {
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(i))) << "'" << std::endl;
+                return nullptr;
+            }
+        } else if (visitExclusiveOrExpression(ctx->exclusiveOrExpression(i)).__is_valid_cast<llvm::Value*>()) {
+            operand = std::any_cast<llvm::Value*>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(i)));
+        }
+        // 类型检查与转化
+        result = this->CreateBitwiseOR(result, operand);
+    }
+    return result;
 }
 
 std::any Visitor::visitLogicalAndExpression(ZigCCParser::LogicalAndExpressionContext *ctx)
 {
-    for (auto InclusiveOrExpression : ctx->inclusiveOrExpression())
-        return visitInclusiveOrExpression(InclusiveOrExpression);
+    llvm::Value* result = nullptr;
+    // 判断返回的是变量名 string 还是表达式 llvm::Value
+    if (visitInclusiveOrExpression(ctx->inclusiveOrExpression(0)).__is_valid_cast<std::string>()) {
+        std::string name = std::any_cast<std::string>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(0)));
+        result = this->getVariable(name);
+        if (result == nullptr) {
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(0))) << "'" << std::endl;
+            return nullptr;
+        }
+    } else if (visitInclusiveOrExpression(ctx->inclusiveOrExpression(0)).__is_valid_cast<llvm::Value*>()) {
+        result = std::any_cast<llvm::Value*>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(0)));
+    }
+    // （需要做逻辑运算的情况下）判断得到的表达式是否能转化成 bool 类型
+    if (ctx->inclusiveOrExpression().size() > 1) {
+        result = Cast2I1(result);
+        if (result == nullptr) {
+            throw std::domain_error("Logic AND operator \"&&\" must be applied to 2 expressions that can be cast to boolean.");
+            return nullptr;
+        }
+    }
+    for (size_t i = 1; i < ctx->inclusiveOrExpression().size(); i++) {
+        llvm::Value* operand = nullptr;
+        if (visitInclusiveOrExpression(ctx->inclusiveOrExpression(i)).__is_valid_cast<std::string>()) {
+            std::string name = std::any_cast<std::string>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(i)));
+            operand = this->getVariable(name);
+            if (operand == nullptr) {
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(i))) << "'" << std::endl;
+                return nullptr;
+            }
+        } else if (visitInclusiveOrExpression(ctx->inclusiveOrExpression(i)).__is_valid_cast<llvm::Value*>()) {
+            operand = std::any_cast<llvm::Value*>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(i)));
+        }
+        // 类型检查与转化
+        operand = Cast2I1(operand);
+        if (operand == nullptr) {
+            throw std::domain_error("Logic AND operator \"&&\" must be applied to 2 expressions that can be cast to boolean.");
+            return nullptr;
+        }
+        result = builder.CreateLogicalAnd(result, operand);
+    }
+    return result;
 }
 
 std::any Visitor::visitLogicalOrExpression(ZigCCParser::LogicalOrExpressionContext *ctx)
 {
-    // TODO: 肯定不能这么写，先假定只有一个
-    for (auto LogicalAndExpression : ctx->logicalAndExpression())
-        return visitLogicalAndExpression(LogicalAndExpression);
+    llvm::Value* result = nullptr;
+    // 判断返回的是变量名 string 还是表达式 llvm::Value
+    if (visitLogicalAndExpression(ctx->logicalAndExpression(0)).__is_valid_cast<std::string>()) {
+        std::string name = std::any_cast<std::string>(visitLogicalAndExpression(ctx->logicalAndExpression(0)));
+        result = this->getVariable(name);
+        if (result == nullptr) {
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitLogicalAndExpression(ctx->logicalAndExpression(0))) << "'" << std::endl;
+            return nullptr;
+        }
+    } else if (visitLogicalAndExpression(ctx->logicalAndExpression(0)).__is_valid_cast<llvm::Value*>()) {
+        result = std::any_cast<llvm::Value*>(visitLogicalAndExpression(ctx->logicalAndExpression(0)));
+    }
+    // （需要做逻辑运算的情况下）判断得到的表达式是否能转化成 bool 类型
+    if (ctx->logicalAndExpression().size() > 1) {
+        result = Cast2I1(result);
+        if (result == nullptr) {
+            throw std::domain_error("Logic OR operator \"||\" must be applied to 2 expressions that can be cast to boolean.");
+            return nullptr;
+        }
+    }
+    for (size_t i = 1; i < ctx->logicalAndExpression().size(); i++) {
+        llvm::Value* operand = nullptr;
+        if (visitLogicalAndExpression(ctx->logicalAndExpression(i)).__is_valid_cast<std::string>()) {
+            std::string name = std::any_cast<std::string>(visitLogicalAndExpression(ctx->logicalAndExpression(i)));
+            operand = this->getVariable(name);
+            if (operand == nullptr) {
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitLogicalAndExpression(ctx->logicalAndExpression(i))) << "'" << std::endl;
+                return nullptr;
+            }
+        } else if (visitLogicalAndExpression(ctx->logicalAndExpression(i)).__is_valid_cast<llvm::Value*>()) {
+            operand = std::any_cast<llvm::Value*>(visitLogicalAndExpression(ctx->logicalAndExpression(i)));
+        }
+        // 类型检查与转化
+        operand = Cast2I1(operand);
+        if (operand == nullptr) {
+            throw std::domain_error("Logic OR operator \"||\" must be applied to 2 expressions that can be cast to boolean.");
+            return nullptr;
+        }
+        result = builder.CreateLogicalOr(result, operand);
+    }
+    return result;
 }
 
 std::any Visitor::visitConditionalExpression(ZigCCParser::ConditionalExpressionContext *ctx)
@@ -460,6 +1189,7 @@ std::any Visitor::visitConditionalExpression(ZigCCParser::ConditionalExpressionC
 
 std::any Visitor::visitAssignmentExpression(ZigCCParser::AssignmentExpressionContext *ctx)
 {
+    // TODO: 加入类型检查和类型转换
     if (auto AssignmentOperator = ctx->assignmentOperator()) {
         std::string AssignOp = std::any_cast<std::string>(visitAssignmentOperator(AssignmentOperator));
         auto lhs = std::any_cast<std::string>(visitLogicalOrExpression(ctx->logicalOrExpression()));
@@ -610,22 +1340,226 @@ std::any Visitor::visitStatementSeq(ZigCCParser::StatementSeqContext *ctx)
 
 std::any Visitor::visitSelectionStatement(ZigCCParser::SelectionStatementContext *ctx)
 {
+    if (ctx->If() != nullptr) {
+        llvm::Value* condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
+        if (condition == nullptr) {
+            std::cout << "Error: Condition is not a valid expression." << std::endl;
+            return nullptr;
+        }
+        // 判断 condition 是否可以转化为 bool 类型
+        condition = Cast2I1(condition);
+        if (condition == nullptr) {
+            std::cout << "Error: Condition is not a valid expression." << std::endl;
+            return nullptr;
+        }
+        llvm::Function* function = currentScope().currentFunction;
+        if (function == nullptr) {
+            std::cout << "Error: If statement not within a function." << std::endl;
+            return nullptr;
+        }
+        llvm::BasicBlock* thenBlock = llvm::BasicBlock::Create(*llvm_context, "then", function);
+        llvm::BasicBlock* elseBlock = llvm::BasicBlock::Create(*llvm_context, "else");
+        llvm::BasicBlock* mergeBlock = llvm::BasicBlock::Create(*llvm_context, "merge");
+        
+        // Create a branch instruction corresponding to this if statement
+        builder.CreateCondBr(condition, thenBlock, elseBlock);
+        // Generate code in the "Then" block
+        function->getBasicBlockList().push_back(thenBlock);
+        builder.SetInsertPoint(thenBlock);
+        if (ctx->statement(0) != nullptr) {
+            visitStatement(ctx->statement(0));
+        }
+        TerminateBlockByBr(mergeBlock);
 
+        // Generate code in the "Else" block
+        function->getBasicBlockList().push_back(elseBlock);
+        builder.SetInsertPoint(elseBlock);
+        if (ctx->Else() != nullptr) {
+            visitStatement(ctx->statement(1));
+        }
+        TerminateBlockByBr(mergeBlock);
+
+        // Finish "Merge" block
+        if (mergeBlock->hasNPredecessorsOrMore(1)) {
+			function->getBasicBlockList().push_back(mergeBlock);
+			builder.SetInsertPoint(mergeBlock);
+		}
+    } else if (ctx->Switch() != nullptr) {
+        // TODO: 注意 switch 语句的条件不允许赋值，这和 if 语句不同，并且也不一定需要是 bool 类型
+        llvm::Value* condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
+        if (condition == nullptr) {
+            std::cout << "Error: Condition is not a valid expression." << std::endl;
+            return nullptr;
+        }
+        llvm::Function* function = currentScope().currentFunction;
+        if (function == nullptr) {
+            std::cout << "Error: Switch statement not within a function." << std::endl;
+            return nullptr;
+        }
+        // TODO: 未完成
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitCondition(ZigCCParser::ConditionContext *ctx)
 {
-
+    if (auto Expression = ctx->expression()) {
+        return visitExpression(Expression);
+    }
 }
 
 std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext *ctx)
 {
+    if (ctx->While() != nullptr) {
+        llvm::Function* function = currentScope().currentFunction;
+        if (function == nullptr) {
+            std::cout << "Error: While statement not within a function." << std::endl;
+            return nullptr;
+        }
+        
+        //Create "WhileCond", "WhileLoop" and "WhileEnd"
+		llvm::BasicBlock* WhileCondBB = llvm::BasicBlock::Create(*llvm_context, "WhileCond");
+		llvm::BasicBlock* WhileLoopBB = llvm::BasicBlock::Create(*llvm_context, "WhileLoop");
+		llvm::BasicBlock* WhileEndBB = llvm::BasicBlock::Create(*llvm_context, "WhileEnd");
+        //Create an unconditional branch, jump to "WhileCond" block.
+		builder.CreateBr(WhileCondBB);
 
+		//Evaluate the loop condition (cast the type to i1 if necessary).
+		//Since we don't allow variable declarations in if-condition (because we only allow expressions there),
+		//we don't need to push a symbol table
+		function->getBasicBlockList().push_back(WhileCondBB);
+		builder.SetInsertPoint(WhileCondBB);
+		llvm::Value* Condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
+		if (!(Condition = Cast2I1(Condition))) {
+			throw std::logic_error("The condition value of while-statement must be either an integer, or a floating-point number, or a pointer.");
+			return NULL;
+		}
+		builder.CreateCondBr(Condition, WhileLoopBB, WhileEndBB);
+		
+        //Generate code in the "WhileLoop" block
+		function->getBasicBlockList().push_back(WhileLoopBB);
+		builder.SetInsertPoint(WhileLoopBB);
+		if (ctx->statement() != nullptr) {
+            // TODO: 还需要处理 break 和 continue 语句
+			visitStatement(ctx->statement());
+		}
+		TerminateBlockByBr(WhileCondBB);
+
+		//Finish "WhileEnd" block
+		function->getBasicBlockList().push_back(WhileEndBB);
+		builder.SetInsertPoint(WhileEndBB);
+		return NULL;
+    } else if (ctx->Do() != nullptr) {
+        llvm::Function* function = currentScope().currentFunction;
+        if (function == nullptr) {
+            std::cout << "Error: Do statement not within a function." << std::endl;
+            return nullptr;
+        }
+        llvm::BasicBlock* DoLoopBB = llvm::BasicBlock::Create(*llvm_context, "DoLoop");
+		llvm::BasicBlock* DoCondBB = llvm::BasicBlock::Create(*llvm_context, "DoCond");
+		llvm::BasicBlock* DoEndBB = llvm::BasicBlock::Create(*llvm_context, "DoEnd");
+        //Create an unconditional branch, jump to "DoLoop" block.
+		builder.CreateBr(DoLoopBB);
+
+		//Generate code in the "DoLoop" block
+		function->getBasicBlockList().push_back(DoLoopBB);
+		builder.SetInsertPoint(DoLoopBB);
+		if (ctx->statement() != nullptr) {
+			// TODO: 还需要处理 break 和 continue 语句
+			visitStatement(ctx->statement());
+		}
+		TerminateBlockByBr(DoCondBB);
+		
+        //Evaluate the loop condition (cast the type to i1 if necessary).
+		//Since we don't allow variable declarations in if-condition (because we only allow expressions there),
+		//we don't need to push a symbol table
+		function->getBasicBlockList().push_back(DoCondBB);
+		builder.SetInsertPoint(DoCondBB);
+		llvm::Value* Condition = std::any_cast<llvm::Value*>(visitExpression(ctx->expression()));
+		if (!(Condition = Cast2I1(Condition))) {
+			throw std::logic_error("The condition value of do-statement must be either an integer, or a floating-point number, or a pointer.");
+			return NULL;
+		}
+		builder.CreateCondBr(Condition, DoLoopBB, DoEndBB);
+		
+        // Finish "DoEnd" block
+		function->getBasicBlockList().push_back(DoEndBB);
+		builder.SetInsertPoint(DoEndBB);
+		return NULL;
+    } else if (ctx->For() != nullptr) {
+        llvm::Function* function = currentScope().currentFunction;
+        if (function == nullptr) {
+            std::cout << "Error: For statement not within a function." << std::endl;
+            return nullptr;
+        }
+        llvm::BasicBlock* ForCondBB = llvm::BasicBlock::Create(*llvm_context, "ForCond");
+		llvm::BasicBlock* ForLoopBB = llvm::BasicBlock::Create(*llvm_context, "ForLoop");
+		llvm::BasicBlock* ForTailBB = llvm::BasicBlock::Create(*llvm_context, "ForTail");
+		llvm::BasicBlock* ForEndBB = llvm::BasicBlock::Create(*llvm_context, "ForEnd");
+        
+        Scope for_scope(currentScope().currentFunction);
+        scopes.push_back(for_scope);
+        if (ctx->forInitStatement() != nullptr) {
+            visitForInitStatement(ctx->forInitStatement());
+        } else if (ctx->forRangeDeclaration() != nullptr) {
+            // TODO: for (auto i : v)
+            visitForRangeDeclaration(ctx->forRangeDeclaration());
+            visitForRangeInitializer(ctx->forRangeInitializer());
+        }
+		TerminateBlockByBr(ForCondBB);
+
+		// Generate code in the "ForCond" block
+		function->getBasicBlockList().push_back(ForCondBB);
+		builder.SetInsertPoint(ForCondBB);
+		if (ctx->condition() != nullptr) {
+			// If it has a loop condition, evaluate it (cast the type to i1 if necessary).
+			llvm::Value* Condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
+			if (!(Condition = Cast2I1(Condition))) {
+				throw std::logic_error("The condition value of for-statement must be either an integer, or a floating-point number, or a pointer.");
+				return NULL;
+			}
+			builder.CreateCondBr(Condition, ForLoopBB, ForEndBB);
+		}
+		else {
+			// Otherwise, it is an unconditional loop condition (always returns true)
+			builder.CreateBr(ForLoopBB);
+		}
+
+		// Generate code in the "ForLoop" block
+		function->getBasicBlockList().push_back(ForLoopBB);
+		builder.SetInsertPoint(ForLoopBB);
+		if (ctx->statement() != nullptr) {
+            // TODO: 还需要处理 break 和 continue 语句
+            visitStatement(ctx->statement());
+        }
+
+		// If not terminated, jump to "ForTail"
+		TerminateBlockByBr(ForTailBB);
+		// Generate code in the "ForTail" block
+		function->getBasicBlockList().push_back(ForTailBB);
+		builder.SetInsertPoint(ForTailBB);
+		if (ctx->expression() != nullptr) {
+			visitExpression(ctx->expression());
+        }
+		builder.CreateBr(ForCondBB);
+        
+		//Finish "ForEnd" block
+		function->getBasicBlockList().push_back(ForEndBB);
+		builder.SetInsertPoint(ForEndBB);
+        if (ctx->forInitStatement() != nullptr) {
+            scopes.pop_back();
+        }
+		return NULL;
+    }
 }
 
 std::any Visitor::visitForInitStatement(ZigCCParser::ForInitStatementContext *ctx)
 {
-
+    if (auto ExpressionStatement = ctx->expressionStatement()) {
+        visitExpressionStatement(ExpressionStatement);
+    } else if (auto SimpleDeclaration = ctx->simpleDeclaration()) {
+        visitSimpleDeclaration(SimpleDeclaration);
+    }
 }
 
 std::any Visitor::visitForRangeDeclaration(ZigCCParser::ForRangeDeclarationContext *ctx)
