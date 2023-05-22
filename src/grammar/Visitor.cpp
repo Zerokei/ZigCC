@@ -793,7 +793,7 @@ std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpre
     // 此处 * 是作为乘号的情况，作为解引用是一元运算符
     llvm::Value* result = nullptr;
     auto pointerMemberExpression_0 = visitPointerMemberExpression(ctx->pointerMemberExpression(0));
-    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
+    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
     if (pointerMemberExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(visitPointerMemberExpression(ctx->pointerMemberExpression(0)));
         result = this->getVariable(name);
@@ -817,7 +817,7 @@ std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpre
         } else if (pointerMemberExpression_i.type() == typeid(llvm::Value*)) {
             operand = std::any_cast<llvm::Value*>(visitPointerMemberExpression(ctx->pointerMemberExpression(i)));
         }
-        // 类型棢�查与转化
+        // 类型棢�查与转化
         if (ctx->Star(i - 1)) {
             result = this->CreateMul(result, operand);
         } else if (ctx->Div(i - 1)) {
@@ -832,7 +832,7 @@ std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpre
 std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext *ctx)
 {
     llvm::Value* result = nullptr;
-    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
+    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
     auto multiplicativeExpression_0 = visitMultiplicativeExpression(ctx->multiplicativeExpression(0));
     if (multiplicativeExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(visitMultiplicativeExpression(ctx->multiplicativeExpression(0)));
@@ -857,7 +857,7 @@ std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext
         } else if (multiplicativeExpression_i.type() == typeid(llvm::Value*)) {
             operand = std::any_cast<llvm::Value*>(visitMultiplicativeExpression(ctx->multiplicativeExpression(i)));
         }
-        // 类型棢�查与转化
+        // 类型棢�查与转化
         if (ctx->Plus(i - 1)) {
             result = this->CreateAdd(result, operand);
         } else {
@@ -870,7 +870,7 @@ std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext
 std::any Visitor::visitShiftExpression(ZigCCParser::ShiftExpressionContext *ctx)
 {
     llvm::Value* result = nullptr;
-    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
+    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
     auto additiveExpression_0 = visitAdditiveExpression(ctx->additiveExpression(0));
     if (additiveExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(visitAdditiveExpression(ctx->additiveExpression(0)));
@@ -895,8 +895,8 @@ std::any Visitor::visitShiftExpression(ZigCCParser::ShiftExpressionContext *ctx)
         } else if (additiveExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitAdditiveExpression(ctx->additiveExpression(i)));
         }
-        // 类型棢�查与转化
-        // TODO: 算术右移和��辑右移
+        // 类型棢�查与转化
+        // TODO: 算术右移和��辑右移
         if (std::any_cast<std::string>(ctx->shiftOperator()) == ">>") {
             result = this->CreateShr(result, operand);
         } else if (std::any_cast<std::string>(ctx->shiftOperator()) == "<<") {
@@ -908,7 +908,7 @@ std::any Visitor::visitShiftExpression(ZigCCParser::ShiftExpressionContext *ctx)
 
 std::any Visitor::visitShiftOperator(ZigCCParser::ShiftOperatorContext *ctx)
 {
-    // TODO: 暂时只��虑亄1�7 << >> 这两种情冄1�7
+    // TODO: 暂时只��虑亄1�7 << >> 这两种情冄1�7
     std::string result = "";
     if (ctx->Greater(0) != nullptr) {
         result = ">>";
@@ -924,7 +924,7 @@ std::any Visitor::visitRelationalExpression(ZigCCParser::RelationalExpressionCon
 {
     llvm::Value* result = nullptr;
     auto shiftExpression_0 = visitShiftExpression(ctx->shiftExpression(0));
-    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
+    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
     if (shiftExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(visitShiftExpression(ctx->shiftExpression(0)));
         result = this->getVariable(name);
@@ -948,7 +948,7 @@ std::any Visitor::visitRelationalExpression(ZigCCParser::RelationalExpressionCon
         } else if (shiftExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitShiftExpression(ctx->shiftExpression(i)));
         }
-        // 类型棢�查与转化
+        // 类型棢�查与转化
         if (ctx->Less(i - 1)) {
             result = this->CreateCmpLT(result, operand);
         } else if (ctx->Greater(i - 1)) {
@@ -966,7 +966,7 @@ std::any Visitor::visitEqualityExpression(ZigCCParser::EqualityExpressionContext
 {
     llvm::Value* result = nullptr;
     auto relationalExpression_0 = visitRelationalExpression(ctx->relationalExpression(0));
-    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
+    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
     if (relationalExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(visitRelationalExpression(ctx->relationalExpression(0)));
         result = this->getVariable(name);
@@ -990,7 +990,7 @@ std::any Visitor::visitEqualityExpression(ZigCCParser::EqualityExpressionContext
         } else if (relationalExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitRelationalExpression(ctx->relationalExpression(i)));
         }
-        // 类型棢�查与转化
+        // 类型棢�查与转化
         if (ctx->Equal(i - 1)) {
             result = this->CreateCmpEQ(result, operand);
         } else if (ctx->NotEqual(i - 1)) {
@@ -1004,7 +1004,7 @@ std::any Visitor::visitAndExpression(ZigCCParser::AndExpressionContext *ctx)
 {
     llvm::Value* result = nullptr;
     auto equalityExpression_0 = visitEqualityExpression(ctx->equalityExpression(0));
-    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
+    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
     if (equalityExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(visitEqualityExpression(ctx->equalityExpression(0)));
         result = this->getVariable(name);
@@ -1028,7 +1028,7 @@ std::any Visitor::visitAndExpression(ZigCCParser::AndExpressionContext *ctx)
         } else if (equalityExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitEqualityExpression(ctx->equalityExpression(i)));
         }
-        // 类型棢�查与转化
+        // 类型棢�查与转化
         result = this->CreateBitwiseAND(result, operand);
     }
     return result;
@@ -1037,7 +1037,7 @@ std::any Visitor::visitAndExpression(ZigCCParser::AndExpressionContext *ctx)
 std::any Visitor::visitExclusiveOrExpression(ZigCCParser::ExclusiveOrExpressionContext *ctx)
 {
     llvm::Value* result = nullptr;
-    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
+    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
     auto andExpression_0 = visitAndExpression(ctx->andExpression(0));
     if (andExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(visitAndExpression(ctx->andExpression(0)));
@@ -1062,7 +1062,7 @@ std::any Visitor::visitExclusiveOrExpression(ZigCCParser::ExclusiveOrExpressionC
         } else if (andExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitAndExpression(ctx->andExpression(i)));
         }
-        // 类型棢�查与转化
+        // 类型棢�查与转化
         result = this->CreateBitwiseXOR(result, operand);
     }
     return result;
@@ -1072,7 +1072,7 @@ std::any Visitor::visitInclusiveOrExpression(ZigCCParser::InclusiveOrExpressionC
 {
    llvm::Value* result = nullptr;
    auto exclusiveOrExpression_0 = visitExclusiveOrExpression(ctx->exclusiveOrExpression(0));
-    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
+    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
     if (exclusiveOrExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(0)));
         result = this->getVariable(name);
@@ -1096,7 +1096,7 @@ std::any Visitor::visitInclusiveOrExpression(ZigCCParser::InclusiveOrExpressionC
         } else if (exclusiveOrExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(i)));
         }
-        // 类型棢�查与转化
+        // 类型棢�查与转化
         result = this->CreateBitwiseOR(result, operand);
     }
     return result;
@@ -1106,7 +1106,7 @@ std::any Visitor::visitLogicalAndExpression(ZigCCParser::LogicalAndExpressionCon
 {
     llvm::Value* result = nullptr;
     auto inclusiveOrExpression_0 = visitInclusiveOrExpression(ctx->inclusiveOrExpression(0));
-    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
+    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
     if (inclusiveOrExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(0)));
         result = this->getVariable(name);
@@ -1117,7 +1117,7 @@ std::any Visitor::visitLogicalAndExpression(ZigCCParser::LogicalAndExpressionCon
     } else if (inclusiveOrExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(0)));
     }
-    // （需要做逻辑运算的情况下）判断得到的表达式是否能转化戄1�7 bool 类型
+    // （需要做逻辑运算的情况下）判断得到的表达式是否能转化戄1�7 bool 类型
     if (ctx->inclusiveOrExpression().size() > 1) {
         result = Cast2I1(result);
         if (result == nullptr) {
@@ -1138,7 +1138,7 @@ std::any Visitor::visitLogicalAndExpression(ZigCCParser::LogicalAndExpressionCon
         } else if (inclusiveOrExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(i)));
         }
-        // 类型棢�查与转化
+        // 类型棢�查与转化
         operand = Cast2I1(operand);
         if (operand == nullptr) {
             throw std::domain_error("Logic AND operator \"&&\" must be applied to 2 expressions that can be cast to boolean.");
@@ -1153,7 +1153,7 @@ std::any Visitor::visitLogicalOrExpression(ZigCCParser::LogicalOrExpressionConte
 {
     llvm::Value* result = nullptr;
     auto logicalAndExpression_0 = visitLogicalAndExpression(ctx->logicalAndExpression(0));
-    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
+    // 判断返回的是变量各1�7 string 还是表达弄1�7 llvm::Value
     if (logicalAndExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(visitLogicalAndExpression(ctx->logicalAndExpression(0)));
         result = this->getVariable(name);
@@ -1164,7 +1164,7 @@ std::any Visitor::visitLogicalOrExpression(ZigCCParser::LogicalOrExpressionConte
     } else if (logicalAndExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(visitLogicalAndExpression(ctx->logicalAndExpression(0)));
     }
-    // （需要做逻辑运算的情况下）判断得到的表达式是否能转化戄1�7 bool 类型
+    // （需要做逻辑运算的情况下）判断得到的表达式是否能转化戄1�7 bool 类型
     if (ctx->logicalAndExpression().size() > 1) {
         result = Cast2I1(result);
         if (result == nullptr) {
@@ -1185,7 +1185,7 @@ std::any Visitor::visitLogicalOrExpression(ZigCCParser::LogicalOrExpressionConte
         } else if (logicalAndExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitLogicalAndExpression(ctx->logicalAndExpression(i)));
         }
-        // 类型棢�查与转化
+        // 类型棢�查与转化
         operand = Cast2I1(operand);
         if (operand == nullptr) {
             throw std::domain_error("Logic OR operator \"||\" must be applied to 2 expressions that can be cast to boolean.");
@@ -1209,7 +1209,7 @@ std::any Visitor::visitConditionalExpression(ZigCCParser::ConditionalExpressionC
 
 std::any Visitor::visitAssignmentExpression(ZigCCParser::AssignmentExpressionContext *ctx)
 {
-    // TODO: 加入类型棢�查和类型转换
+    // TODO: 加入类型棢�查和类型转换
     if (auto AssignmentOperator = ctx->assignmentOperator()) {
         std::string AssignOp = std::any_cast<std::string>(visitAssignmentOperator(AssignmentOperator));
         auto lhs = std::any_cast<std::string>(visitLogicalOrExpression(ctx->logicalOrExpression()));
@@ -1223,7 +1223,7 @@ std::any Visitor::visitAssignmentExpression(ZigCCParser::AssignmentExpressionCon
         }
         auto rhs = std::any_cast<llvm::Value*>(visitInitializerClause(ctx->initializerClause()));
         auto value = builder.CreateLoad(alloca->getType(), alloca);
-        // 判断赋��号右边的变量是否初始化过（有待改进，不知道是哪个变量）
+        // 判断赋��号右边的变量是否初始化过（有待改进，不知道是哪个变量）
         if (value == nullptr) {
             std::cout << "error: use of uninitialized variable" << std::endl;
         }
@@ -1296,7 +1296,7 @@ std::any Visitor::visitAssignmentOperator(ZigCCParser::AssignmentOperatorContext
 
 std::any Visitor::visitExpression(ZigCCParser::ExpressionContext *ctx)
 {
-    // TODO: 暂时只实现了只有单个赋��的情况
+    // TODO: 暂时只实现了只有单个赋��的情况
     for (auto AssignmentExpression : ctx->assignmentExpression())
         return visitAssignmentExpression(AssignmentExpression);
 }
@@ -1366,7 +1366,7 @@ std::any Visitor::visitSelectionStatement(ZigCCParser::SelectionStatementContext
             std::cout << "Error: Condition is not a valid expression." << std::endl;
             return nullptr;
         }
-        // 判断 condition 是否可以转化丄1�7 bool 类型
+        // 判断 condition 是否可以转化丄1�7 bool 类型
         condition = Cast2I1(condition);
         if (condition == nullptr) {
             std::cout << "Error: Condition is not a valid expression." << std::endl;
@@ -1405,7 +1405,7 @@ std::any Visitor::visitSelectionStatement(ZigCCParser::SelectionStatementContext
 			builder.SetInsertPoint(mergeBlock);
 		}
     } else if (ctx->Switch() != nullptr) {
-        // TODO: 注意 switch 语句的条件不允许赋��，这和 if 语句不同，并且也不一定需要是 bool 类型
+        // TODO: 注意 switch 语句的条件不允许赋��，这和 if 语句不同，并且也不一定需要是 bool 类型
         llvm::Value* condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
         if (condition == nullptr) {
             std::cout << "Error: Condition is not a valid expression." << std::endl;
@@ -1416,7 +1416,7 @@ std::any Visitor::visitSelectionStatement(ZigCCParser::SelectionStatementContext
             std::cout << "Error: Switch statement not within a function." << std::endl;
             return nullptr;
         }
-        // TODO: 未完戄1�7
+        // TODO: 未完戄1�7
     }
     return nullptr;
 }
@@ -1460,7 +1460,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		function->getBasicBlockList().push_back(WhileLoopBB);
 		builder.SetInsertPoint(WhileLoopBB);
 		if (ctx->statement() != nullptr) {
-            // TODO: 还需要处琄1�7 break 咄1�7 continue 语句
+            // TODO: 还需要处琄1�7 break 咄1�7 continue 语句
 			visitStatement(ctx->statement());
 		}
 		TerminateBlockByBr(WhileCondBB);
@@ -1485,7 +1485,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		function->getBasicBlockList().push_back(DoLoopBB);
 		builder.SetInsertPoint(DoLoopBB);
 		if (ctx->statement() != nullptr) {
-			// TODO: 还需要处琄1�7 break 咄1�7 continue 语句
+			// TODO: 还需要处琄1�7 break 咄1�7 continue 语句
 			visitStatement(ctx->statement());
 		}
 		TerminateBlockByBr(DoCondBB);
@@ -1549,7 +1549,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		function->getBasicBlockList().push_back(ForLoopBB);
 		builder.SetInsertPoint(ForLoopBB);
 		if (ctx->statement() != nullptr) {
-            // TODO: 还需要处琄1�7 break 咄1�7 continue 语句
+            // TODO: 还需要处琄1�7 break 咄1�7 continue 语句
             visitStatement(ctx->statement());
         }
 
@@ -1634,8 +1634,8 @@ std::any Visitor::visitDeclarationStatement(ZigCCParser::DeclarationStatementCon
 
 std::any Visitor::visitDeclarationseq(ZigCCParser::DeclarationseqContext *ctx)
 {
-    // 建立全局变量扢�在的 scope（有且仅有一个），其 currentFunction = nullptr
-    // 此后 scopes[0] 就是全局的1�7 scope 的代名词，所有这里面的变量都是可以在屢�部使用的，同时需要注意被覆盖的可胄1�7
+    // 建立全局变量扢�在的 scope（有且仅有一个），其 currentFunction = nullptr
+    // 此后 scopes[0] 就是全局的1�7 scope 的代名词，所有这里面的变量都是可以在屢�部使用的，同时需要注意被覆盖的可胄1�7
     scopes.push_back(Scope());
     for (auto decl : ctx->declaration())
         visitDeclaration(decl);
@@ -1696,64 +1696,64 @@ std::any Visitor::visitAliasDeclaration(ZigCCParser::AliasDeclarationContext *ct
 std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *ctx)
 {
     // TODO: attributeSpecifierSeq()
-    /* 事实上，我们圄1�7 ZigCCParser.h 中每丄1�7 context 类中的函数，有的是并列关系，即表礄1�7
-       几种不同的类型，霢�要做 if-else 分类处理，有的是合作关系，如本函数对应的 context＄1�7
-       观察语法树，我们这一函数将会实现类似亄1�7 int x, y = 0; 这类表达式的分离，即我们霢�覄1�7
+    /* 事实上，我们圄1�7 ZigCCParser.h 中每丄1�7 context 类中的函数，有的是并列关系，即表礄1�7
+       几种不同的类型，霢�要做 if-else 分类处理，有的是合作关系，如本函数对应的 context＄1�7
+       观察语法树，我们这一函数将会实现类似亄1�7 int x, y = 0; 这类表达式的分离，即我们霢�覄1�7
        利用这一类型的函数将其分解成类型和变量名（有的函数负责提取类型，有的函数负责提取变量名，
        因此我们称这些函数是合作关系，在语法树上体现出分叉的特点），并在栈帧中开辟空间存储，
-       分解的过程需要使用更底层的1�7 visitor 函数返回霢�要的类型/变量各1�7
+       分解的过程需要使用更底层的1�7 visitor 函数返回霢�要的类型/变量各1�7
     */
-    // TODO: 目前暂未考虑丢�行中有两种类型的情况（const int 之类的）
-    // 当前只��虑 int x, y = 0; int x = y = 0; 这种情况，enum 以及 class 等复杂类型之后再作处理（添加分支处理（？））
-    // 还有强制类型转换可以做（感觉应该不难＄1�7
+    // TODO: 目前暂未考虑丢�行中有两种类型的情况（const int 之类的）
+    // 当前只��虑 int x, y = 0; int x = y = 0; 这种情况，enum 以及 class 等复杂类型之后再作处理（添加分支处理（？））
+    // 还有强制类型转换可以做（感觉应该不难＄1�7
     llvm::Type* type = nullptr;
     if (auto DeclSpecifierSeq = ctx->declSpecifierSeq()) {
         type = std::any_cast<llvm::Type*>(visitDeclSpecifierSeq(DeclSpecifierSeq));
     }
     std::vector< std::pair<std::string, llvm::Value*> > vars;
     for (auto decl : ctx->initDeclaratorList()->initDeclarator()) {
-        // visitDeclarator 函数返回变量各1�7
+        // visitDeclarator 函数返回变量各1�7
         std::string name = std::any_cast<std::string>(visitDeclarator(decl->declarator()));
-        // 如果进行了初始化，则将初始化的��存兄1�7 values 丄1�7
+        // 如果进行了初始化，则将初始化的��存兄1�7 values 丄1�7
         llvm::Value* value = nullptr;
         if (auto Initializer = decl->initializer()) {
             value = std::any_cast<llvm::Value*>(visitInitializer(Initializer));
         }
         vars.push_back(std::make_pair(name, value));
     }
-    if (currentScope().currentFunction != nullptr) { // 屢�部变量的情况
-        if (type == nullptr) { // 此时找现有的变量是否已经定义迄1�7
+    if (currentScope().currentFunction != nullptr) { // 屢�部变量的情况
+        if (type == nullptr) { // 此时找现有的变量是否已经定义迄1�7
             if (getVariable(vars[0].first) != nullptr) {
                 std::cout << "Error: Variable " + vars[0].first + " is not defined before." << std::endl;
                 return nullptr;
             }
         } 
         for (auto var : vars) {
-            // 类型棢�柄1�7
+            // 类型棢�柄1�7
             if (std::get<1>(var) != nullptr && !TypeCheck(var.second->getType(), type)) {
                 std::cout << "Error: Type mismatch" << std::endl;
                 return nullptr;
             }
-            // CreateAlloca 函数将类型为 type 的变釄1�7 name 加入栈帧，对齐方弄1�7 nullptr（可胄1�7 struct 类型有用？）
+            // CreateAlloca 函数将类型为 type 的变釄1�7 name 加入栈帧，对齐方弄1�7 nullptr（可胄1�7 struct 类型有用？）
             auto alloca = builder.CreateAlloca(type, nullptr, std::get<0>(var));
-            // 当进行了初始化时，CreateStore 函数将赋值的表达式存入上丢�步开辟的地址空间 alloca 丄1�7
+            // 当进行了初始化时，CreateStore 函数将赋值的表达式存入上丢�步开辟的地址空间 alloca 丄1�7
             if (std::get<1>(var) != nullptr) {
                 builder.CreateStore(var.second, alloca);
             }
             this->currentScope().setVariable(std::get<0>(var), alloca);
         }
-    } else { // 全局变量的情冄1�7
-        if (type == nullptr) { // 注意全局变量不允许出现在全局 scope 中赋倄1�7
+    } else { // 全局变量的情冄1�7
+        if (type == nullptr) { // 注意全局变量不允许出现在全局 scope 中赋倄1�7
             std::cout << "Error: Expected type specifier" << std::endl;
             return nullptr;
         }
         for (auto var : vars) {
-            // 类型棢�柄1�7
+            // 类型棢�柄1�7
             if (var.second != nullptr && !TypeCheck(var.second->getType(), type)) {
                 std::cout << "Error: Type mismatch" << std::endl;
                 return nullptr;
             }
-            // 先不考虑 const 的情冄1�7
+            // 先不考虑 const 的情冄1�7
             auto alloca = new llvm::GlobalVariable(*module, type, false, llvm::Function::ExternalLinkage, 
                                                     (llvm::Constant *)var.second, std::get<0>(var));
             if (!this->currentScope().setVariable(std::get<0>(var), alloca)) {
@@ -1800,7 +1800,7 @@ std::any Visitor::visitDeclSpecifier(ZigCCParser::DeclSpecifierContext *ctx)
 
 std::any Visitor::visitDeclSpecifierSeq(ZigCCParser::DeclSpecifierSeqContext *ctx)
 {
-    // 显然是不能这么写代码的，但是目前只��虑只有丢�丄1�7 declSpecifier 的情冄1�7
+    // 显然是不能这么写代码的，但是目前只��虑只有丢�丄1�7 declSpecifier 的情冄1�7
     for (auto decl : ctx->declSpecifier())
         return visitDeclSpecifier(decl);
     // TODO: attributeSpecifierSeq()
@@ -1867,7 +1867,7 @@ std::any Visitor::visitSimpleTypeSignednessModifier(ZigCCParser::SimpleTypeSigne
 
 std::any Visitor::visitSimpleTypeSpecifier(ZigCCParser::SimpleTypeSpecifierContext *ctx)
 {
-    // TODO: 除了基本类型之外的函敄1�7
+    // TODO: 除了基本类型之外的函敄1�7
     if (ctx->Char() != nullptr) {
         return (llvm::Type *)llvm::Type::getInt8Ty(*llvm_context);
     } else if (ctx->Char16() != nullptr) {
@@ -2080,6 +2080,7 @@ std::any Visitor::visitDeclarator(ZigCCParser::DeclaratorContext *ctx)
     }
 }
 
+// TODO: 指针数组与数组指针
 std::any Visitor::visitPointerDeclarator(ZigCCParser::PointerDeclaratorContext *ctx)
 {
     if (auto NoPointerOperator = ctx->noPointerDeclarator()) {
@@ -2139,7 +2140,7 @@ std::any Visitor::visitDeclaratorid(ZigCCParser::DeclaratoridContext *ctx)
     if (auto IdExpression = ctx->idExpression()) {
         return visitIdExpression(IdExpression);
     }
-    // TODO: 其他情况（省略号＄1�7
+    // TODO: 其他情况（省略号＄1�7
     return nullptr;
 }
 
@@ -2203,7 +2204,7 @@ std::any Visitor::visitParameterDeclaration(ZigCCParser::ParameterDeclarationCon
 
 std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext *ctx)
 {
-    // 默认返回值类垄1�7 int32
+    // 默认返回值类垄1�7 int32
     llvm::Type *type = (llvm::Type *)llvm::Type::getInt32Ty(*llvm_context);
     if (auto declSpecifierSeq = ctx->declSpecifierSeq()) {
         type = std::any_cast<llvm::Type *>(visitDeclSpecifierSeq(declSpecifierSeq));
@@ -2233,21 +2234,21 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
                                       fun_name,
                                       this->module.get());
     
-    // 加入刄1�7 scopes 作为接下杄1�7 body 中的作用埄1�7
+    // 加入刄1�7 scopes 作为接下杄1�7 body 中的作用埄1�7
     Scope fun_scope = Scope(function);
     this->scopes.push_back(fun_scope);
 
     auto block = llvm::BasicBlock::Create(builder.getContext(), "entry", function);
     builder.SetInsertPoint(block);
 
-    // 添加参数列表中的参数刄1�7 var_list 丄1�7
-    // NOTE: 参数列表中的参数，认为是先前没有声明过的屢�部变釄1�7
-    //      （不霢�要检柄1�7 scope 中是否已经有同名变量＄1�7
+    // 添加参数列表中的参数刄1�7 var_list 丄1�7
+    // NOTE: 参数列表中的参数，认为是先前没有声明过的屢�部变釄1�7
+    //      （不霢�要检柄1�7 scope 中是否已经有同名变量＄1�7
     for (const auto& param: params) {
         std::string param_name = param.first;
         llvm::Type *param_type = param.second;
         auto alloca = this->builder.CreateAlloca(param_type, nullptr, param_name);
-        // NOTE: 初步实现的是不做初始化参敄1�7
+        // NOTE: 初步实现的是不做初始化参敄1�7
         fun_scope.setVariable(param_name, alloca);
     }
 
@@ -2255,7 +2256,7 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     auto functionBody = ctx->functionBody();
     visitFunctionBody(functionBody);
 
-    // 抛出当前 scope，开始分析全屢� / 下一个函数体
+    // 抛出当前 scope，开始分析全屢� / 下一个函数体
     this->scopes.pop_back();
 
     // NOTE: What to return?
@@ -2277,12 +2278,12 @@ std::any Visitor::visitInitializer(ZigCCParser::InitializerContext *ctx)
     } else if (auto ExpressionList = ctx->expressionList()) {
         return visitExpressionList(ExpressionList);
     }
-    // TODO: 还有左右括号的情冄1�7
+    // TODO: 还有左右括号的情冄1�7
 }
 
 std::any Visitor::visitBraceOrEqualInitializer(ZigCCParser::BraceOrEqualInitializerContext *ctx)
 {
-    // 等于号赋值或初始化列衄1�7
+    // 等于号赋值或初始化列衄1�7
     if (auto InitializerClause = ctx->initializerClause()) {
         return visitInitializerClause(InitializerClause);
     } else if (auto BracedInitList = ctx->bracedInitList()) {
@@ -2592,7 +2593,7 @@ std::any Visitor::visitLiteral(ZigCCParser::LiteralContext *ctx)
     } else if (ctx->BooleanLiteral() != nullptr) {
         return (llvm::Value *)llvm::ConstantInt::get(llvm::Type::getInt1Ty(*llvm_context), ctx->BooleanLiteral()->getText() == "true");
     } else if (ctx->PointerLiteral() != nullptr) {
-        // TODO: 不一定是 i8 也不丢�定是 NULL
+        // TODO: 不一定是 i8 也不丢�定是 NULL
         return (llvm::Value *)llvm::ConstantPointerNull::get(llvm::Type::getInt8PtrTy(*llvm_context));
     } else if (ctx->UserDefinedLiteral() != nullptr) {
         // TODO: UserDefinedLiteral
