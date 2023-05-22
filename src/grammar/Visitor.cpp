@@ -713,7 +713,13 @@ std::any Visitor::visitPseudoDestructorName(ZigCCParser::PseudoDestructorNameCon
 
 std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
 {
-    if (auto PostfixExpression = ctx->postfixExpression()) {
+    if (ctx->PlusPlus() != nullptr) { // ++i
+        
+    } else if (ctx->MinusMinus() != nullptr) { // --i
+        
+    } else if (ctx->Sizeof() != nullptr) {
+        
+    } else if (auto PostfixExpression = ctx->postfixExpression()) {
         return visitPostfixExpression(PostfixExpression);
     } else if (auto UnaryOperator = ctx->unaryOperator()) {
         return visitUnaryOperator(UnaryOperator);
@@ -1303,7 +1309,16 @@ std::any Visitor::visitExpression(ZigCCParser::ExpressionContext *ctx)
 
 std::any Visitor::visitConstantExpression(ZigCCParser::ConstantExpressionContext *ctx)
 {
-
+    if (auto ConditionalExpression = ctx->conditionalExpression()) {
+        auto ConstExpr = visitConditionalExpression(ConditionalExpression);
+        if (ConstExpr.type() == typeid(llvm::Value*)) {
+            return ConstExpr;
+        } else {
+            std::cout << "Error: Constant expression must be a constant expression." << std::endl;
+            return nullptr;
+        }
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitStatement(ZigCCParser::StatementContext *ctx)
@@ -1711,10 +1726,50 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
         type = std::any_cast<llvm::Type*>(visitDeclSpecifierSeq(DeclSpecifierSeq));
     }
     std::vector< std::pair<std::string, llvm::Value*> > vars;
+    int pointer_cnt = 0;
+    std::vector<llvm::Value*> array_cnt;
     for (auto decl : ctx->initDeclaratorList()->initDeclarator()) {
-        // visitDeclarator 函数返回变量名
-        std::string name = std::any_cast<std::string>(visitDeclarator(decl->declarator()));
+        // 我们先处理指针，再处理数组，因此默认 int *a[] 为指针数组
+        // TODO: 数组指针需特判是否为 int (*a)[]
+        // 首先判断是否有 * 运算符，创建指针类型
+        pointer_cnt = decl->declarator()->pointerDeclarator()->pointerOperator().size();
+        if (type != nullptr && pointer_cnt > 0) {
+            for (int i = 0; i < pointer_cnt; i++) {
+                type = llvm::PointerType::get(type, 0);
+            }
+        }
+        // 判断是否有数组，创建数组类型（TODO: int a[][5] 这类的实现）
+        auto NoPointerDeclarator = decl->declarator()->noPointerDeclarator();
+        while (NoPointerDeclarator->LeftBracket() != nullptr) {
+            if (NoPointerDeclarator->constantExpression() != nullptr) {
+                // 检查下标是否是整数类型
+                llvm::Value* array_size = std::any_cast<llvm::Value*>(visitConstantExpression(NoPointerDeclarator->constantExpression()));
+                if (array_size != nullptr && !array_size->getType()->isIntegerTy()) {
+                    std::cout << "Error: Array size must be an integer." << std::endl;
+                    return nullptr;
+                }
+                array_cnt.push_back(array_size);
+            } else {
+                array_cnt.push_back(nullptr);
+            }
+            NoPointerDeclarator = NoPointerDeclarator->noPointerDeclarator();
+        }
+        
+        std::string name;
+        if (array_cnt.size() > 0) {
+            for (int i = array_cnt.size() - 1; i >= 0; i--) {
+                if (array_cnt[i] != nullptr) {
+                    type = llvm::ArrayType::get(type, static_cast<llvm::ConstantInt*>(array_cnt[i])->getSExtValue());
+                } else {
+                    type = llvm::ArrayType::get(type, 0);
+                }
+            }
+            name = std::any_cast<std::string>(visitNoPointerDeclarator(NoPointerDeclarator));
+        } else { // visitDeclarator 函数返回变量名
+            name = std::any_cast<std::string>(visitDeclarator(decl->declarator()));
+        }
         // 如果进行了初始化，则将初始化的值存入 values 中
+        // TODO: 数组初始化
         llvm::Value* value = nullptr;
         if (auto Initializer = decl->initializer()) {
             value = std::any_cast<llvm::Value*>(visitInitializer(Initializer));
@@ -1722,25 +1777,48 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
         vars.push_back(std::make_pair(name, value));
     }
     if (currentScope().currentFunction != nullptr) { // 局部变量的情况
-        if (type == nullptr) { // 此时找现有的变量是否已经定义过
-            if (getVariable(vars[0].first) != nullptr) {
-                std::cout << "Error: Variable " + vars[0].first + " is not defined before." << std::endl;
-                return nullptr;
+        if (type == nullptr) { // 没有 type，说明此时是赋值
+            for (auto var : vars) {
+                // 因此需要判断当前变量是否已经定义过
+                llvm::Value* var_value = getVariable(var.first);
+                if (var_value == nullptr) {
+                    std::cout << "Error: Variable " + var.first + " is not defined before." << std::endl;
+                    return nullptr;
+                }
+                // 数组下标转换
+                llvm::Value* array_index = nullptr;
+                for (int i = array_cnt.size() - 1; i >= 0; i--) {
+                    var_value = builder.CreateAdd(var_value, array_cnt[i]);
+                    var_value = builder.CreateLoad(var_value->getType()->getPointerElementType(), var_value);
+                }
+                // 指针解引用转换
+                for (int i = 0; i < pointer_cnt; i++) {
+                    var_value = builder.CreateLoad(var_value->getType()->getPointerElementType(), var_value);
+                }
+                // 类型检查
+                if (!TypeCheck(var.second->getType(), var_value->getType())) {
+                    std::cout << "Error: Type mismatch" << std::endl;
+                    return nullptr;
+                }
+                builder.CreateStore(var.second, var_value);
             }
-        } 
-        for (auto var : vars) {
-            // 类型检查
-            if (std::get<1>(var) != nullptr && !TypeCheck(var.second->getType(), type)) {
-                std::cout << "Error: Type mismatch" << std::endl;
-                return nullptr;
+        }
+        else {
+            for (auto var : vars) {
+                // TODO: 数组初始化
+                // 类型检查
+                if (std::get<1>(var) != nullptr && !TypeCheck(var.second->getType(), type)) {
+                    std::cout << "Error: Type mismatch" << std::endl;
+                    return nullptr;
+                }
+                // CreateAlloca 函数将类型为 type 的变量 name 加入栈帧，对齐方式 nullptr（可能 struct 类型有用？）
+                auto alloca = builder.CreateAlloca(type, nullptr, std::get<0>(var));
+                // 当进行了初始化时，CreateStore 函数将赋值的表达式存入上一步开辟的地址空间 alloca 中
+                if (std::get<1>(var) != nullptr) {
+                    builder.CreateStore(var.second, alloca);
+                }
+                this->currentScope().setVariable(std::get<0>(var), alloca);
             }
-            // CreateAlloca 函数将类型为 type 的变量 name 加入栈帧，对齐方式 nullptr（可能 struct 类型有用？）
-            auto alloca = builder.CreateAlloca(type, nullptr, std::get<0>(var));
-            // 当进行了初始化时，CreateStore 函数将赋值的表达式存入上一步开辟的地址空间 alloca 中
-            if (std::get<1>(var) != nullptr) {
-                builder.CreateStore(var.second, alloca);
-            }
-            this->currentScope().setVariable(std::get<0>(var), alloca);
         }
     } else { // 全局变量的情况
         if (type == nullptr) { // 注意全局变量不允许出现在全局 scope 中赋值
@@ -1748,6 +1826,7 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
             return nullptr;
         }
         for (auto var : vars) {
+            // TODO: 数组初始化
             // 类型检查
             if (var.second != nullptr && !TypeCheck(var.second->getType(), type)) {
                 std::cout << "Error: Type mismatch" << std::endl;
@@ -1867,7 +1946,7 @@ std::any Visitor::visitSimpleTypeSignednessModifier(ZigCCParser::SimpleTypeSigne
 
 std::any Visitor::visitSimpleTypeSpecifier(ZigCCParser::SimpleTypeSpecifierContext *ctx)
 {
-    // TODO: 除了基本类型之外的函敄1�7
+    // TODO: 除了基本类型之外的函数
     if (ctx->Char() != nullptr) {
         return (llvm::Type *)llvm::Type::getInt8Ty(*llvm_context);
     } else if (ctx->Char16() != nullptr) {
