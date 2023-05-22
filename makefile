@@ -86,4 +86,4 @@ $(BUILD_PATH)/%.o: $(SRC_PATH)/%.$(SRC_EXT)
 
 # Build main target
 $(BUILD_PATH)/$(EXE_NAME): $(OBJS)
-	$(CC) $(OBJS) -o $(BUILD_PATH)/$(EXE_NAME) $(LIBS)
+	$(CC) $(OBJS) -o $(BUILD_PATH)/$(EXE_NAME) $(LIBS) $(DEBUGFLAGS)
