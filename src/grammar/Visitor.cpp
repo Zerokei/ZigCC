@@ -1392,14 +1392,15 @@ std::any Visitor::visitSelectionStatement(ZigCCParser::SelectionStatementContext
             std::cout << "Error: If statement not within a function." << std::endl;
             return nullptr;
         }
-        llvm::BasicBlock* thenBlock = llvm::BasicBlock::Create(*llvm_context, "then", function);
-        llvm::BasicBlock* elseBlock = llvm::BasicBlock::Create(*llvm_context, "else");
-        llvm::BasicBlock* mergeBlock = llvm::BasicBlock::Create(*llvm_context, "merge");
+        // llvm::LLVMContext &block_ctx = builder.getContext();
+        llvm::BasicBlock* thenBlock = llvm::BasicBlock::Create(*llvm_context);
+        llvm::BasicBlock* elseBlock = llvm::BasicBlock::Create(*llvm_context);
+        llvm::BasicBlock* mergeBlock = llvm::BasicBlock::Create(*llvm_context);
+        thenBlock->insertInto(function);
         
         // Create a branch instruction corresponding to this if statement
         builder.CreateCondBr(condition, thenBlock, elseBlock);
         // Generate code in the "Then" block
-        function->getBasicBlockList().push_back(thenBlock);
         builder.SetInsertPoint(thenBlock);
         if (ctx->statement(0) != nullptr) {
             visitStatement(ctx->statement(0));
@@ -1407,7 +1408,7 @@ std::any Visitor::visitSelectionStatement(ZigCCParser::SelectionStatementContext
         TerminateBlockByBr(mergeBlock);
 
         // Generate code in the "Else" block
-        function->getBasicBlockList().push_back(elseBlock);
+        elseBlock->insertInto(function);
         builder.SetInsertPoint(elseBlock);
         if (ctx->Else() != nullptr) {
             visitStatement(ctx->statement(1));
@@ -1416,7 +1417,7 @@ std::any Visitor::visitSelectionStatement(ZigCCParser::SelectionStatementContext
 
         // Finish "Merge" block
         if (mergeBlock->hasNPredecessorsOrMore(1)) {
-			function->getBasicBlockList().push_back(mergeBlock);
+            mergeBlock->insertInto(function);
 			builder.SetInsertPoint(mergeBlock);
 		}
     } else if (ctx->Switch() != nullptr) {
@@ -1462,7 +1463,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		//Evaluate the loop condition (cast the type to i1 if necessary).
 		//Since we don't allow variable declarations in if-condition (because we only allow expressions there),
 		//we don't need to push a symbol table
-		function->getBasicBlockList().push_back(WhileCondBB);
+		WhileCondBB->insertInto(function);
 		builder.SetInsertPoint(WhileCondBB);
 		llvm::Value* Condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
 		if (!(Condition = Cast2I1(Condition))) {
@@ -1472,7 +1473,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		builder.CreateCondBr(Condition, WhileLoopBB, WhileEndBB);
 		
         //Generate code in the "WhileLoop" block
-		function->getBasicBlockList().push_back(WhileLoopBB);
+        WhileLoopBB->insertInto(function);
 		builder.SetInsertPoint(WhileLoopBB);
 		if (ctx->statement() != nullptr) {
             // TODO: 还需要处理 break 和 continue 语句
@@ -1481,7 +1482,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		TerminateBlockByBr(WhileCondBB);
 
 		//Finish "WhileEnd" block
-		function->getBasicBlockList().push_back(WhileEndBB);
+        WhileEndBB->insertInto(function);
 		builder.SetInsertPoint(WhileEndBB);
 		return NULL;
     } else if (ctx->Do() != nullptr) {
@@ -1497,7 +1498,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		builder.CreateBr(DoLoopBB);
 
 		//Generate code in the "DoLoop" block
-		function->getBasicBlockList().push_back(DoLoopBB);
+        DoLoopBB->insertInto(function);
 		builder.SetInsertPoint(DoLoopBB);
 		if (ctx->statement() != nullptr) {
 			// TODO: 还需要处理 break 和 continue 语句
@@ -1508,7 +1509,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
         //Evaluate the loop condition (cast the type to i1 if necessary).
 		//Since we don't allow variable declarations in if-condition (because we only allow expressions there),
 		//we don't need to push a symbol table
-		function->getBasicBlockList().push_back(DoCondBB);
+        DoCondBB->insertInto(function);
 		builder.SetInsertPoint(DoCondBB);
 		llvm::Value* Condition = std::any_cast<llvm::Value*>(visitExpression(ctx->expression()));
 		if (!(Condition = Cast2I1(Condition))) {
@@ -1518,7 +1519,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		builder.CreateCondBr(Condition, DoLoopBB, DoEndBB);
 		
         // Finish "DoEnd" block
-		function->getBasicBlockList().push_back(DoEndBB);
+        DoEndBB->insertInto(function);
 		builder.SetInsertPoint(DoEndBB);
 		return NULL;
     } else if (ctx->For() != nullptr) {
@@ -1544,7 +1545,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		TerminateBlockByBr(ForCondBB);
 
 		// Generate code in the "ForCond" block
-		function->getBasicBlockList().push_back(ForCondBB);
+        ForCondBB->insertInto(function);
 		builder.SetInsertPoint(ForCondBB);
 		if (ctx->condition() != nullptr) {
 			// If it has a loop condition, evaluate it (cast the type to i1 if necessary).
@@ -1561,7 +1562,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		}
 
 		// Generate code in the "ForLoop" block
-		function->getBasicBlockList().push_back(ForLoopBB);
+        ForLoopBB->insertInto(function);
 		builder.SetInsertPoint(ForLoopBB);
 		if (ctx->statement() != nullptr) {
             // TODO: 还需要处理 break 和 continue 语句
@@ -1571,7 +1572,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		// If not terminated, jump to "ForTail"
 		TerminateBlockByBr(ForTailBB);
 		// Generate code in the "ForTail" block
-		function->getBasicBlockList().push_back(ForTailBB);
+        ForTailBB->insertInto(function);
 		builder.SetInsertPoint(ForTailBB);
 		if (ctx->expression() != nullptr) {
 			visitExpression(ctx->expression());
@@ -1579,7 +1580,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		builder.CreateBr(ForCondBB);
         
 		//Finish "ForEnd" block
-		function->getBasicBlockList().push_back(ForEndBB);
+        ForEndBB->insertInto(function);
 		builder.SetInsertPoint(ForEndBB);
         if (ctx->forInitStatement() != nullptr) {
             scopes.pop_back();
@@ -2317,7 +2318,7 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     Scope fun_scope = Scope(function);
     this->scopes.push_back(fun_scope);
 
-    auto block = llvm::BasicBlock::Create(builder.getContext(), "entry", function);
+    auto block = llvm::BasicBlock::Create(builder.getContext(), llvm::Twine(std::string("entry_")+fun_name), function);
     builder.SetInsertPoint(block);
 
     // 添加参数列表中的参数到 var_list 中
