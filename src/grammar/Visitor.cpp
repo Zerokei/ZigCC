@@ -696,15 +696,15 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
         llvm::Value* operand = nullptr;
         auto PostfixExpression = visitPostfixExpression(ctx->postfixExpression());
         if (PostfixExpression.type() == typeid(std::string)) {
-            std::string name = std::any_cast<std::string>(visitPostfixExpression(ctx->postfixExpression()));
+            std::string name = std::any_cast<std::string>(PostfixExpression);
             operand_alloc = this->getVariable(name);
             if (operand_alloc == nullptr) {
-                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitPostfixExpression(ctx->postfixExpression())) << "'" << std::endl;
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(PostfixExpression) << "'" << std::endl;
                 return nullptr;
             }
             operand = builder.CreateLoad(operand_alloc->getType()->getNonOpaquePointerElementType(), operand_alloc);
         } else if (PostfixExpression.type() == typeid(llvm::Value*)) {
-            operand = std::any_cast<llvm::Value*>(visitPostfixExpression(ctx->postfixExpression()));
+            operand = std::any_cast<llvm::Value*>(PostfixExpression);
         }
         llvm::Value* ret = operand;
         
@@ -716,7 +716,7 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
             builder.CreateStore(result, operand_alloc);
             return ret;
         } else {
-            std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(visitPostfixExpression(ctx->postfixExpression())) << "'" << std::endl;
+            std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(PostfixExpression) << "'" << std::endl;
             return nullptr;
         }
     } else if (ctx->MinusMinus() != nullptr) { // i--
@@ -724,17 +724,17 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
         llvm::Value* operand = nullptr;
         auto PostfixExpression = visitPostfixExpression(ctx->postfixExpression());
         if (PostfixExpression.type() == typeid(std::string)) {
-            std::string name = std::any_cast<std::string>(visitPostfixExpression(ctx->postfixExpression()));
+            std::string name = std::any_cast<std::string>(PostfixExpression);
             operand_alloc = this->getVariable(name);
             if (operand_alloc == nullptr) {
-                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitPostfixExpression(ctx->postfixExpression())) << "'" << std::endl;
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(PostfixExpression) << "'" << std::endl;
                 return nullptr;
             }
+            operand = builder.CreateLoad(operand_alloc->getType()->getNonOpaquePointerElementType(), operand_alloc);
         } else if (PostfixExpression.type() == typeid(llvm::Value*)) {
-            operand = std::any_cast<llvm::Value*>(visitPostfixExpression(ctx->postfixExpression()));
+            operand = std::any_cast<llvm::Value*>(PostfixExpression);
         }
         llvm::Value* ret = operand;
-        operand = builder.CreateLoad(operand_alloc->getType()->getNonOpaquePointerElementType(), operand_alloc);
         // 类型检查
         if (operand->getType()->isIntegerTy() ||
             operand->getType()->isFloatingPointTy() ||
@@ -743,7 +743,7 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
             builder.CreateStore(result, operand_alloc);
             return ret;
         } else {
-            std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(visitPostfixExpression(ctx->postfixExpression())) << "'" << std::endl;
+            std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(PostfixExpression) << "'" << std::endl;
             return nullptr;
         }
     } else if (auto PrimaryExpression = ctx->primaryExpression()) {
@@ -773,15 +773,15 @@ std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
         llvm::Value* operand = nullptr;
         auto UnaryExpression = visitUnaryExpression(ctx->unaryExpression());
         if (UnaryExpression.type() == typeid(std::string)) {
-            std::string name = std::any_cast<std::string>(visitUnaryExpression(ctx->unaryExpression()));
+            std::string name = std::any_cast<std::string>(UnaryExpression);
             operand_alloc = this->getVariable(name);
             if (operand_alloc == nullptr) {
-                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitUnaryExpression(ctx->unaryExpression())) << "'" << std::endl;
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(UnaryExpression) << "'" << std::endl;
                 return nullptr;
             }
             operand = builder.CreateLoad(operand_alloc->getType()->getNonOpaquePointerElementType(), operand_alloc);
         } else if (UnaryExpression.type() == typeid(llvm::Value*)) {
-            operand = std::any_cast<llvm::Value*>(visitUnaryExpression(ctx->unaryExpression()));
+            operand = std::any_cast<llvm::Value*>(UnaryExpression);
         }
         if (ctx->PlusPlus() != nullptr) { // ++i
             // 类型检查
@@ -792,7 +792,7 @@ std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
                 builder.CreateStore(operand, operand_alloc);
                 return operand;
             } else {
-                std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(visitUnaryExpression(ctx->unaryExpression())) << "'" << std::endl;
+                std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(UnaryExpression) << "'" << std::endl;
                 return nullptr;
             }
         } else if (ctx->MinusMinus() != nullptr) { // --i
@@ -804,7 +804,7 @@ std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
                 builder.CreateStore(operand, operand_alloc);
                 return operand;
             } else {
-                std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(visitUnaryExpression(ctx->unaryExpression())) << "'" << std::endl;
+                std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(UnaryExpression) << "'" << std::endl;
                 return nullptr;
             }
         } else if (ctx->Sizeof() != nullptr) { // sizeof
@@ -826,7 +826,7 @@ std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
                 } else if (operand->getType()->isFloatingPointTy()) {
                     return builder.CreateFNeg(operand);
                 } else {
-                    std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(visitUnaryExpression(ctx->unaryExpression())) << "'" << std::endl;
+                    std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(UnaryExpression) << "'" << std::endl;
                     return nullptr;
                 }
             } else if (UnaryOp->Tilde() != nullptr) {
@@ -834,7 +834,7 @@ std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
                 if (operand->getType()->isIntegerTy()) {
                     return builder.CreateNot(operand);
                 } else {
-                    std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(visitUnaryExpression(ctx->unaryExpression())) << "'" << std::endl;
+                    std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(UnaryExpression) << "'" << std::endl;
                     return nullptr;
                 }
             } else if (UnaryOp->Not() != nullptr) {
@@ -912,14 +912,14 @@ std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpre
     auto pointerMemberExpression_0 = visitPointerMemberExpression(ctx->pointerMemberExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (pointerMemberExpression_0.type() == typeid(std::string)) {
-        std::string name = std::any_cast<std::string>(visitPointerMemberExpression(ctx->pointerMemberExpression(0)));
+        std::string name = std::any_cast<std::string>(pointerMemberExpression_0);
         result = this->getVariable(name);
         if (result == nullptr) {
-            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitPointerMemberExpression(ctx->pointerMemberExpression(0))) << "'" << std::endl;
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(pointerMemberExpression_0) << "'" << std::endl;
             return nullptr;
         }
     } else if (pointerMemberExpression_0.type() == typeid(llvm::Value *)) {
-        result = std::any_cast<llvm::Value*>(visitPointerMemberExpression(ctx->pointerMemberExpression(0)));
+        result = std::any_cast<llvm::Value*>(pointerMemberExpression_0);
     }
     if (ctx->pointerMemberExpression().size() == 1) {
         return result;
@@ -929,14 +929,14 @@ std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpre
         llvm::Value* operand = nullptr;
         auto pointerMemberExpression_i = visitPointerMemberExpression(ctx->pointerMemberExpression(i));
         if (pointerMemberExpression_i.type() == typeid(std::string)) {
-            std::string name = std::any_cast<std::string>(visitPointerMemberExpression(ctx->pointerMemberExpression(i)));
+            std::string name = std::any_cast<std::string>(pointerMemberExpression_i);
             operand = this->getVariable(name);
             if (operand == nullptr) {
-                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitPointerMemberExpression(ctx->pointerMemberExpression(i))) << "'" << std::endl;
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(pointerMemberExpression_i) << "'" << std::endl;
                 return nullptr;
             }
         } else if (pointerMemberExpression_i.type() == typeid(llvm::Value*)) {
-            operand = std::any_cast<llvm::Value*>(visitPointerMemberExpression(ctx->pointerMemberExpression(i)));
+            operand = std::any_cast<llvm::Value*>(pointerMemberExpression_i);
         }
         operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型捡查与转化
@@ -957,14 +957,14 @@ std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     auto multiplicativeExpression_0 = visitMultiplicativeExpression(ctx->multiplicativeExpression(0));
     if (multiplicativeExpression_0.type() == typeid(std::string)) {
-        std::string name = std::any_cast<std::string>(visitMultiplicativeExpression(ctx->multiplicativeExpression(0)));
+        std::string name = std::any_cast<std::string>(multiplicativeExpression_0);
         result = this->getVariable(name);
         if (result == nullptr) {
-            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitMultiplicativeExpression(ctx->multiplicativeExpression(0))) << "'" << std::endl;
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(multiplicativeExpression_0) << "'" << std::endl;
             return nullptr;
         }
     } else if (multiplicativeExpression_0.type() == typeid(llvm::Value *)) {
-        result = std::any_cast<llvm::Value*>(visitMultiplicativeExpression(ctx->multiplicativeExpression(0)));
+        result = std::any_cast<llvm::Value*>(multiplicativeExpression_0);
     }
     if (ctx->multiplicativeExpression().size() == 1) {
         return result;
@@ -974,14 +974,14 @@ std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext
         llvm::Value* operand = nullptr;
         auto multiplicativeExpression_i = visitMultiplicativeExpression(ctx->multiplicativeExpression(i));
         if (multiplicativeExpression_i.type() == typeid(std::string)) {
-            std::string name = std::any_cast<std::string>(visitMultiplicativeExpression(ctx->multiplicativeExpression(i)));
+            std::string name = std::any_cast<std::string>(multiplicativeExpression_i);
             operand = this->getVariable(name);
             if (operand == nullptr) {
-                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitMultiplicativeExpression(ctx->multiplicativeExpression(i))) << "'" << std::endl;
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(multiplicativeExpression_i) << "'" << std::endl;
                 return nullptr;
             }
         } else if (multiplicativeExpression_i.type() == typeid(llvm::Value*)) {
-            operand = std::any_cast<llvm::Value*>(visitMultiplicativeExpression(ctx->multiplicativeExpression(i)));
+            operand = std::any_cast<llvm::Value*>(multiplicativeExpression_i);
         }
         operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
@@ -1000,14 +1000,14 @@ std::any Visitor::visitShiftExpression(ZigCCParser::ShiftExpressionContext *ctx)
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     auto additiveExpression_0 = visitAdditiveExpression(ctx->additiveExpression(0));
     if (additiveExpression_0.type() == typeid(std::string)) {
-        std::string name = std::any_cast<std::string>(visitAdditiveExpression(ctx->additiveExpression(0)));
+        std::string name = std::any_cast<std::string>(additiveExpression_0);
         result = this->getVariable(name);
         if (result == nullptr) {
-            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitAdditiveExpression(ctx->additiveExpression(0))) << "'" << std::endl;
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(additiveExpression_0) << "'" << std::endl;
             return nullptr;
         }
     } else if (additiveExpression_0.type() == typeid(llvm::Value *)) {
-        result = std::any_cast<llvm::Value*>(visitAdditiveExpression(ctx->additiveExpression(0)));
+        result = std::any_cast<llvm::Value*>(additiveExpression_0);
     }
     if (ctx->additiveExpression().size() == 1) {
         return result;
@@ -1017,14 +1017,14 @@ std::any Visitor::visitShiftExpression(ZigCCParser::ShiftExpressionContext *ctx)
         llvm::Value* operand = nullptr;
         auto additiveExpression_i = visitAdditiveExpression(ctx->additiveExpression(i));
         if (additiveExpression_i.type() == typeid(std::string)) {
-            std::string name = std::any_cast<std::string>(visitAdditiveExpression(ctx->additiveExpression(i)));
+            std::string name = std::any_cast<std::string>(additiveExpression_i);
             operand = this->getVariable(name);
             if (operand == nullptr) {
-                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitAdditiveExpression(ctx->additiveExpression(i))) << "'" << std::endl;
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(additiveExpression_i) << "'" << std::endl;
                 return nullptr;
             }
         } else if (additiveExpression_i.type() == typeid(llvm::Value *)) {
-            operand = std::any_cast<llvm::Value*>(visitAdditiveExpression(ctx->additiveExpression(i)));
+            operand = std::any_cast<llvm::Value*>(additiveExpression_i);
         }
         operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
@@ -1058,14 +1058,14 @@ std::any Visitor::visitRelationalExpression(ZigCCParser::RelationalExpressionCon
     auto shiftExpression_0 = visitShiftExpression(ctx->shiftExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (shiftExpression_0.type() == typeid(std::string)) {
-        std::string name = std::any_cast<std::string>(visitShiftExpression(ctx->shiftExpression(0)));
+        std::string name = std::any_cast<std::string>(shiftExpression_0);
         result = this->getVariable(name);
         if (result == nullptr) {
-            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitShiftExpression(ctx->shiftExpression(0))) << "'" << std::endl;
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(shiftExpression_0) << "'" << std::endl;
             return nullptr;
         }
     } else if (shiftExpression_0.type() == typeid(llvm::Value *)) {
-        result = std::any_cast<llvm::Value*>(visitShiftExpression(ctx->shiftExpression(0)));
+        result = std::any_cast<llvm::Value*>(shiftExpression_0);
     }
     if (ctx->shiftExpression().size() == 1) {
         return result;
@@ -1075,14 +1075,14 @@ std::any Visitor::visitRelationalExpression(ZigCCParser::RelationalExpressionCon
         llvm::Value* operand = nullptr;
         auto shiftExpression_i = visitShiftExpression(ctx->shiftExpression(i));
         if (shiftExpression_i.type() == typeid(std::string)) {
-            std::string name = std::any_cast<std::string>(visitShiftExpression(ctx->shiftExpression(i)));
+            std::string name = std::any_cast<std::string>(shiftExpression_i);
             operand = this->getVariable(name);
             if (operand == nullptr) {
-                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitShiftExpression(ctx->shiftExpression(i))) << "'" << std::endl;
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(shiftExpression_i) << "'" << std::endl;
                 return nullptr;
             }
         } else if (shiftExpression_i.type() == typeid(llvm::Value *)) {
-            operand = std::any_cast<llvm::Value*>(visitShiftExpression(ctx->shiftExpression(i)));
+            operand = std::any_cast<llvm::Value*>(shiftExpression_i);
         }
         operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
@@ -1105,14 +1105,14 @@ std::any Visitor::visitEqualityExpression(ZigCCParser::EqualityExpressionContext
     auto relationalExpression_0 = visitRelationalExpression(ctx->relationalExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (relationalExpression_0.type() == typeid(std::string)) {
-        std::string name = std::any_cast<std::string>(visitRelationalExpression(ctx->relationalExpression(0)));
+        std::string name = std::any_cast<std::string>(relationalExpression_0);
         result = this->getVariable(name);
         if (result == nullptr) {
-            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitRelationalExpression(ctx->relationalExpression(0))) << "'" << std::endl;
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(relationalExpression_0) << "'" << std::endl;
             return nullptr;
         }
     } else if (relationalExpression_0.type() == typeid(llvm::Value *)) {
-        result = std::any_cast<llvm::Value*>(visitRelationalExpression(ctx->relationalExpression(0)));
+        result = std::any_cast<llvm::Value*>(relationalExpression_0);
     }
     if (ctx->relationalExpression().size() == 1) {
         return result;
@@ -1122,14 +1122,14 @@ std::any Visitor::visitEqualityExpression(ZigCCParser::EqualityExpressionContext
         llvm::Value* operand = nullptr;
         auto relationalExpression_i = visitRelationalExpression(ctx->relationalExpression(i));
         if (relationalExpression_i.type() == typeid(std::string)) {
-            std::string name = std::any_cast<std::string>(visitRelationalExpression(ctx->relationalExpression(i)));
+            std::string name = std::any_cast<std::string>(relationalExpression_i);
             operand = this->getVariable(name);
             if (operand == nullptr) {
-                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitRelationalExpression(ctx->relationalExpression(i))) << "'" << std::endl;
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(relationalExpression_i) << "'" << std::endl;
                 return nullptr;
             }
         } else if (relationalExpression_i.type() == typeid(llvm::Value *)) {
-            operand = std::any_cast<llvm::Value*>(visitRelationalExpression(ctx->relationalExpression(i)));
+            operand = std::any_cast<llvm::Value*>(relationalExpression_i);
         }
         operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
@@ -1148,14 +1148,14 @@ std::any Visitor::visitAndExpression(ZigCCParser::AndExpressionContext *ctx)
     auto equalityExpression_0 = visitEqualityExpression(ctx->equalityExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (equalityExpression_0.type() == typeid(std::string)) {
-        std::string name = std::any_cast<std::string>(visitEqualityExpression(ctx->equalityExpression(0)));
+        std::string name = std::any_cast<std::string>(equalityExpression_0);
         result = this->getVariable(name);
         if (result == nullptr) {
-            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitEqualityExpression(ctx->equalityExpression(0))) << "'" << std::endl;
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(equalityExpression_0) << "'" << std::endl;
             return nullptr;
         }
     } else if (equalityExpression_0.type() == typeid(llvm::Value *)) {
-        result = std::any_cast<llvm::Value*>(visitEqualityExpression(ctx->equalityExpression(0)));
+        result = std::any_cast<llvm::Value*>(equalityExpression_0);
     }
     if (ctx->equalityExpression().size() == 1) {
         return result;
@@ -1165,14 +1165,14 @@ std::any Visitor::visitAndExpression(ZigCCParser::AndExpressionContext *ctx)
         llvm::Value* operand = nullptr;
         auto equalityExpression_i = visitEqualityExpression(ctx->equalityExpression(i));
         if (equalityExpression_i.type() == typeid(std::string)) {
-            std::string name = std::any_cast<std::string>(visitEqualityExpression(ctx->equalityExpression(i)));
+            std::string name = std::any_cast<std::string>(equalityExpression_i);
             operand = this->getVariable(name);
             if (operand == nullptr) {
-                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitEqualityExpression(ctx->equalityExpression(i))) << "'" << std::endl;
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(equalityExpression_i) << "'" << std::endl;
                 return nullptr;
             }
         } else if (equalityExpression_i.type() == typeid(llvm::Value *)) {
-            operand = std::any_cast<llvm::Value*>(visitEqualityExpression(ctx->equalityExpression(i)));
+            operand = std::any_cast<llvm::Value*>(equalityExpression_i);
         }
         operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
@@ -1187,14 +1187,14 @@ std::any Visitor::visitExclusiveOrExpression(ZigCCParser::ExclusiveOrExpressionC
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     auto andExpression_0 = visitAndExpression(ctx->andExpression(0));
     if (andExpression_0.type() == typeid(std::string)) {
-        std::string name = std::any_cast<std::string>(visitAndExpression(ctx->andExpression(0)));
+        std::string name = std::any_cast<std::string>(andExpression_0);
         result = this->getVariable(name);
         if (result == nullptr) {
-            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitAndExpression(ctx->andExpression(0))) << "'" << std::endl;
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(andExpression_0) << "'" << std::endl;
             return nullptr;
         }
     } else if (andExpression_0.type() == typeid(llvm::Value *)) {
-        result = std::any_cast<llvm::Value*>(visitAndExpression(ctx->andExpression(0)));
+        result = std::any_cast<llvm::Value*>(andExpression_0);
     }
     if (ctx->andExpression().size() == 1) {
         return result;
@@ -1204,14 +1204,14 @@ std::any Visitor::visitExclusiveOrExpression(ZigCCParser::ExclusiveOrExpressionC
         llvm::Value* operand = nullptr;
         auto andExpression_i = visitAndExpression(ctx->andExpression(i));
         if (andExpression_i.type() == typeid(std::string)) {
-            std::string name = std::any_cast<std::string>(visitAndExpression(ctx->andExpression(i)));
+            std::string name = std::any_cast<std::string>(andExpression_i);
             operand = this->getVariable(name);
             if (operand == nullptr) {
-                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitAndExpression(ctx->andExpression(i))) << "'" << std::endl;
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(andExpression_i) << "'" << std::endl;
                 return nullptr;
             }
         } else if (andExpression_i.type() == typeid(llvm::Value *)) {
-            operand = std::any_cast<llvm::Value*>(visitAndExpression(ctx->andExpression(i)));
+            operand = std::any_cast<llvm::Value*>(andExpression_i);
         }
         operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
@@ -1226,14 +1226,14 @@ std::any Visitor::visitInclusiveOrExpression(ZigCCParser::InclusiveOrExpressionC
    auto exclusiveOrExpression_0 = visitExclusiveOrExpression(ctx->exclusiveOrExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (exclusiveOrExpression_0.type() == typeid(std::string)) {
-        std::string name = std::any_cast<std::string>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(0)));
+        std::string name = std::any_cast<std::string>(exclusiveOrExpression_0);
         result = this->getVariable(name);
         if (result == nullptr) {
-            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(0))) << "'" << std::endl;
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(exclusiveOrExpression_0) << "'" << std::endl;
             return nullptr;
         }
     } else if (exclusiveOrExpression_0.type() == typeid(llvm::Value *)) {
-        result = std::any_cast<llvm::Value*>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(0)));
+        result = std::any_cast<llvm::Value*>(exclusiveOrExpression_0);
     }
     if (ctx->exclusiveOrExpression().size() == 1) {
         return result;
@@ -1243,14 +1243,14 @@ std::any Visitor::visitInclusiveOrExpression(ZigCCParser::InclusiveOrExpressionC
         llvm::Value* operand = nullptr;
         auto exclusiveOrExpression_i = visitExclusiveOrExpression(ctx->exclusiveOrExpression(i));
         if (exclusiveOrExpression_i.type() == typeid(std::string)) {
-            std::string name = std::any_cast<std::string>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(i)));
+            std::string name = std::any_cast<std::string>(exclusiveOrExpression_i);
             operand = this->getVariable(name);
             if (operand == nullptr) {
-                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(i))) << "'" << std::endl;
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(exclusiveOrExpression_i) << "'" << std::endl;
                 return nullptr;
             }
         } else if (exclusiveOrExpression_i.type() == typeid(llvm::Value *)) {
-            operand = std::any_cast<llvm::Value*>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(i)));
+            operand = std::any_cast<llvm::Value*>(exclusiveOrExpression_i);
         }
         operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
@@ -1265,14 +1265,14 @@ std::any Visitor::visitLogicalAndExpression(ZigCCParser::LogicalAndExpressionCon
     auto inclusiveOrExpression_0 = visitInclusiveOrExpression(ctx->inclusiveOrExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (inclusiveOrExpression_0.type() == typeid(std::string)) {
-        std::string name = std::any_cast<std::string>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(0)));
+        std::string name = std::any_cast<std::string>(inclusiveOrExpression_0);
         result = this->getVariable(name);
         if (result == nullptr) {
-            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(0))) << "'" << std::endl;
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(inclusiveOrExpression_0) << "'" << std::endl;
             return nullptr;
         }
     } else if (inclusiveOrExpression_0.type() == typeid(llvm::Value *)) {
-        result = std::any_cast<llvm::Value*>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(0)));
+        result = std::any_cast<llvm::Value*>(inclusiveOrExpression_0);
     }
     if (ctx->inclusiveOrExpression().size() == 1) {
         return result;
@@ -1290,14 +1290,14 @@ std::any Visitor::visitLogicalAndExpression(ZigCCParser::LogicalAndExpressionCon
         llvm::Value* operand = nullptr;
         auto inclusiveOrExpression_i = visitInclusiveOrExpression(ctx->inclusiveOrExpression(i));
         if (inclusiveOrExpression_i.type() == typeid(std::string)) {
-            std::string name = std::any_cast<std::string>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(i)));
+            std::string name = std::any_cast<std::string>(inclusiveOrExpression_i);
             operand = this->getVariable(name);
             if (operand == nullptr) {
-                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(i))) << "'" << std::endl;
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(inclusiveOrExpression_i) << "'" << std::endl;
                 return nullptr;
             }
         } else if (inclusiveOrExpression_i.type() == typeid(llvm::Value *)) {
-            operand = std::any_cast<llvm::Value*>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(i)));
+            operand = std::any_cast<llvm::Value*>(inclusiveOrExpression_i);
         }
         operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
@@ -1317,14 +1317,14 @@ std::any Visitor::visitLogicalOrExpression(ZigCCParser::LogicalOrExpressionConte
     auto logicalAndExpression_0 = visitLogicalAndExpression(ctx->logicalAndExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (logicalAndExpression_0.type() == typeid(std::string)) {
-        std::string name = std::any_cast<std::string>(visitLogicalAndExpression(ctx->logicalAndExpression(0)));
+        std::string name = std::any_cast<std::string>(logicalAndExpression_0);
         result = this->getVariable(name);
         if (result == nullptr) {
-            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitLogicalAndExpression(ctx->logicalAndExpression(0))) << "'" << std::endl;
+            std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(logicalAndExpression_0) << "'" << std::endl;
             return nullptr;
         }
     } else if (logicalAndExpression_0.type() == typeid(llvm::Value *)) {
-        result = std::any_cast<llvm::Value*>(visitLogicalAndExpression(ctx->logicalAndExpression(0)));
+        result = std::any_cast<llvm::Value*>(logicalAndExpression_0);
     }
     if (ctx->logicalAndExpression().size() == 1) {
         return result;
@@ -1342,14 +1342,14 @@ std::any Visitor::visitLogicalOrExpression(ZigCCParser::LogicalOrExpressionConte
         llvm::Value* operand = nullptr;
         auto logicalAndExpression_i = visitLogicalAndExpression(ctx->logicalAndExpression(i));
         if (logicalAndExpression_i.type() == typeid(std::string)) {
-            std::string name = std::any_cast<std::string>(visitLogicalAndExpression(ctx->logicalAndExpression(i)));
+            std::string name = std::any_cast<std::string>(logicalAndExpression_i);
             operand = this->getVariable(name);
             if (operand == nullptr) {
-                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitLogicalAndExpression(ctx->logicalAndExpression(i))) << "'" << std::endl;
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(logicalAndExpression_i) << "'" << std::endl;
                 return nullptr;
             }
         } else if (logicalAndExpression_i.type() == typeid(llvm::Value *)) {
-            operand = std::any_cast<llvm::Value*>(visitLogicalAndExpression(ctx->logicalAndExpression(i)));
+            operand = std::any_cast<llvm::Value*>(logicalAndExpression_i);
         }
         operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
