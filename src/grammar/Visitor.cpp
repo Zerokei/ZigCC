@@ -938,8 +938,12 @@ std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpre
         } else if (pointerMemberExpression_i.type() == typeid(llvm::Value*)) {
             operand = std::any_cast<llvm::Value*>(visitPointerMemberExpression(ctx->pointerMemberExpression(i)));
         }
+<<<<<<< HEAD
         operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型捡查与转化
+=======
+        // 类型检查与转化
+>>>>>>> 8ecee8b4e8a7b9408a47bdece9b2d528dd6c299e
         if (ctx->Star(i - 1)) {
             result = this->CreateMul(result, operand);
         } else if (ctx->Div(i - 1)) {
@@ -1592,7 +1596,7 @@ std::any Visitor::visitSelectionStatement(ZigCCParser::SelectionStatementContext
             std::cout << "Error: Switch statement not within a function." << std::endl;
             return nullptr;
         }
-        // TODO: 未完戄1�7
+        // TODO: 未完成
     }
     return nullptr;
 }
@@ -1810,8 +1814,8 @@ std::any Visitor::visitDeclarationStatement(ZigCCParser::DeclarationStatementCon
 
 std::any Visitor::visitDeclarationseq(ZigCCParser::DeclarationseqContext *ctx)
 {
-    // 建立全局变量扢�在的 scope（有且仅有一个），其 currentFunction = nullptr
-    // 此后 scopes[0] 就是全局的1�7 scope 的代名词，所有这里面的变量都是可以在屢�部使用的，同时需要注意被覆盖的可胄1�7
+    // 建立全局变量所在的 scope（有且仅有一个），其 currentFunction = nullptr
+    // 此后 scopes[0] 就是全局的 scope 的代名词，所有这里面的变量都是可以在局部使用的，同时需要注意被覆盖的可能
     scopes.push_back(Scope());
     for (auto decl : ctx->declaration())
         visitDeclaration(decl);
@@ -2035,7 +2039,7 @@ std::any Visitor::visitDeclSpecifier(ZigCCParser::DeclSpecifierContext *ctx)
 
 std::any Visitor::visitDeclSpecifierSeq(ZigCCParser::DeclSpecifierSeqContext *ctx)
 {
-    // 显然是不能这么写代码的，但是目前只��虑只有丢�丄1�7 declSpecifier 的情冄1�7
+    // 显然是不能这么写代码的，但是目前只考虑只有一个 declSpecifier 的情况
     for (auto decl : ctx->declSpecifier())
         return visitDeclSpecifier(decl);
     // TODO: attributeSpecifierSeq()
@@ -2375,7 +2379,7 @@ std::any Visitor::visitDeclaratorid(ZigCCParser::DeclaratoridContext *ctx)
     if (auto IdExpression = ctx->idExpression()) {
         return visitIdExpression(IdExpression);
     }
-    // TODO: 其他情况（省略号＄1�7
+    // TODO: 其他情况（省略号）
     return nullptr;
 }
 
