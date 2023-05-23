@@ -691,7 +691,62 @@ std::any Visitor::visitLambdaDeclarator(ZigCCParser::LambdaDeclaratorContext *ct
 
 std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *ctx)
 {
-    if (auto PrimaryExpression = ctx->primaryExpression()) {
+    if (ctx->PlusPlus() != nullptr) { // i++
+        llvm::Value* operand_alloc = nullptr;
+        llvm::Value* operand = nullptr;
+        auto PostfixExpression = visitPostfixExpression(ctx->postfixExpression());
+        if (PostfixExpression.type() == typeid(std::string)) {
+            std::string name = std::any_cast<std::string>(visitPostfixExpression(ctx->postfixExpression()));
+            operand_alloc = this->getVariable(name);
+            if (operand_alloc == nullptr) {
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitPostfixExpression(ctx->postfixExpression())) << "'" << std::endl;
+                return nullptr;
+            }
+            operand = builder.CreateLoad(operand_alloc->getType()->getNonOpaquePointerElementType(), operand_alloc);
+        } else if (PostfixExpression.type() == typeid(llvm::Value*)) {
+            operand = std::any_cast<llvm::Value*>(visitPostfixExpression(ctx->postfixExpression()));
+        }
+        llvm::Value* ret = operand;
+        
+        // 类型检查
+        if (operand->getType()->isIntegerTy() ||
+            operand->getType()->isFloatingPointTy() ||
+            operand->getType()->isPointerTy()) {
+            llvm::Value* result = builder.CreateAdd(operand, builder.getInt1(1));
+            builder.CreateStore(result, operand_alloc);
+            return ret;
+        } else {
+            std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(visitPostfixExpression(ctx->postfixExpression())) << "'" << std::endl;
+            return nullptr;
+        }
+    } else if (ctx->MinusMinus() != nullptr) { // i--
+        llvm::Value* operand_alloc = nullptr;
+        llvm::Value* operand = nullptr;
+        auto PostfixExpression = visitPostfixExpression(ctx->postfixExpression());
+        if (PostfixExpression.type() == typeid(std::string)) {
+            std::string name = std::any_cast<std::string>(visitPostfixExpression(ctx->postfixExpression()));
+            operand_alloc = this->getVariable(name);
+            if (operand_alloc == nullptr) {
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitPostfixExpression(ctx->postfixExpression())) << "'" << std::endl;
+                return nullptr;
+            }
+        } else if (PostfixExpression.type() == typeid(llvm::Value*)) {
+            operand = std::any_cast<llvm::Value*>(visitPostfixExpression(ctx->postfixExpression()));
+        }
+        llvm::Value* ret = operand;
+        operand = builder.CreateLoad(operand_alloc->getType()->getNonOpaquePointerElementType(), operand_alloc);
+        // 类型检查
+        if (operand->getType()->isIntegerTy() ||
+            operand->getType()->isFloatingPointTy() ||
+            operand->getType()->isPointerTy()) {
+            llvm::Value* result = builder.CreateSub(operand, builder.getInt1(1));
+            builder.CreateStore(result, operand_alloc);
+            return ret;
+        } else {
+            std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(visitPostfixExpression(ctx->postfixExpression())) << "'" << std::endl;
+            return nullptr;
+        }
+    } else if (auto PrimaryExpression = ctx->primaryExpression()) {
         return visitPrimaryExpression(PrimaryExpression);
     }
 }
@@ -713,26 +768,81 @@ std::any Visitor::visitPseudoDestructorName(ZigCCParser::PseudoDestructorNameCon
 
 std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
 {
-    if (ctx->PlusPlus() != nullptr) { // ++i
-        
-    } else if (ctx->MinusMinus() != nullptr) { // --i
-        
-    } else if (ctx->Sizeof() != nullptr) {
-        
+    if (ctx->unaryExpression() != nullptr) { // 表明有单目运算符计算需求
+        llvm::Value* operand_alloc = nullptr;
+        llvm::Value* operand = nullptr;
+        auto UnaryExpression = visitUnaryExpression(ctx->unaryExpression());
+        if (UnaryExpression.type() == typeid(std::string)) {
+            std::string name = std::any_cast<std::string>(visitUnaryExpression(ctx->unaryExpression()));
+            operand_alloc = this->getVariable(name);
+            if (operand_alloc == nullptr) {
+                std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(visitUnaryExpression(ctx->unaryExpression())) << "'" << std::endl;
+                return nullptr;
+            }
+            operand = builder.CreateLoad(operand_alloc->getType()->getNonOpaquePointerElementType(), operand_alloc);
+        } else if (UnaryExpression.type() == typeid(llvm::Value*)) {
+            operand = std::any_cast<llvm::Value*>(visitUnaryExpression(ctx->unaryExpression()));
+        }
+        if (ctx->PlusPlus() != nullptr) { // ++i
+            // 类型检查
+            if (operand->getType()->isIntegerTy() ||
+                operand->getType()->isFloatingPointTy() ||
+                operand->getType()->isPointerTy()) {
+                operand = builder.CreateAdd(operand, builder.getInt1(1));
+                builder.CreateStore(operand, operand_alloc);
+                return operand;
+            } else {
+                std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(visitUnaryExpression(ctx->unaryExpression())) << "'" << std::endl;
+                return nullptr;
+            }
+        } else if (ctx->MinusMinus() != nullptr) { // --i
+            // 类型检查
+            if (operand->getType()->isIntegerTy() ||
+                operand->getType()->isFloatingPointTy() ||
+                operand->getType()->isPointerTy()) {
+                operand = builder.CreateSub(operand, builder.getInt1(1));
+                builder.CreateStore(operand, operand_alloc);
+                return operand;
+            } else {
+                std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(visitUnaryExpression(ctx->unaryExpression())) << "'" << std::endl;
+                return nullptr;
+            }
+        } else if (ctx->Sizeof() != nullptr) { // sizeof
+            return DL->getTypeAllocSize(operand->getType());
+        } else if (auto UnaryOp = ctx->unaryOperator()) {
+            if (UnaryOp->Or() != nullptr) {
+                // TODO: 这是啥情况，没看懂 |x 是什么意思
+                return nullptr;
+            } else if (UnaryOp->And() != nullptr) {
+                return operand_alloc;
+            } else if (UnaryOp->Star() != nullptr) {
+                return builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
+            } else if (UnaryOp->Plus() != nullptr) {
+                return operand;
+            } else if (UnaryOp->Minus() != nullptr) {
+                // 类型检查
+                if (operand->getType()->isIntegerTy()) {
+                    return builder.CreateNeg(operand);
+                } else if (operand->getType()->isFloatingPointTy()) {
+                    return builder.CreateFNeg(operand);
+                } else {
+                    std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(visitUnaryExpression(ctx->unaryExpression())) << "'" << std::endl;
+                    return nullptr;
+                }
+            } else if (UnaryOp->Tilde() != nullptr) {
+                // 类型检查
+                if (operand->getType()->isIntegerTy()) {
+                    return builder.CreateNot(operand);
+                } else {
+                    std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(visitUnaryExpression(ctx->unaryExpression())) << "'" << std::endl;
+                    return nullptr;
+                }
+            } else if (UnaryOp->Not() != nullptr) {
+                return builder.CreateICmpEQ(Cast2I1(operand), builder.getInt1(false));
+            }
+        }
     } else if (auto PostfixExpression = ctx->postfixExpression()) {
         return visitPostfixExpression(PostfixExpression);
-    } else if (auto UnaryOperator = ctx->unaryOperator()) {
-        return visitUnaryOperator(UnaryOperator);
-    } else if (auto NewExpression = ctx->newExpression()) {
-        return visitNewExpression(NewExpression);
-    } else if (auto DeleteExpression = ctx->deleteExpression()) {
-        return visitDeleteExpression(DeleteExpression);
-    } else if (auto NoExceptExpression = ctx->noExceptExpression()) {
-        return visitNoExceptExpression(NoExceptExpression);
-    } else if (auto TheTypeId = ctx->theTypeId()) {
-        return visitTheTypeId(TheTypeId);
-    } else if (auto UnaryExpression = ctx->unaryExpression()) {
-        return visitUnaryExpression(UnaryExpression);
     }
 }
 
@@ -797,6 +907,7 @@ std::any Visitor::visitPointerMemberExpression(ZigCCParser::PointerMemberExpress
 std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpressionContext *ctx)
 {
     // 此处 * 是作为乘号的情况，作为解引用是一元运算符
+    llvm::Value* alloc = nullptr;
     llvm::Value* result = nullptr;
     auto pointerMemberExpression_0 = visitPointerMemberExpression(ctx->pointerMemberExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
@@ -810,6 +921,10 @@ std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpre
     } else if (pointerMemberExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(visitPointerMemberExpression(ctx->pointerMemberExpression(0)));
     }
+    if (ctx->pointerMemberExpression().size() == 1) {
+        return result;
+    }
+    result = builder.CreateLoad(result->getType()->getNonOpaquePointerElementType(), result);
     for (size_t i = 1; i < ctx->pointerMemberExpression().size(); i++) {
         llvm::Value* operand = nullptr;
         auto pointerMemberExpression_i = visitPointerMemberExpression(ctx->pointerMemberExpression(i));
@@ -823,7 +938,8 @@ std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpre
         } else if (pointerMemberExpression_i.type() == typeid(llvm::Value*)) {
             operand = std::any_cast<llvm::Value*>(visitPointerMemberExpression(ctx->pointerMemberExpression(i)));
         }
-        // 类型棢�查与转化
+        operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
+        // 类型捡查与转化
         if (ctx->Star(i - 1)) {
             result = this->CreateMul(result, operand);
         } else if (ctx->Div(i - 1)) {
@@ -850,6 +966,10 @@ std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext
     } else if (multiplicativeExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(visitMultiplicativeExpression(ctx->multiplicativeExpression(0)));
     }
+    if (ctx->multiplicativeExpression().size() == 1) {
+        return result;
+    }
+    result = builder.CreateLoad(result->getType()->getNonOpaquePointerElementType(), result);
     for (size_t i = 1; i < ctx->multiplicativeExpression().size(); i++) {
         llvm::Value* operand = nullptr;
         auto multiplicativeExpression_i = visitMultiplicativeExpression(ctx->multiplicativeExpression(i));
@@ -863,6 +983,7 @@ std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext
         } else if (multiplicativeExpression_i.type() == typeid(llvm::Value*)) {
             operand = std::any_cast<llvm::Value*>(visitMultiplicativeExpression(ctx->multiplicativeExpression(i)));
         }
+        operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
         if (ctx->Plus(i - 1)) {
             result = this->CreateAdd(result, operand);
@@ -888,6 +1009,10 @@ std::any Visitor::visitShiftExpression(ZigCCParser::ShiftExpressionContext *ctx)
     } else if (additiveExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(visitAdditiveExpression(ctx->additiveExpression(0)));
     }
+    if (ctx->additiveExpression().size() == 1) {
+        return result;
+    }
+    result = builder.CreateLoad(result->getType()->getNonOpaquePointerElementType(), result);
     for (size_t i = 1; i < ctx->additiveExpression().size(); i++) {
         llvm::Value* operand = nullptr;
         auto additiveExpression_i = visitAdditiveExpression(ctx->additiveExpression(i));
@@ -901,6 +1026,7 @@ std::any Visitor::visitShiftExpression(ZigCCParser::ShiftExpressionContext *ctx)
         } else if (additiveExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitAdditiveExpression(ctx->additiveExpression(i)));
         }
+        operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
         // TODO: 算术右移和逻辑右移
         if (std::any_cast<std::string>(ctx->shiftOperator()) == ">>") {
@@ -941,6 +1067,10 @@ std::any Visitor::visitRelationalExpression(ZigCCParser::RelationalExpressionCon
     } else if (shiftExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(visitShiftExpression(ctx->shiftExpression(0)));
     }
+    if (ctx->shiftExpression().size() == 1) {
+        return result;
+    }
+    result = builder.CreateLoad(result->getType()->getNonOpaquePointerElementType(), result);
     for (size_t i = 1; i < ctx->shiftExpression().size(); i++) {
         llvm::Value* operand = nullptr;
         auto shiftExpression_i = visitShiftExpression(ctx->shiftExpression(i));
@@ -954,6 +1084,7 @@ std::any Visitor::visitRelationalExpression(ZigCCParser::RelationalExpressionCon
         } else if (shiftExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitShiftExpression(ctx->shiftExpression(i)));
         }
+        operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
         if (ctx->Less(i - 1)) {
             result = this->CreateCmpLT(result, operand);
@@ -983,6 +1114,10 @@ std::any Visitor::visitEqualityExpression(ZigCCParser::EqualityExpressionContext
     } else if (relationalExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(visitRelationalExpression(ctx->relationalExpression(0)));
     }
+    if (ctx->relationalExpression().size() == 1) {
+        return result;
+    }
+    result = builder.CreateLoad(result->getType()->getNonOpaquePointerElementType(), result);
     for (size_t i = 1; i < ctx->relationalExpression().size(); i++) {
         llvm::Value* operand = nullptr;
         auto relationalExpression_i = visitRelationalExpression(ctx->relationalExpression(i));
@@ -996,6 +1131,7 @@ std::any Visitor::visitEqualityExpression(ZigCCParser::EqualityExpressionContext
         } else if (relationalExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitRelationalExpression(ctx->relationalExpression(i)));
         }
+        operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
         if (ctx->Equal(i - 1)) {
             result = this->CreateCmpEQ(result, operand);
@@ -1021,6 +1157,10 @@ std::any Visitor::visitAndExpression(ZigCCParser::AndExpressionContext *ctx)
     } else if (equalityExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(visitEqualityExpression(ctx->equalityExpression(0)));
     }
+    if (ctx->equalityExpression().size() == 1) {
+        return result;
+    }
+    result = builder.CreateLoad(result->getType()->getNonOpaquePointerElementType(), result);
     for (size_t i = 1; i < ctx->equalityExpression().size(); i++) {
         llvm::Value* operand = nullptr;
         auto equalityExpression_i = visitEqualityExpression(ctx->equalityExpression(i));
@@ -1034,6 +1174,7 @@ std::any Visitor::visitAndExpression(ZigCCParser::AndExpressionContext *ctx)
         } else if (equalityExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitEqualityExpression(ctx->equalityExpression(i)));
         }
+        operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
         result = this->CreateBitwiseAND(result, operand);
     }
@@ -1055,6 +1196,10 @@ std::any Visitor::visitExclusiveOrExpression(ZigCCParser::ExclusiveOrExpressionC
     } else if (andExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(visitAndExpression(ctx->andExpression(0)));
     }
+    if (ctx->andExpression().size() == 1) {
+        return result;
+    }
+    result = builder.CreateLoad(result->getType()->getNonOpaquePointerElementType(), result);
     for (size_t i = 1; i < ctx->andExpression().size(); i++) {
         llvm::Value* operand = nullptr;
         auto andExpression_i = visitAndExpression(ctx->andExpression(i));
@@ -1068,6 +1213,7 @@ std::any Visitor::visitExclusiveOrExpression(ZigCCParser::ExclusiveOrExpressionC
         } else if (andExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitAndExpression(ctx->andExpression(i)));
         }
+        operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
         result = this->CreateBitwiseXOR(result, operand);
     }
@@ -1089,6 +1235,10 @@ std::any Visitor::visitInclusiveOrExpression(ZigCCParser::InclusiveOrExpressionC
     } else if (exclusiveOrExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(0)));
     }
+    if (ctx->exclusiveOrExpression().size() == 1) {
+        return result;
+    }
+    result = builder.CreateLoad(result->getType()->getNonOpaquePointerElementType(), result);
     for (size_t i = 1; i < ctx->exclusiveOrExpression().size(); i++) {
         llvm::Value* operand = nullptr;
         auto exclusiveOrExpression_i = visitExclusiveOrExpression(ctx->exclusiveOrExpression(i));
@@ -1102,6 +1252,7 @@ std::any Visitor::visitInclusiveOrExpression(ZigCCParser::InclusiveOrExpressionC
         } else if (exclusiveOrExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitExclusiveOrExpression(ctx->exclusiveOrExpression(i)));
         }
+        operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
         result = this->CreateBitwiseOR(result, operand);
     }
@@ -1123,6 +1274,10 @@ std::any Visitor::visitLogicalAndExpression(ZigCCParser::LogicalAndExpressionCon
     } else if (inclusiveOrExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(0)));
     }
+    if (ctx->inclusiveOrExpression().size() == 1) {
+        return result;
+    }
+    result = builder.CreateLoad(result->getType()->getNonOpaquePointerElementType(), result);
     // （需要做逻辑运算的情况下）判断得到的表达式是否能转化为 bool 类型
     if (ctx->inclusiveOrExpression().size() > 1) {
         result = Cast2I1(result);
@@ -1144,6 +1299,7 @@ std::any Visitor::visitLogicalAndExpression(ZigCCParser::LogicalAndExpressionCon
         } else if (inclusiveOrExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitInclusiveOrExpression(ctx->inclusiveOrExpression(i)));
         }
+        operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
         operand = Cast2I1(operand);
         if (operand == nullptr) {
@@ -1170,6 +1326,10 @@ std::any Visitor::visitLogicalOrExpression(ZigCCParser::LogicalOrExpressionConte
     } else if (logicalAndExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(visitLogicalAndExpression(ctx->logicalAndExpression(0)));
     }
+    if (ctx->logicalAndExpression().size() == 1) {
+        return result;
+    }
+    result = builder.CreateLoad(result->getType()->getNonOpaquePointerElementType(), result);
     // （需要做逻辑运算的情况下）判断得到的表达式是否能转化为 bool 类型
     if (ctx->logicalAndExpression().size() > 1) {
         result = Cast2I1(result);
@@ -1191,6 +1351,7 @@ std::any Visitor::visitLogicalOrExpression(ZigCCParser::LogicalOrExpressionConte
         } else if (logicalAndExpression_i.type() == typeid(llvm::Value *)) {
             operand = std::any_cast<llvm::Value*>(visitLogicalAndExpression(ctx->logicalAndExpression(i)));
         }
+        operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型检查与转化
         operand = Cast2I1(operand);
         if (operand == nullptr) {
@@ -1780,27 +1941,22 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
         if (type == nullptr) { // 没有 type，说明此时是赋值
             for (auto var : vars) {
                 // 因此需要判断当前变量是否已经定义过
-                llvm::Value* var_value = getVariable(var.first);
-                if (var_value == nullptr) {
+                llvm::Value* var_alloc = getVariable(var.first);
+                if (var_alloc == nullptr) {
                     std::cout << "Error: Variable " + var.first + " is not defined before." << std::endl;
                     return nullptr;
                 }
                 // 数组下标转换
-                llvm::Value* array_index = nullptr;
                 for (int i = array_cnt.size() - 1; i >= 0; i--) {
-                    var_value = builder.CreateAdd(var_value, array_cnt[i]);
-                    var_value = builder.CreateLoad(var_value->getType()->getPointerElementType(), var_value);
+                    var_alloc = builder.CreateLoad(var_alloc->getType()->getNonOpaquePointerElementType(), var_alloc);
+                    var_alloc = builder.CreateAdd(var_alloc, array_cnt[i]);
                 }
                 // 指针解引用转换
                 for (int i = 0; i < pointer_cnt; i++) {
-                    var_value = builder.CreateLoad(var_value->getType()->getPointerElementType(), var_value);
+                    var_alloc = builder.CreateLoad(var_alloc->getType()->getNonOpaquePointerElementType(), var_alloc);
                 }
-                // 类型检查
-                if (!TypeCheck(var.second->getType(), var_value->getType())) {
-                    std::cout << "Error: Type mismatch" << std::endl;
-                    return nullptr;
-                }
-                builder.CreateStore(var.second, var_value);
+                // 类型检查与赋值
+                this->CreateAssignment(var_alloc, var.second);
             }
         }
         else {
