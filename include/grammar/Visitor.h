@@ -19,11 +19,13 @@ public:
     std::unique_ptr<llvm::LLVMContext> llvm_context;
     llvm::IRBuilder<> builder;
     std::unique_ptr<llvm::Module> module;
+    llvm::DataLayout* DL;
     std::vector<Scope> scopes;
     
     Visitor() : llvm_context(std::make_unique<llvm::LLVMContext>()),
                 builder(*this->llvm_context),
-                module(std::make_unique<llvm::Module>("output", *this->llvm_context)) {}
+                module(std::make_unique<llvm::Module>("output", *this->llvm_context)),
+                DL(new llvm::DataLayout(module.get())) {}
 
     Scope &currentScope();
     llvm::Value *getVariable(const std::string &name);
