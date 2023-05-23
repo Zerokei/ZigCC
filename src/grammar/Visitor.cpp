@@ -938,12 +938,8 @@ std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpre
         } else if (pointerMemberExpression_i.type() == typeid(llvm::Value*)) {
             operand = std::any_cast<llvm::Value*>(visitPointerMemberExpression(ctx->pointerMemberExpression(i)));
         }
-<<<<<<< HEAD
         operand = builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
         // 类型捡查与转化
-=======
-        // 类型检查与转化
->>>>>>> 8ecee8b4e8a7b9408a47bdece9b2d528dd6c299e
         if (ctx->Star(i - 1)) {
             result = this->CreateMul(result, operand);
         } else if (ctx->Div(i - 1)) {
