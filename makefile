@@ -9,7 +9,7 @@ RM = -rm -f
 CPPFLAGS = -Wall -std=c++17 -O1 -lLLVM-14
 # Add -Ofast for opt
 # Debug flags
-DEBUGFLAGS = -ggdb
+DEBUGFLAGS = -g
 # Resulting program file name
 EXE_NAME = zigcc
 # The source file extentions
