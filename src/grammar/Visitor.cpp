@@ -2512,12 +2512,18 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     // 添加参数列表中的参数到 var_list 中
     // NOTE: 参数列表中的参数，认为是先前没有声明过的局部变量
     //      （不需要检查 scope 中是否已经有同名变量）
+    auto fun_arg_iter = function->arg_begin();
     for (const auto& param: params) {
         std::string param_name = param.first;
         llvm::Type *param_type = param.second;
         auto alloca = this->builder.CreateAlloca(param_type, nullptr, param_name);
+        builder.CreateStore(fun_arg_iter, alloca);
+        fun_arg_iter++;
         // NOTE: 初步实现的是不做初始化参数
         fun_scope.setVariable(param_name, alloca);
+        if(fun_arg_iter == function->arg_end()) {
+            break;
+        }
     }
 
     // 加入到 scopes 作为接下来 body 中的作用域
