@@ -606,8 +606,14 @@ std::any Visitor::visitTranslationUnit(ZigCCParser::TranslationUnitContext *ctx)
 
 std::any Visitor::visitPrimaryExpression(ZigCCParser::PrimaryExpressionContext *ctx)
 {
-    for (auto Literal : ctx->literal())
-        return visitLiteral(Literal);
+    // TODO: 暂时只考虑了有一个 literal 的情况
+    if (ctx->literal(0) != nullptr) {
+        return visitLiteral(ctx->literal(0));
+    } else if (ctx->idExpression() != nullptr) {
+        return visitIdExpression(ctx->idExpression());
+    } else if (ctx->lambdaExpression() != nullptr) {
+        return visitLambdaExpression(ctx->lambdaExpression());
+    }
 }
 
 std::any Visitor::visitIdExpression(ZigCCParser::IdExpressionContext *ctx)
@@ -747,7 +753,9 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
             return nullptr;
         }
     } else if (auto PrimaryExpression = ctx->primaryExpression()) {
+        std::cout << "Before visitPrimaryExpression" << std::endl;
         return visitPrimaryExpression(PrimaryExpression);
+        std::cout << "After visitPrimaryExpression" << std::endl;
     }
 }
 
@@ -842,7 +850,9 @@ std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
             }
         }
     } else if (auto PostfixExpression = ctx->postfixExpression()) {
+        std::cout << "Before visitPostfixExpression" << std::endl;
         return visitPostfixExpression(PostfixExpression);
+        std::cout << "After visitPostfixExpression" << std::endl;
     }
 }
 
@@ -953,7 +963,9 @@ std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext
     llvm::Value* alloc = nullptr;
     llvm::Value* result = nullptr;
     // 判断返回的是变量名 string 还是表达式 llvm::Value
+    std::cout << "Before visitMultiplicativeExpression" << std::endl;
     auto multiplicativeExpression_0 = visitMultiplicativeExpression(ctx->multiplicativeExpression(0));
+    std::cout << "After visitMultiplicativeExpression" << std::endl;
     if (multiplicativeExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(multiplicativeExpression_0);
         alloc = this->getVariable(name);
@@ -1372,6 +1384,7 @@ std::any Visitor::visitAssignmentExpression(ZigCCParser::AssignmentExpressionCon
         // 判断赋值号右边的变量是否初始化过（有待改进，不知道是哪个变量）
         if (value == nullptr) {
             std::cout << "error: use of uninitialized variable" << std::endl;
+            return nullptr;
         }
         if (AssignOp == "=") {
             builder.CreateStore(rhs, alloca);
@@ -1477,6 +1490,7 @@ std::any Visitor::visitStatement(ZigCCParser::StatementContext *ctx)
         visitJumpStatement(JumpStatement);
     } else if (auto DeclarationStatement = ctx->declarationStatement()) {
         visitDeclarationStatement(DeclarationStatement);
+        std::cout << "Declaration statement end" << std::endl;
     } else if (auto TryBlock = ctx->tryBlock()) {
         visitTryBlock(TryBlock);
     } else if (auto AttributeSpecifierSeq = ctx->attributeSpecifierSeq()) {
@@ -1761,7 +1775,21 @@ std::any Visitor::visitJumpStatement(ZigCCParser::JumpStatementContext *ctx)
             return nullptr;
         }
         if (ctx->expression() != nullptr) {
-            llvm::Value* value = std::any_cast<llvm::Value*>(visitExpression(ctx->expression()));
+            llvm::Value* alloc;
+            llvm::Value* value;
+            auto RetExpr = visitExpression(ctx->expression());
+            if (RetExpr.type() == typeid(std::string)) {
+                std::cout << "Ret value is a string" << std::endl;
+                std::string name = std::any_cast<std::string>(RetExpr);
+                alloc = this->getVariable(name);
+                if (alloc == nullptr) {
+                    std::cout << "Error: Use of undeclared identifier '" << std::any_cast<std::string>(RetExpr) << "'" << std::endl;
+                    return nullptr;
+                }
+                value = builder.CreateLoad(alloc->getType()->getNonOpaquePointerElementType(), alloc);
+            } else if (RetExpr.type() == typeid(llvm::Value *)) {
+                value = std::any_cast<llvm::Value*>(RetExpr);
+            }
             if (!TypeCheck(value->getType(), function->getReturnType())) {
                 std::cout << "Error: Return type mismatch." << std::endl;
                 return nullptr;
@@ -1774,6 +1802,7 @@ std::any Visitor::visitJumpStatement(ZigCCParser::JumpStatementContext *ctx)
             }
             builder.CreateRetVoid();
         }
+        return nullptr;
     } else if (ctx->Goto() != nullptr) {
 
     } else if (ctx->Identifier() != nullptr) {
@@ -1785,7 +1814,9 @@ std::any Visitor::visitDeclarationStatement(ZigCCParser::DeclarationStatementCon
 {
     if (auto BlockDeclaration = ctx->blockDeclaration()) {
         visitBlockDeclaration(BlockDeclaration);
+        std::cout << "BlockDeclaration end" << std::endl;
     }
+    return nullptr;
 }
 
 std::any Visitor::visitDeclarationseq(ZigCCParser::DeclarationseqContext *ctx)
@@ -1824,8 +1855,10 @@ std::any Visitor::visitDeclaration(ZigCCParser::DeclarationContext *ctx)
 
 std::any Visitor::visitBlockDeclaration(ZigCCParser::BlockDeclarationContext *ctx)
 {
+    std::cout << "BlockDeclaration" << std::endl;
     if (auto SimpleDeclaration = ctx->simpleDeclaration()) {
         visitSimpleDeclaration(SimpleDeclaration);
+        std::cout << "SimpleDeclaration end" << std::endl;
     } else if (auto AsmDefinition = ctx->asmDefinition()) {
         visitAsmDefinition(AsmDefinition);
     } else if (auto NamespaceAliasDefinition = ctx->namespaceAliasDefinition()) {
@@ -1862,10 +1895,12 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     // TODO: 目前暂未考虑一行中有两种类型的情况（const int 之类的）
     // 当前只考虑 int x, y = 0; int x = y = 0; 这种情况，enum 以及 class 等复杂类型之后再作处理（添加分支处理（？））
     // 还有强制类型转换可以做（感觉应该不难）
+    std::cout << "SimpleDeclaration" << std::endl;
     llvm::Type* type = nullptr;
     if (auto DeclSpecifierSeq = ctx->declSpecifierSeq()) {
         type = std::any_cast<llvm::Type*>(visitDeclSpecifierSeq(DeclSpecifierSeq));
     }
+    std::cout << "type: " << type << std::endl;
     std::vector< std::pair<std::string, llvm::Value*> > vars;
     int pointer_cnt = 0;
     std::vector<llvm::Value*> array_cnt;
@@ -1912,27 +1947,30 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
         }
         // 如果进行了初始化，则将初始化的值存入 values 中
         // TODO: 数组初始化
+        llvm::Value* alloca = nullptr;
         llvm::Value* value = nullptr;
         if (auto Initializer = decl->initializer()) {
             auto AssignExpr = visitInitializer(Initializer);
             if (AssignExpr.type() == typeid(std::string)) {
                 std::string var_name = std::any_cast<std::string>(AssignExpr);
-                value = getVariable(var_name);
-                if (value == nullptr) {
+                alloca = getVariable(var_name);
+                if (alloca == nullptr) {
                     std::cout << "Error: Variable " + var_name + " is not defined before." << std::endl;
                     return nullptr;
                 }
+                value = builder.CreateLoad(alloca->getType()->getNonOpaquePointerElementType(), alloca);
             } else if (AssignExpr.type() == typeid(llvm::Value*)) {
                 value = std::any_cast<llvm::Value*>(AssignExpr);
             }
-            value = std::any_cast<llvm::Value*>();
         }
         vars.push_back(std::make_pair(name, value));
+        std::cout << "name: " << name << std::endl;
+        std::cout << "value: " << value << std::endl;
     }
     if (currentScope().currentFunction != nullptr) { // 局部变量的情况
         if (type == nullptr) { // 没有 type，说明此时是赋值
             for (auto var : vars) {
-                
+                std::cout << "assign var: " << std::get<0>(var) << std::endl;
                 // 因此需要判断当前变量是否已经定义过
                 llvm::Value* var_alloc = getVariable(var.first);
                 if (var_alloc == nullptr) {
@@ -1952,10 +1990,12 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
                 // NOTE: 可能全局变量不能如此赋值！
                 this->CreateAssignment(var_alloc, var.second);
                 // builder.CreateStore(var.second, var_alloc);
+                std::cout << "finish assign var: " << std::get<0>(var) << std::endl;
             }
         }
         else {
             for (auto var : vars) {
+                std::cout << "create var: " << std::get<0>(var) << std::endl;
                 // TODO: 数组初始化
                 // 类型检查
                 if (std::get<1>(var) != nullptr && !TypeCheck(var.second->getType(), type)) {
@@ -1969,6 +2009,7 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
                     builder.CreateStore(var.second, alloca);
                 }
                 this->currentScope().setVariable(std::get<0>(var), alloca);
+                std::cout << "finish create var: " << std::get<0>(var) << std::endl;
             }
         }
     } else { // 全局变量的情况
