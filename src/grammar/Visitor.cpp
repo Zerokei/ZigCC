@@ -2492,6 +2492,12 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     auto functionBody = ctx->functionBody();
     visitFunctionBody(functionBody);
 
+    // 创建一个空返回（如果能在 body 中处理最好，如果没有返回指令的话自动添加一个 void ret）
+    // NOTE: 这个想法可能有问题，有待检查
+    llvm::BasicBlock *external_ret_block = llvm::BasicBlock::Create(*llvm_context, llvm::Twine(std::string("external_ret_")+fun_name), function);
+    builder.SetInsertPoint(external_ret_block);
+    builder.CreateRetVoid();
+
     // 抛出当前 scope，开始分析全局 / 下一个函数体
     this->scopes.pop_back();
 
