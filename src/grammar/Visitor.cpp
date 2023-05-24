@@ -1896,29 +1896,96 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     // 当前只考虑 int x, y = 0; int x = y = 0; 这种情况，enum 以及 class 等复杂类型之后再作处理（添加分支处理（？））
     // 还有强制类型转换可以做（感觉应该不难）
     std::cout << "SimpleDeclaration" << std::endl;
+    std::string temp_name;
     llvm::Type* type = nullptr;
     if (auto DeclSpecifierSeq = ctx->declSpecifierSeq()) {
-        type = std::any_cast<llvm::Type*>(visitDeclSpecifierSeq(DeclSpecifierSeq));
+        auto VisitDeclSpecifierSeq = visitDeclSpecifierSeq(DeclSpecifierSeq);
+        if(VisitDeclSpecifierSeq.type() == typeid(llvm::Type *)) {
+            type = std::any_cast<llvm::Type*>(VisitDeclSpecifierSeq);
+        } else if(VisitDeclSpecifierSeq.type() == typeid(std::string)) {
+            temp_name = std::any_cast<std::string>(VisitDeclSpecifierSeq);
+        }
     }
     std::cout << "type: " << type << std::endl;
     std::vector< std::pair<std::string, llvm::Value*> > vars;
     int pointer_cnt = 0;
     std::vector<llvm::Value*> array_cnt;
     for (auto decl : ctx->initDeclaratorList()->initDeclarator()) {
-        // 判断是否进行函数调用
         antlr4::tree::TerminalNode *L_paren = nullptr;
-            // L_paren = decl->declarator()->pointerDeclarator()->noPointerDeclarator()->parametersAndQualifiers()->LeftParen();
+        // 判断是否进行函数调用(单参数)
+        if(auto _L_paren_noPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator())
+        if(L_paren = _L_paren_noPointerDeclarator->LeftParen()) {
+            std::string fun_name(temp_name);
+            llvm::Function *callee = module->getFunction(fun_name);
+            llvm::FunctionType *callee_type = callee->getFunctionType();
+            
+            // 获得参数
+            auto PointerDeclarator =  _L_paren_noPointerDeclarator->pointerDeclarator();
+            std::string param_name = std::any_cast<std::string>(visitPointerDeclarator(PointerDeclarator));
+            // TODO: 如何根据变量名得到其类型？我们似乎并没有记录这部分。
+            llvm::Value *param_value = getVariable(param_name);
+            if(nullptr == param_value) {
+                std::cout << "Error: Undefined variable " + param_name + "." << std::endl;
+                return nullptr;
+            }
+
+            std::vector<llvm::Value *> param_values;
+            param_values.push_back(param_value);
+
+            // 获得应匹配的函数参数类型
+            llvm::ArrayRef<llvm::Type *> _array_need_param_types = callee_type->params();
+            std::vector<llvm::Type *> need_param_types(_array_need_param_types.begin(), _array_need_param_types.end());
+
+            if(need_param_types.size() != 1) {
+                std::cout << "Error: Wrong number of parameters when calling " + fun_name + "." << std::endl;
+                return nullptr;
+            }
+
+            // TODO: 类型检查与匹配，如果无法 cast 应报错
+
+            builder.CreateCall(callee_type, callee, param_values);
+            continue;
+        }
+
+        // 判断是否进行函数调用(无参数或多参数)
         // Ugly but Useful...
         if(auto _L_paren_noPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator())
         if(auto _L_paren_parametersAndQualifiers = _L_paren_noPointerDeclarator->parametersAndQualifiers())
         if(L_paren = _L_paren_parametersAndQualifiers->LeftParen()) {
             // Function Call
-            std::cout << "HERE function call!" << std::endl;
             std::string fun_name;
             fun_name = std::any_cast<std::string>(visitNoPointerDeclarator(_L_paren_noPointerDeclarator));
             llvm::Function *callee = module->getFunction(fun_name);
             llvm::FunctionType *callee_type = callee->getFunctionType();
-            builder.CreateCall(callee_type, callee);
+
+            // 获得参数列表
+            std::vector< std::pair<std::string, llvm::Type *> > params;
+            params = std::any_cast<std::vector< std::pair<std::string, llvm::Type *> > >
+                (visitParametersAndQualifiers(_L_paren_parametersAndQualifiers));
+            std::vector<llvm::Type *> param_types;
+            std::vector<llvm::Value *> param_values;
+            for (const auto& param: params) {
+                param_types.push_back(param.second);
+                llvm::Value *value = getVariable(param.first);
+                if(nullptr == value) {
+                    std::cout << "Error: Undefined variable " + param.first + "." << std::endl;
+                    return nullptr;
+                }
+                param_values.push_back(value);
+            }
+
+            llvm::ArrayRef<llvm::Type *> _array_need_param_types = callee_type->params();
+            std::vector<llvm::Type *> need_param_types(_array_need_param_types.begin(), _array_need_param_types.end());
+
+            if(need_param_types.size() != param_types.size()) {
+                std::cout << "Error: Wrong number of parameters when calling " + fun_name + "." << std::endl;
+                return nullptr;
+            }
+
+            // TODO: 类型检查与匹配，如果无法 cast 应报错
+            
+
+            builder.CreateCall(callee_type, callee, param_values);
             continue;
         }
 
@@ -2177,6 +2244,9 @@ std::any Visitor::visitSimpleTypeSpecifier(ZigCCParser::SimpleTypeSpecifierConte
     } else if (ctx->Auto() != nullptr) {
         // TODO: auto
     } else {
+        if(auto TheTypeName = ctx->theTypeName()) {
+            return visitTheTypeName(TheTypeName);
+        }
         // TODO: "error: unknown type specifier"
         return nullptr;
     }
@@ -2185,13 +2255,13 @@ std::any Visitor::visitSimpleTypeSpecifier(ZigCCParser::SimpleTypeSpecifierConte
 std::any Visitor::visitTheTypeName(ZigCCParser::TheTypeNameContext *ctx)
 {
     if (auto ClassName = ctx->className()) {
-        visitClassName(ClassName);
+        return visitClassName(ClassName);
     } else if (auto EnumName = ctx->enumName()) {
-        visitEnumName(EnumName);
+        return visitEnumName(EnumName);
     } else if (auto TypedefName = ctx->typedefName()) {
-        visitTypedefName(TypedefName);
+        return visitTypedefName(TypedefName);
     } else if (auto SimpleTemplateId = ctx->simpleTemplateId()) {
-        visitSimpleTemplateId(SimpleTemplateId);
+        return visitSimpleTemplateId(SimpleTemplateId);
     }
 }
 
@@ -2616,7 +2686,9 @@ std::any Visitor::visitBracedInitList(ZigCCParser::BracedInitListContext *ctx)
 
 std::any Visitor::visitClassName(ZigCCParser::ClassNameContext *ctx)
 {
-
+    if(auto Identifier = ctx->Identifier()) {
+        return std::string(Identifier->getText());
+    }
 }
 
 std::any Visitor::visitClassSpecifier(ZigCCParser::ClassSpecifierContext *ctx)
