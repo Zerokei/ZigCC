@@ -5,6 +5,7 @@
 #include <vector>
 #include <tuple>
 #include <string>
+#include <typeinfo>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Type.h>
 #include <llvm/Support/raw_ostream.h>
