@@ -2474,7 +2474,7 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     Scope fun_scope = Scope(function);
     this->scopes.push_back(fun_scope);
 
-    auto block = llvm::BasicBlock::Create(builder.getContext(), llvm::Twine(std::string("entry_")+fun_name), function);
+    auto block = llvm::BasicBlock::Create(*llvm_context, llvm::Twine(std::string("entry_")+fun_name), function);
     builder.SetInsertPoint(block);
 
     // 添加参数列表中的参数到 var_list 中
