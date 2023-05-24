@@ -2504,10 +2504,6 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
                                       llvm::GlobalValue::LinkageTypes::ExternalLinkage,
                                       fun_name,
                                       this->module.get());
-    
-    // 加入到 scopes 作为接下来 body 中的作用域
-    Scope fun_scope = Scope(function);
-    this->scopes.push_back(fun_scope);
 
     auto block = llvm::BasicBlock::Create(*llvm_context, llvm::Twine(std::string("entry_")+fun_name), function);
     builder.SetInsertPoint(block);
@@ -2522,6 +2518,10 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
         // NOTE: 初步实现的是不做初始化参数
         fun_scope.setVariable(param_name, alloca);
     }
+
+    // 加入到 scopes 作为接下来 body 中的作用域
+    Scope fun_scope = Scope(function);
+    this->scopes.push_back(fun_scope);
 
     // BODY
     auto functionBody = ctx->functionBody();
