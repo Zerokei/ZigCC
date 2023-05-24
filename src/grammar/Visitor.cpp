@@ -1905,6 +1905,23 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     int pointer_cnt = 0;
     std::vector<llvm::Value*> array_cnt;
     for (auto decl : ctx->initDeclaratorList()->initDeclarator()) {
+        // 判断是否进行函数调用
+        antlr4::tree::TerminalNode *L_paren = nullptr;
+            // L_paren = decl->declarator()->pointerDeclarator()->noPointerDeclarator()->parametersAndQualifiers()->LeftParen();
+        // Ugly but Useful...
+        if(auto _L_paren_noPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator())
+        if(auto _L_paren_parametersAndQualifiers = _L_paren_noPointerDeclarator->parametersAndQualifiers())
+        if(L_paren = _L_paren_parametersAndQualifiers->LeftParen()) {
+            // Function Call
+            std::cout << "HERE function call!" << std::endl;
+            std::string fun_name;
+            fun_name = std::any_cast<std::string>(visitNoPointerDeclarator(_L_paren_noPointerDeclarator));
+            llvm::Function *callee = module->getFunction(fun_name);
+            llvm::FunctionType *callee_type = callee->getFunctionType();
+            builder.CreateCall(callee_type, callee);
+            continue;
+        }
+
         // 我们先处理指针，再处理数组，因此默认 int *a[] 为指针数组
         // TODO: 数组指针需特判是否为 int (*a)[]
         // 首先判断是否有 * 运算符，创建指针类型
