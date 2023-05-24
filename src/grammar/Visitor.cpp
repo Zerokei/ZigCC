@@ -2508,6 +2508,7 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     auto block = llvm::BasicBlock::Create(*llvm_context, llvm::Twine(std::string("entry_")+fun_name), function);
     builder.SetInsertPoint(block);
 
+    Scope fun_scope = Scope(function);
     // 添加参数列表中的参数到 var_list 中
     // NOTE: 参数列表中的参数，认为是先前没有声明过的局部变量
     //      （不需要检查 scope 中是否已经有同名变量）
@@ -2520,7 +2521,6 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     }
 
     // 加入到 scopes 作为接下来 body 中的作用域
-    Scope fun_scope = Scope(function);
     this->scopes.push_back(fun_scope);
 
     // BODY
