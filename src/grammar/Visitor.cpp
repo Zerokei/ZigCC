@@ -1902,6 +1902,7 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
         }
         // 判断是否有数组，创建数组类型（TODO: int a[][5] 这类的实现）
         auto NoPointerDeclarator = decl->declarator()->noPointerDeclarator();
+        if(NoPointerDeclarator) // NOTE: Maybe NULL
         while (NoPointerDeclarator->LeftBracket() != nullptr) {
             if (NoPointerDeclarator->constantExpression() != nullptr) {
                 // 检查下标是否是整数类型
@@ -1941,6 +1942,7 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     if (currentScope().currentFunction != nullptr) { // 局部变量的情况
         if (type == nullptr) { // 没有 type，说明此时是赋值
             for (auto var : vars) {
+                
                 // 因此需要判断当前变量是否已经定义过
                 llvm::Value* var_alloc = getVariable(var.first);
                 if (var_alloc == nullptr) {
@@ -1957,7 +1959,9 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
                     var_alloc = builder.CreateLoad(var_alloc->getType()->getNonOpaquePointerElementType(), var_alloc);
                 }
                 // 类型检查与赋值
+                // NOTE: 可能全局变量不能如此赋值！
                 this->CreateAssignment(var_alloc, var.second);
+                // builder.CreateStore(var.second, var_alloc);
             }
         }
         else {
@@ -2474,7 +2478,7 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     Scope fun_scope = Scope(function);
     this->scopes.push_back(fun_scope);
 
-    auto block = llvm::BasicBlock::Create(builder.getContext(), llvm::Twine(std::string("entry_")+fun_name), function);
+    auto block = llvm::BasicBlock::Create(*llvm_context, llvm::Twine(std::string("entry_")+fun_name), function);
     builder.SetInsertPoint(block);
 
     // 添加参数列表中的参数到 var_list 中
@@ -2491,6 +2495,12 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     // BODY
     auto functionBody = ctx->functionBody();
     visitFunctionBody(functionBody);
+
+    // 创建一个空返回（如果能在 body 中处理最好，如果没有返回指令的话自动添加一个 void ret）
+    // NOTE: 这个想法可能有问题，有待检查
+    llvm::BasicBlock *external_ret_block = llvm::BasicBlock::Create(*llvm_context, llvm::Twine(std::string("external_ret_")+fun_name), function);
+    builder.SetInsertPoint(external_ret_block);
+    builder.CreateRetVoid();
 
     // 抛出当前 scope，开始分析全局 / 下一个函数体
     this->scopes.pop_back();
