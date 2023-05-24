@@ -2447,6 +2447,7 @@ std::any Visitor::visitNoPointerAbstractPackDeclarator(ZigCCParser::NoPointerAbs
 
 std::any Visitor::visitParameterDeclarationClause(ZigCCParser::ParameterDeclarationClauseContext *ctx)
 {
+    if(!ctx) return std::vector< std::pair< std::string, llvm::Type* > >();
     if (auto parameterDeclarationList = ctx->parameterDeclarationList()) {
         return visitParameterDeclarationList(parameterDeclarationList);
     }
@@ -2487,8 +2488,11 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     // 获得参数列表
     std::vector< std::pair<std::string, llvm::Type *> > params;
     auto parametersAndQualifiers = ctx->declarator()->pointerDeclarator()->noPointerDeclarator()->parametersAndQualifiers();
+    // auto ParametersAndQualifiers = visitParametersAndQualifiers(parametersAndQualifiers);
     params = std::any_cast<std::vector< std::pair<std::string, llvm::Type *> > >
-            (visitParametersAndQualifiers(parametersAndQualifiers));
+        (visitParametersAndQualifiers(parametersAndQualifiers));
+
+
     std::vector<llvm::Type *> param_types;
     for (const auto& param: params) {
         param_types.push_back(param.second);
