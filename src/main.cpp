@@ -72,7 +72,6 @@ int main(int argc, char* argv[])
 
     // JIT（动态链接库相关）
     auto jit = ZigCC::JIT::create(FE.visitor.module, FE.visitor.llvm_context);
-    std::cout << "After Create JIT" << std::endl;
     // 使用 registerSymbols() 函数注册需要用到的符号（Symbol），并将它们与对应的函数指针关联起来
     // 在这个例子中，将 printf 函数与字符串 "printf" 关联起来（后续可以继续添加）
     jit->registerSymbols(
@@ -83,14 +82,11 @@ int main(int argc, char* argv[])
             symbolMap[interner("scanf")] = llvm::JITEvaluatedSymbol::fromPointer(scanf);
             return symbolMap;
         });
-    std::cout << "After Register Symbols" << std::endl;
     // 使用 lookup() 函数查找名为 "main" 的函数，并将其转换为一个函数指针类型（int()）。
     auto entry = jit->lookup<int()>("main");
-    std::cout << "After Lookup" << std::endl;
     if (!entry) {
         llvm::errs() << entry.takeError();
     }
     entry.get()();
-    std::cout << "After Entry" << std::endl;
     return EXIT_SUCCESS;
 }

@@ -823,7 +823,7 @@ std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
             } else if (UnaryOp->And() != nullptr) {
                 return operand_alloc;
             } else if (UnaryOp->Star() != nullptr) {
-                return builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
+                return (llvm::Value*)builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
             } else if (UnaryOp->Plus() != nullptr) {
                 return operand;
             } else if (UnaryOp->Minus() != nullptr) {
@@ -1975,13 +1975,10 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
             }
         }
         vars.push_back(std::make_pair(name, value));
-        std::cout << "name: " << name << std::endl;
-        std::cout << "value: " << value << std::endl;
     }
     if (currentScope().currentFunction != nullptr) { // 局部变量的情况
         if (type == nullptr) { // 没有 type，说明此时是赋值
             for (auto var : vars) {
-                std::cout << "assign var: " << std::get<0>(var) << std::endl;
                 // 因此需要判断当前变量是否已经定义过
                 llvm::Value* var_alloc = getVariable(var.first);
                 if (var_alloc == nullptr) {
@@ -2000,12 +1997,10 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
                 // 类型检查与赋值
                 // NOTE: 可能全局变量不能如此赋值！
                 this->CreateAssignment(var_alloc, var.second);
-                std::cout << "finish assign var: " << std::get<0>(var) << std::endl;
             }
         }
         else {
             for (auto var : vars) {
-                std::cout << "create var: " << std::get<0>(var) << std::endl;
                 // TODO: 数组初始化
                 // 类型检查
                 if (std::get<1>(var) != nullptr && !TypeCheck(var.second->getType(), type)) {
@@ -2016,11 +2011,9 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
                 auto alloca = builder.CreateAlloca(type, nullptr, std::get<0>(var));
                 // 当进行了初始化时，CreateStore 函数将赋值的表达式存入上一步开辟的地址空间 alloca 中
                 if (std::get<1>(var) != nullptr) {
-                    std::cout << "Before CreateStore" << std::endl;
                     builder.CreateStore(var.second, alloca);
                 }
                 this->currentScope().setVariable(std::get<0>(var), alloca);
-                std::cout << "finish create var: " << std::get<0>(var) << std::endl;
             }
         }
     } else { // 全局变量的情况
@@ -2108,10 +2101,11 @@ std::any Visitor::visitTypeSpecifier(ZigCCParser::TypeSpecifierContext *ctx)
     if (auto TrailingTypeSpecifier = ctx->trailingTypeSpecifier()) {
 	    return visitTrailingTypeSpecifier(TrailingTypeSpecifier);
     } else if (auto ClassSpecifier = ctx->classSpecifier()) {
-        return visitClassSpecifier(ClassSpecifier);
+        visitClassSpecifier(ClassSpecifier);
     } else if (auto EnumSpecifier = ctx->enumSpecifier()) {
-        return visitEnumSpecifier(EnumSpecifier);
+        visitEnumSpecifier(EnumSpecifier);
     }
+    return nullptr;
 }
 
 std::any Visitor::visitTrailingTypeSpecifier(ZigCCParser::TrailingTypeSpecifierContext *ctx)
@@ -2610,22 +2604,55 @@ std::any Visitor::visitBracedInitList(ZigCCParser::BracedInitListContext *ctx)
 
 std::any Visitor::visitClassName(ZigCCParser::ClassNameContext *ctx)
 {
-
+    if (ctx->Identifier() != nullptr) {
+        return ctx->Identifier()->getText();
+    }
+    return std::string("");
 }
 
 std::any Visitor::visitClassSpecifier(ZigCCParser::ClassSpecifierContext *ctx)
 {
-
+    // TODO: 目前强制最标准的 class/struct/union 定义，不支持匿名定义等
+    std::string classtype, classname;
+    if (ctx->classHead() != nullptr) {
+        std::pair<std::string, std::string> ret = std::any_cast< std::pair<std::string, std::string> >(visitClassHead(ctx->classHead()));
+        classtype = ret.first;
+        classname = ret.second;
+        if (classtype == "class") {
+            if (auto MemberSpecification = ctx->memberSpecification()) {
+                visitMemberSpecification(MemberSpecification);
+            }
+        } else if (classtype == "struct") {
+            if (auto MemberSpecification = ctx->memberSpecification()) {
+                visitMemberSpecification(MemberSpecification);
+            }
+        } else if (classtype == "union") {
+            if (auto MemberSpecification = ctx->memberSpecification()) {
+                visitMemberSpecification(MemberSpecification);
+            }
+        }
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitClassHead(ZigCCParser::ClassHeadContext *ctx)
 {
-
+    if (ctx->Union() != nullptr) {
+        return std::make_pair("union", std::any_cast<std::string>(visitClassHeadName(ctx->classHeadName())));
+    } else if (auto ClassKey = ctx->classKey()) {
+        return std::make_pair(std::any_cast<std::string>(visitClassKey(ClassKey)), std::any_cast<std::string>(visitClassHeadName(ctx->classHeadName())));
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitClassHeadName(ZigCCParser::ClassHeadNameContext *ctx)
 {
-
+    if (auto className = ctx->className()) {
+        return visitClassName(className);
+    } else if (auto nestedNameSpecifier = ctx->nestedNameSpecifier()) {
+        return visitNestedNameSpecifier(nestedNameSpecifier);
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitClassVirtSpecifier(ZigCCParser::ClassVirtSpecifierContext *ctx)
@@ -2635,12 +2662,17 @@ std::any Visitor::visitClassVirtSpecifier(ZigCCParser::ClassVirtSpecifierContext
 
 std::any Visitor::visitClassKey(ZigCCParser::ClassKeyContext *ctx)
 {
-
+    if (ctx->Class() != nullptr) {
+        return std::string("class");
+    } else if (ctx->Struct() != nullptr) {
+        return std::string("struct");
+    }
+    return std::string("");
 }
 
 std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationContext *ctx)
 {
-
+    
 }
 
 [[deprecated("First rule not implemented")]]
@@ -2715,7 +2747,14 @@ std::any Visitor::visitBaseTypeSpecifier(ZigCCParser::BaseTypeSpecifierContext *
 
 std::any Visitor::visitAccessSpecifier(ZigCCParser::AccessSpecifierContext *ctx)
 {
-
+    if (ctx->Private() != nullptr) {
+        return std::string("private");
+    } else if (ctx->Protected() != nullptr) {
+        return std::string("protected");
+    } else if (ctx->Public() != nullptr) {
+        return std::string("public");
+    }
+    return std::string("");
 }
 
 std::any Visitor::visitConversionFunctionId(ZigCCParser::ConversionFunctionIdContext *ctx)

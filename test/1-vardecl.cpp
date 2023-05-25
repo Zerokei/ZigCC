@@ -1,7 +1,8 @@
 void f()
 {
-    int a = 1;
-    int* b = &a;
-    int c = *b;
+    int a, b;
+    a = 1;
+    b = 1;
+    int c = a + b;
     return ;
 }
