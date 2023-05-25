@@ -1895,6 +1895,12 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     // TODO: 目前暂未考虑一行中有两种类型的情况（const int 之类的）
     // 当前只考虑 int x, y = 0; int x = y = 0; 这种情况，enum 以及 class 等复杂类型之后再作处理（添加分支处理（？））
     // 还有强制类型转换可以做（感觉应该不难）
+    
+    // 判断空语句
+    if(!ctx->declSpecifierSeq() && !ctx->initDeclaratorList() && !ctx->attributeSpecifierSeq()) {
+        return nullptr;
+    }
+
     std::cout << "SimpleDeclaration" << std::endl;
     std::string temp_name;
     llvm::Type* type = nullptr;
@@ -2621,9 +2627,9 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
 
     // 创建一个空返回（如果能在 body 中处理最好，如果没有返回指令的话自动添加一个 void ret）
     // NOTE: 这个想法可能有问题，有待检查
-    llvm::BasicBlock *external_ret_block = llvm::BasicBlock::Create(*llvm_context, llvm::Twine(std::string("external_ret_")+fun_name), function);
-    builder.SetInsertPoint(external_ret_block);
-    builder.CreateRetVoid();
+    // llvm::BasicBlock *external_ret_block = llvm::BasicBlock::Create(*llvm_context, llvm::Twine(std::string("external_ret_")+fun_name), function);
+    // builder.SetInsertPoint(external_ret_block);
+    // builder.CreateRetVoid();
 
     // 抛出当前 scope，开始分析全局 / 下一个函数体
     this->scopes.pop_back();
@@ -2636,6 +2642,16 @@ std::any Visitor::visitFunctionBody(ZigCCParser::FunctionBodyContext *ctx)
 {
     if (auto compoundStatement = ctx->compoundStatement()) {
         visitCompoundStatement(compoundStatement);
+    }
+    llvm::Function *function = currentScope().currentFunction;
+    if(!builder.GetInsertBlock()->getTerminator()) {
+        llvm::Type *retType = function->getReturnType();
+        if(retType->isVoidTy()) {
+            builder.CreateRetVoid();
+        } else {
+            std::cout << "Warning: Function " + function->getName().str() + " has NO return statment." << std::endl;
+            builder.CreateRet(llvm::UndefValue::get(retType));
+        }
     }
     return nullptr;
 }
