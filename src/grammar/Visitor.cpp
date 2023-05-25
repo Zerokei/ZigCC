@@ -1636,9 +1636,9 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		builder.SetInsertPoint(DoCondBB);
 		llvm::Value* Condition = std::any_cast<llvm::Value*>(visitExpression(ctx->expression()));
 		if (!(Condition = Cast2I1(Condition))) {
+            scopes.pop_back();
 			throw std::logic_error("The condition value of do-statement must be either an integer, or a floating-point number, or a pointer.");
             // NOTE: Must pop scope
-            scopes.pop_back();
 			return nullptr;
 		}
 		builder.CreateCondBr(Condition, DoLoopBB, DoEndBB);
@@ -1705,13 +1705,14 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		llvm::BasicBlock* ForTailBB = llvm::BasicBlock::Create(*llvm_context, "ForTail");
 		llvm::BasicBlock* ForEndBB = llvm::BasicBlock::Create(*llvm_context, "ForEnd");
         
-        Scope for_scope(currentScope().currentFunction);
-        scopes.push_back(for_scope);
-        if (ctx->forInitStatement() != nullptr) {
-            visitForInitStatement(ctx->forInitStatement());
-        } else if (ctx->forRangeDeclaration() != nullptr) {
+        // 创建作用域用来管理 FOR 块中的局部变量
+        scopes.push_back(Scope(function));
+
+        if (auto ForInitStatement = ctx->forInitStatement()) {
+            visitForInitStatement(ForInitStatement);
+        } else if (auto ForRangeDeclaration = ctx->forRangeDeclaration()) {
             // TODO: for (auto i : v)
-            visitForRangeDeclaration(ctx->forRangeDeclaration());
+            visitForRangeDeclaration(ForRangeDeclaration);
             visitForRangeInitializer(ctx->forRangeInitializer());
         }
 		TerminateBlockByBr(ForCondBB);
@@ -1723,6 +1724,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 			// If it has a loop condition, evaluate it (cast the type to i1 if necessary).
 			llvm::Value* Condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
 			if (!(Condition = Cast2I1(Condition))) {
+                scopes.pop_back();
 				throw std::logic_error("The condition value of for-statement must be either an integer, or a floating-point number, or a pointer.");
 				return nullptr;
 			}
@@ -1768,6 +1770,8 @@ std::any Visitor::visitForInitStatement(ZigCCParser::ForInitStatementContext *ct
     } else if (auto SimpleDeclaration = ctx->simpleDeclaration()) {
         visitSimpleDeclaration(SimpleDeclaration);
     }
+
+    return nullptr;
 }
 
 std::any Visitor::visitForRangeDeclaration(ZigCCParser::ForRangeDeclarationContext *ctx)
