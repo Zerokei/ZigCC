@@ -1959,18 +1959,17 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
             llvm::FunctionType *callee_type = callee->getFunctionType();
 
             // 获得参数列表
-            std::vector< std::pair<std::string, llvm::Type *> > params;
-            params = std::any_cast<std::vector< std::pair<std::string, llvm::Type *> > >
+            auto param_names = std::any_cast< std::vector<std::string> >
                 (visitParametersAndQualifiers(_L_paren_parametersAndQualifiers));
             std::vector<llvm::Type *> param_types;
             std::vector<llvm::Value *> param_values;
-            for (const auto& param: params) {
-                param_types.push_back(param.second);
-                llvm::Value *value = getVariable(param.first);
+            for (const auto& name: param_names) {
+                llvm::Value *value = getVariable(name);
                 if(nullptr == value) {
-                    std::cout << "Error: Undefined variable " + param.first + "." << std::endl;
+                    std::cout << "Error: Undefined variable " + name + "." << std::endl;
                     return nullptr;
                 }
+                param_types.push_back(value->getType());
                 param_values.push_back(value);
             }
 
@@ -2543,17 +2542,34 @@ std::any Visitor::visitParameterDeclarationClause(ZigCCParser::ParameterDeclarat
 std::any Visitor::visitParameterDeclarationList(ZigCCParser::ParameterDeclarationListContext *ctx)
 {
     auto param_list = ctx->parameterDeclaration();
-    std::vector< std::pair< std::string, llvm::Type* > > params;
+    
+    if(ctx->parameterDeclaration(0)->declarator()) {
+        // Visit param with name & type
+        std::vector< std::pair< std::string, llvm::Type* > > params;
 
-    for(const auto& param_dec_ctx: param_list) {
-        auto dec_specifier = param_dec_ctx->declSpecifierSeq();
-        llvm::Type *type = std::any_cast<llvm::Type *>(visitDeclSpecifierSeq(dec_specifier));
-        auto declarator = param_dec_ctx->declarator();
-        std::string name= std::any_cast<std::string>(visitDeclarator(declarator));
-        params.push_back(std::pair< std::string, llvm::Type * >(name, type));
+        for(const auto& param_dec_ctx: param_list) {
+            auto dec_specifier = param_dec_ctx->declSpecifierSeq();
+            llvm::Type *type = std::any_cast<llvm::Type *>(visitDeclSpecifierSeq(dec_specifier));
+            auto declarator = param_dec_ctx->declarator();
+            std::string name= std::any_cast<std::string>(visitDeclarator(declarator));
+            params.push_back(std::pair< std::string, llvm::Type * >(name, type));
+        }
+
+        return params;
+    } else {
+        // Return className
+        std::vector<std::string> param_names;
+        for(const auto &param_dec_ctx : param_list) {
+            if(auto _param_decl_typeSpecifier = param_dec_ctx->declSpecifierSeq()->declSpecifier(0)->typeSpecifier())
+            if(auto _param_decl_simpleTypeSpecifier = _param_decl_typeSpecifier->trailingTypeSpecifier()->simpleTypeSpecifier())
+            if(auto _param_decl_className = _param_decl_simpleTypeSpecifier->theTypeName()->className()) {
+                std::string name = std::any_cast<std::string>(visitClassName(_param_decl_className));
+                param_names.push_back(name);
+            }
+        }
+        return param_names;
     }
-
-    return params;
+    
 }
 
 std::any Visitor::visitParameterDeclaration(ZigCCParser::ParameterDeclarationContext *ctx)
