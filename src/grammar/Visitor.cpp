@@ -1604,7 +1604,52 @@ std::any Visitor::visitCondition(ZigCCParser::ConditionContext *ctx)
 
 std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext *ctx)
 {
-    if (ctx->While() != nullptr) {
+    if (ctx->Do() != nullptr) {
+        llvm::Function* function = currentScope().currentFunction;
+        if (function == nullptr) {
+            std::cout << "Error: Do statement not within a function." << std::endl;
+            return nullptr;
+        }
+
+        // 创建新的作用域用来管理 DO-WHILE 块中的局部变量
+        scopes.push_back(Scope(function));
+
+        llvm::BasicBlock* DoLoopBB = llvm::BasicBlock::Create(*llvm_context, "DoLoop");
+		llvm::BasicBlock* DoCondBB = llvm::BasicBlock::Create(*llvm_context, "DoCond");
+		llvm::BasicBlock* DoEndBB = llvm::BasicBlock::Create(*llvm_context, "DoEnd");
+        //Create an unconditional branch, jump to "DoLoop" block.
+		builder.CreateBr(DoLoopBB);
+
+		//Generate code in the "DoLoop" block
+        DoLoopBB->insertInto(function);
+		builder.SetInsertPoint(DoLoopBB);
+		if (ctx->statement() != nullptr) {
+			// TODO: 还需要处理 break 和 continue 语句
+			visitStatement(ctx->statement());
+		}
+		TerminateBlockByBr(DoCondBB);
+		
+        //Evaluate the loop condition (cast the type to i1 if necessary).
+		//Since we don't allow variable declarations in if-condition (because we only allow expressions there),
+		//we don't need to push a symbol table
+        DoCondBB->insertInto(function);
+		builder.SetInsertPoint(DoCondBB);
+		llvm::Value* Condition = std::any_cast<llvm::Value*>(visitExpression(ctx->expression()));
+		if (!(Condition = Cast2I1(Condition))) {
+			throw std::logic_error("The condition value of do-statement must be either an integer, or a floating-point number, or a pointer.");
+            // NOTE: Must pop scope
+            scopes.pop_back();
+			return nullptr;
+		}
+		builder.CreateCondBr(Condition, DoLoopBB, DoEndBB);
+		
+        // Finish "DoEnd" block
+        DoEndBB->insertInto(function);
+		builder.SetInsertPoint(DoEndBB);
+
+        scopes.pop_back();
+		return nullptr;
+    } else if (ctx->While() != nullptr) {
         llvm::Function* function = currentScope().currentFunction;
         if (function == nullptr) {
             std::cout << "Error: While statement not within a function." << std::endl;
@@ -1648,43 +1693,6 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		builder.SetInsertPoint(WhileEndBB);
 
         scopes.pop_back();
-		return nullptr;
-    } else if (ctx->Do() != nullptr) {
-        llvm::Function* function = currentScope().currentFunction;
-        if (function == nullptr) {
-            std::cout << "Error: Do statement not within a function." << std::endl;
-            return nullptr;
-        }
-        llvm::BasicBlock* DoLoopBB = llvm::BasicBlock::Create(*llvm_context, "DoLoop");
-		llvm::BasicBlock* DoCondBB = llvm::BasicBlock::Create(*llvm_context, "DoCond");
-		llvm::BasicBlock* DoEndBB = llvm::BasicBlock::Create(*llvm_context, "DoEnd");
-        //Create an unconditional branch, jump to "DoLoop" block.
-		builder.CreateBr(DoLoopBB);
-
-		//Generate code in the "DoLoop" block
-        DoLoopBB->insertInto(function);
-		builder.SetInsertPoint(DoLoopBB);
-		if (ctx->statement() != nullptr) {
-			// TODO: 还需要处理 break 和 continue 语句
-			visitStatement(ctx->statement());
-		}
-		TerminateBlockByBr(DoCondBB);
-		
-        //Evaluate the loop condition (cast the type to i1 if necessary).
-		//Since we don't allow variable declarations in if-condition (because we only allow expressions there),
-		//we don't need to push a symbol table
-        DoCondBB->insertInto(function);
-		builder.SetInsertPoint(DoCondBB);
-		llvm::Value* Condition = std::any_cast<llvm::Value*>(visitExpression(ctx->expression()));
-		if (!(Condition = Cast2I1(Condition))) {
-			throw std::logic_error("The condition value of do-statement must be either an integer, or a floating-point number, or a pointer.");
-			return nullptr;
-		}
-		builder.CreateCondBr(Condition, DoLoopBB, DoEndBB);
-		
-        // Finish "DoEnd" block
-        DoEndBB->insertInto(function);
-		builder.SetInsertPoint(DoEndBB);
 		return nullptr;
     } else if (ctx->For() != nullptr) {
         llvm::Function* function = currentScope().currentFunction;
