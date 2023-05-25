@@ -4,10 +4,10 @@ int fun(int aa) {
 }
 int main(int z) {
     z = 1;
-    int y = 2;
-    if (x + y < z) {
-        int x = 2;
-    }
+    int y = 1 + 2 * 3;
+    do {
+        y--;
+    } while (y > 0);
     fun(y);
     return 0;
 }

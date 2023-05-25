@@ -698,7 +698,6 @@ std::any Visitor::visitLambdaDeclarator(ZigCCParser::LambdaDeclaratorContext *ct
 std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *ctx)
 {
     if (ctx->PlusPlus() != nullptr) { // i++
-        std::cout << "PostfixExpression: i++" << std::endl;
         llvm::Value* operand_alloc = nullptr;
         llvm::Value* operand = nullptr;
         auto PostfixExpression = visitPostfixExpression(ctx->postfixExpression());
@@ -2684,14 +2683,17 @@ std::any Visitor::visitClassSpecifier(ZigCCParser::ClassSpecifierContext *ctx)
         classtype = ret.first;
         classname = ret.second;
         if (classtype == "class") {
+            auto newclass = llvm::StructType::create(*llvm_context, "class." + classname);
             if (auto MemberSpecification = ctx->memberSpecification()) {
                 visitMemberSpecification(MemberSpecification);
             }
         } else if (classtype == "struct") {
+            auto newstruct = llvm::StructType::create(*llvm_context, "struct." + classname);
             if (auto MemberSpecification = ctx->memberSpecification()) {
                 visitMemberSpecification(MemberSpecification);
             }
         } else if (classtype == "union") {
+            auto newunion = llvm::StructType::create(*llvm_context, "union." + classname);
             if (auto MemberSpecification = ctx->memberSpecification()) {
                 visitMemberSpecification(MemberSpecification);
             }
@@ -2737,7 +2739,27 @@ std::any Visitor::visitClassKey(ZigCCParser::ClassKeyContext *ctx)
 
 std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationContext *ctx)
 {
-    
+    // 由于自动生成语法树的问题，此处只能强制要求 class 的每个变量前都要规定 private/protected/public
+    // 强制要求 struct 和 union 都是 public，不允许加限制
+    auto MemberDecl = ctx->memberdeclaration(0);
+    size_t accessnum = ctx->accessSpecifier().size();
+    if (MemberDecl != nullptr) {
+        for (int i = 0; i < ctx->memberdeclaration().size(); i++) {
+            Access access = Access::PUBLIC;
+            if (accessnum > 0) {
+                std::string access = std::any_cast<std::string>(visitAccessSpecifier(ctx->accessSpecifier(i)));
+                if (access == "private") {
+                    access = Access::PRIVATE;
+                } else if (access == "protected") {
+                    access = Access::PROTECTED;
+                } else if (access == "public") {
+                    access = Access::PUBLIC;
+                }
+            }
+            std::unordered_map<std::string, Access> variables;
+
+        }
+    }
 }
 
 [[deprecated("First rule not implemented")]]
