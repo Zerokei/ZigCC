@@ -1678,14 +1678,14 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		llvm::Value* Condition = std::any_cast<llvm::Value*>(visitExpression(ctx->expression()));
 		if (!(Condition = Cast2I1(Condition))) {
 			throw std::logic_error("The condition value of do-statement must be either an integer, or a floating-point number, or a pointer.");
-			return NULL;
+			return nullptr;
 		}
 		builder.CreateCondBr(Condition, DoLoopBB, DoEndBB);
 		
         // Finish "DoEnd" block
         DoEndBB->insertInto(function);
 		builder.SetInsertPoint(DoEndBB);
-		return NULL;
+		return nullptr;
     } else if (ctx->For() != nullptr) {
         llvm::Function* function = currentScope().currentFunction;
         if (function == nullptr) {
@@ -1716,7 +1716,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 			llvm::Value* Condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
 			if (!(Condition = Cast2I1(Condition))) {
 				throw std::logic_error("The condition value of for-statement must be either an integer, or a floating-point number, or a pointer.");
-				return NULL;
+				return nullptr;
 			}
 			builder.CreateCondBr(Condition, ForLoopBB, ForEndBB);
 		}
@@ -1749,7 +1749,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
         if (ctx->forInitStatement() != nullptr) {
             scopes.pop_back();
         }
-		return NULL;
+		return nullptr;
     }
 }
 
