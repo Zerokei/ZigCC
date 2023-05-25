@@ -1542,6 +1542,10 @@ std::any Visitor::visitSelectionStatement(ZigCCParser::SelectionStatementContext
             std::cout << "Error: If statement not within a function." << std::endl;
             return nullptr;
         }
+
+        // 创建新的作用域管理 IF 块中的局部变量
+        scopes.push_back(Scope(function));
+
         // llvm::LLVMContext &block_ctx = builder.getContext();
         llvm::BasicBlock* thenBlock = llvm::BasicBlock::Create(*llvm_context);
         llvm::BasicBlock* elseBlock = llvm::BasicBlock::Create(*llvm_context);
@@ -1570,6 +1574,9 @@ std::any Visitor::visitSelectionStatement(ZigCCParser::SelectionStatementContext
             mergeBlock->insertInto(function);
 			builder.SetInsertPoint(mergeBlock);
 		}
+
+        // 退出当前作用域
+        scopes.pop_back();
     } else if (ctx->Switch() != nullptr) {
         // TODO: 注意 switch 语句的条件不允许赋值，这和 if 语句不同，并且也不一定需要是 bool 类型
         llvm::Value* condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
@@ -1596,7 +1603,57 @@ std::any Visitor::visitCondition(ZigCCParser::ConditionContext *ctx)
 
 std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext *ctx)
 {
-    if (ctx->While() != nullptr) {
+    if (ctx->Do() != nullptr) {
+        llvm::Function* function = currentScope().currentFunction;
+        if (function == nullptr) {
+            std::cout << "Error: Do statement not within a function." << std::endl;
+            return nullptr;
+        }
+
+        // 创建新的作用域用来管理 DO-WHILE 块中的局部变量
+        scopes.push_back(Scope(function));
+
+        llvm::BasicBlock* DoLoopBB = llvm::BasicBlock::Create(*llvm_context, "DoLoop");
+		llvm::BasicBlock* DoCondBB = llvm::BasicBlock::Create(*llvm_context, "DoCond");
+		llvm::BasicBlock* DoEndBB = llvm::BasicBlock::Create(*llvm_context, "DoEnd");
+        //Create an unconditional branch, jump to "DoLoop" block.
+		builder.CreateBr(DoLoopBB);
+
+		//Generate code in the "DoLoop" block
+        DoLoopBB->insertInto(function);
+		builder.SetInsertPoint(DoLoopBB);
+
+        std::pair<llvm::BasicBlock *, llvm::BasicBlock *> do_BB_pair(DoCondBB, DoEndBB);
+        this->cond_done_BB_pair = &do_BB_pair;
+
+		if (ctx->statement() != nullptr) {
+			// TODO: 还需要处理 break 和 continue 语句
+			visitStatement(ctx->statement());
+		}
+        this->cond_done_BB_pair = nullptr;
+		TerminateBlockByBr(DoCondBB);
+		
+        //Evaluate the loop condition (cast the type to i1 if necessary).
+		//Since we don't allow variable declarations in if-condition (because we only allow expressions there),
+		//we don't need to push a symbol table
+        DoCondBB->insertInto(function);
+		builder.SetInsertPoint(DoCondBB);
+		llvm::Value* Condition = std::any_cast<llvm::Value*>(visitExpression(ctx->expression()));
+		if (!(Condition = Cast2I1(Condition))) {
+            scopes.pop_back();
+			throw std::logic_error("The condition value of do-statement must be either an integer, or a floating-point number, or a pointer.");
+            // NOTE: Must pop scope
+			return nullptr;
+		}
+		builder.CreateCondBr(Condition, DoLoopBB, DoEndBB);
+		
+        // Finish "DoEnd" block
+        DoEndBB->insertInto(function);
+		builder.SetInsertPoint(DoEndBB);
+
+        scopes.pop_back();
+		return nullptr;
+    } else if (ctx->While() != nullptr) {
         llvm::Function* function = currentScope().currentFunction;
         if (function == nullptr) {
             std::cout << "Error: While statement not within a function." << std::endl;
@@ -1618,60 +1675,33 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		llvm::Value* Condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
 		if (!(Condition = Cast2I1(Condition))) {
 			throw std::logic_error("The condition value of while-statement must be either an integer, or a floating-point number, or a pointer.");
-			return NULL;
+			return nullptr;
 		}
+
+        // 创建新的作用域，管理 WHILE 块内的局部变量
+        scopes.push_back(Scope(function));
+
 		builder.CreateCondBr(Condition, WhileLoopBB, WhileEndBB);
 		
         //Generate code in the "WhileLoop" block
         WhileLoopBB->insertInto(function);
 		builder.SetInsertPoint(WhileLoopBB);
+
+        std::pair<llvm::BasicBlock *, llvm::BasicBlock *> while_BB_pair(WhileCondBB, WhileEndBB);
+        this->cond_done_BB_pair = &while_BB_pair;
 		if (ctx->statement() != nullptr) {
             // TODO: 还需要处理 break 和 continue 语句
 			visitStatement(ctx->statement());
 		}
+        this->cond_done_BB_pair = nullptr;
 		TerminateBlockByBr(WhileCondBB);
 
 		//Finish "WhileEnd" block
         WhileEndBB->insertInto(function);
 		builder.SetInsertPoint(WhileEndBB);
-		return NULL;
-    } else if (ctx->Do() != nullptr) {
-        llvm::Function* function = currentScope().currentFunction;
-        if (function == nullptr) {
-            std::cout << "Error: Do statement not within a function." << std::endl;
-            return nullptr;
-        }
-        llvm::BasicBlock* DoLoopBB = llvm::BasicBlock::Create(*llvm_context, "DoLoop");
-		llvm::BasicBlock* DoCondBB = llvm::BasicBlock::Create(*llvm_context, "DoCond");
-		llvm::BasicBlock* DoEndBB = llvm::BasicBlock::Create(*llvm_context, "DoEnd");
-        //Create an unconditional branch, jump to "DoLoop" block.
-		builder.CreateBr(DoLoopBB);
 
-		//Generate code in the "DoLoop" block
-        DoLoopBB->insertInto(function);
-		builder.SetInsertPoint(DoLoopBB);
-		if (ctx->statement() != nullptr) {
-			// TODO: 还需要处理 break 和 continue 语句
-			visitStatement(ctx->statement());
-		}
-		TerminateBlockByBr(DoCondBB);
-		
-        //Evaluate the loop condition (cast the type to i1 if necessary).
-		//Since we don't allow variable declarations in if-condition (because we only allow expressions there),
-		//we don't need to push a symbol table
-        DoCondBB->insertInto(function);
-		builder.SetInsertPoint(DoCondBB);
-		llvm::Value* Condition = std::any_cast<llvm::Value*>(visitExpression(ctx->expression()));
-		if (!(Condition = Cast2I1(Condition))) {
-			throw std::logic_error("The condition value of do-statement must be either an integer, or a floating-point number, or a pointer.");
-			return NULL;
-		}
-		builder.CreateCondBr(Condition, DoLoopBB, DoEndBB);
-		
-        // Finish "DoEnd" block
-        DoEndBB->insertInto(function);
-		builder.SetInsertPoint(DoEndBB);
-		return NULL;
+        scopes.pop_back();
+		return nullptr;
     } else if (ctx->For() != nullptr) {
         llvm::Function* function = currentScope().currentFunction;
         if (function == nullptr) {
@@ -1683,13 +1713,14 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		llvm::BasicBlock* ForTailBB = llvm::BasicBlock::Create(*llvm_context, "ForTail");
 		llvm::BasicBlock* ForEndBB = llvm::BasicBlock::Create(*llvm_context, "ForEnd");
         
-        Scope for_scope(currentScope().currentFunction);
-        scopes.push_back(for_scope);
-        if (ctx->forInitStatement() != nullptr) {
-            visitForInitStatement(ctx->forInitStatement());
-        } else if (ctx->forRangeDeclaration() != nullptr) {
+        // 创建作用域用来管理 FOR 块中的局部变量
+        scopes.push_back(Scope(function));
+
+        if (auto ForInitStatement = ctx->forInitStatement()) {
+            visitForInitStatement(ForInitStatement);
+        } else if (auto ForRangeDeclaration = ctx->forRangeDeclaration()) {
             // TODO: for (auto i : v)
-            visitForRangeDeclaration(ctx->forRangeDeclaration());
+            visitForRangeDeclaration(ForRangeDeclaration);
             visitForRangeInitializer(ctx->forRangeInitializer());
         }
 		TerminateBlockByBr(ForCondBB);
@@ -1701,8 +1732,9 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 			// If it has a loop condition, evaluate it (cast the type to i1 if necessary).
 			llvm::Value* Condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
 			if (!(Condition = Cast2I1(Condition))) {
+                scopes.pop_back();
 				throw std::logic_error("The condition value of for-statement must be either an integer, or a floating-point number, or a pointer.");
-				return NULL;
+				return nullptr;
 			}
 			builder.CreateCondBr(Condition, ForLoopBB, ForEndBB);
 		}
@@ -1714,6 +1746,9 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		// Generate code in the "ForLoop" block
         ForLoopBB->insertInto(function);
 		builder.SetInsertPoint(ForLoopBB);
+
+        std::pair<llvm::BasicBlock *, llvm::BasicBlock *> for_BB_pair(ForTailBB, ForEndBB);
+        this->cond_done_BB_pair = &for_BB_pair;
 		if (ctx->statement() != nullptr) {
             // TODO: 还需要处理 break 和 continue 语句
             visitStatement(ctx->statement());
@@ -1735,7 +1770,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
         if (ctx->forInitStatement() != nullptr) {
             scopes.pop_back();
         }
-		return NULL;
+		return nullptr;
     }
 }
 
@@ -1746,6 +1781,8 @@ std::any Visitor::visitForInitStatement(ZigCCParser::ForInitStatementContext *ct
     } else if (auto SimpleDeclaration = ctx->simpleDeclaration()) {
         visitSimpleDeclaration(SimpleDeclaration);
     }
+
+    return nullptr;
 }
 
 std::any Visitor::visitForRangeDeclaration(ZigCCParser::ForRangeDeclarationContext *ctx)
@@ -1761,9 +1798,21 @@ std::any Visitor::visitForRangeInitializer(ZigCCParser::ForRangeInitializerConte
 std::any Visitor::visitJumpStatement(ZigCCParser::JumpStatementContext *ctx)
 {
     if (ctx->Break() != nullptr) {
-
+        // Second with WHILE_DONE & FOR_DONE
+        if(nullptr == this->cond_done_BB_pair) {
+            std::cout << "Error: Using break out of loop-body." << std::endl;
+            return nullptr;
+        }
+        builder.CreateBr(cond_done_BB_pair->second);
+        return nullptr;
     } else if (ctx->Continue() != nullptr) {
-
+        // Firtst with WHILE_COND & FOR_TAIL
+        if(nullptr == cond_done_BB_pair) {
+            std::cout << "Error: Using break out of loop-body." << std::endl;
+            return nullptr;
+        }
+        builder.CreateBr(cond_done_BB_pair->first);
+        return nullptr;
     } else if (ctx->Return() != nullptr) {
         llvm::Function* function = currentScope().currentFunction;
         if (function == nullptr) {
@@ -1888,6 +1937,13 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     // TODO: 目前暂未考虑一行中有两种类型的情况（const int 之类的）
     // 当前只考虑 int x, y = 0; int x = y = 0; 这种情况，enum 以及 class 等复杂类型之后再作处理（添加分支处理（？））
     // 还有强制类型转换可以做（感觉应该不难）
+    
+    // 判断空语句
+    if(!ctx->declSpecifierSeq() && !ctx->initDeclaratorList() && !ctx->attributeSpecifierSeq()) {
+        return nullptr;
+    }
+
+    std::cout << "SimpleDeclaration" << std::endl;
     llvm::Type* type = nullptr;
     std::string temp_name;
     if (auto DeclSpecifierSeq = ctx->declSpecifierSeq()) {
@@ -2608,9 +2664,9 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
 
     // 创建一个空返回（如果能在 body 中处理最好，如果没有返回指令的话自动添加一个 void ret）
     // NOTE: 这个想法可能有问题，有待检查
-    llvm::BasicBlock *external_ret_block = llvm::BasicBlock::Create(*llvm_context, llvm::Twine(std::string("external_ret_")+fun_name), function);
-    builder.SetInsertPoint(external_ret_block);
-    builder.CreateRetVoid();
+    // llvm::BasicBlock *external_ret_block = llvm::BasicBlock::Create(*llvm_context, llvm::Twine(std::string("external_ret_")+fun_name), function);
+    // builder.SetInsertPoint(external_ret_block);
+    // builder.CreateRetVoid();
 
     // 抛出当前 scope，开始分析全局 / 下一个函数体
     this->scopes.pop_back();
@@ -2623,6 +2679,16 @@ std::any Visitor::visitFunctionBody(ZigCCParser::FunctionBodyContext *ctx)
 {
     if (auto compoundStatement = ctx->compoundStatement()) {
         visitCompoundStatement(compoundStatement);
+    }
+    llvm::Function *function = currentScope().currentFunction;
+    if(!builder.GetInsertBlock()->getTerminator()) {
+        llvm::Type *retType = function->getReturnType();
+        if(retType->isVoidTy()) {
+            builder.CreateRetVoid();
+        } else {
+            std::cout << "Warning: Function " + function->getName().str() + " has NO return statment." << std::endl;
+            builder.CreateRet(llvm::UndefValue::get(retType));
+        }
     }
     return nullptr;
 }

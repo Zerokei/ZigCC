@@ -22,11 +22,13 @@ public:
     std::unique_ptr<llvm::Module> module;
     llvm::DataLayout* DL;
     std::vector<Scope> scopes;
+    std::pair<llvm::BasicBlock *, llvm::BasicBlock *> *cond_done_BB_pair;
     
     Visitor() : llvm_context(std::make_unique<llvm::LLVMContext>()),
                 builder(*this->llvm_context),
                 module(std::make_unique<llvm::Module>("output", *this->llvm_context)),
-                DL(new llvm::DataLayout(module.get())) {}
+                DL(new llvm::DataLayout(module.get())),
+                cond_done_BB_pair(nullptr) {}
 
     Scope &currentScope();
     llvm::Value *getVariable(const std::string &name);
