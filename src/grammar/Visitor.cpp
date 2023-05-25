@@ -1961,8 +1961,33 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
                 std::cout << "Error: Wrong number of parameters when calling " + fun_name + "." << std::endl;
                 return nullptr;
             }
+
             // TODO: 类型检查与匹配，如果无法 cast 应报错
-            builder.CreateCall(callee_type, callee, param_values);
+            std::vector<llvm::Value *> cast_values;
+            for(size_t i = 0; i < need_param_types.size(); ++i) {
+                llvm::Value *value = param_values[i];
+                llvm::Type *type = param_types[i];
+                llvm::Type *cast_type = need_param_types[i];
+                if(TypeCheck(type, cast_type)) {
+                    // 不需要 cast
+                    cast_values.push_back(value);
+                } else {
+                    
+                        bool a0 = value->getType()->isIntegerTy();
+                        bool a1 = value->getType()->isFloatingPointTy();
+                        bool a2 = cast_type->isIntegerTy();
+                        bool a3 = cast_type->isFloatingPointTy();
+                    
+                    llvm::Value *_cast_value = TypeCasting(value, cast_type);
+                    if(!_cast_value) {
+                        std::cout << "Error: Unable to cast " + param_names[i] + " for function call." << std::endl;
+                        return nullptr;
+                    }
+                    cast_values.push_back(_cast_value);
+                }
+            }
+
+            builder.CreateCall(callee_type, callee, cast_values);
             continue;
         }
 _ZIGCC_DECL_NOT_FUNCTION_CALL:
