@@ -1623,10 +1623,15 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		//Generate code in the "DoLoop" block
         DoLoopBB->insertInto(function);
 		builder.SetInsertPoint(DoLoopBB);
+
+        std::pair<llvm::BasicBlock *, llvm::BasicBlock *> do_BB_pair(DoCondBB, DoEndBB);
+        this->cond_done_BB_pair = &do_BB_pair;
+
 		if (ctx->statement() != nullptr) {
 			// TODO: 还需要处理 break 和 continue 语句
 			visitStatement(ctx->statement());
 		}
+        this->cond_done_BB_pair = nullptr;
 		TerminateBlockByBr(DoCondBB);
 		
         //Evaluate the loop condition (cast the type to i1 if necessary).
@@ -1636,9 +1641,9 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		builder.SetInsertPoint(DoCondBB);
 		llvm::Value* Condition = std::any_cast<llvm::Value*>(visitExpression(ctx->expression()));
 		if (!(Condition = Cast2I1(Condition))) {
+            scopes.pop_back();
 			throw std::logic_error("The condition value of do-statement must be either an integer, or a floating-point number, or a pointer.");
             // NOTE: Must pop scope
-            scopes.pop_back();
 			return nullptr;
 		}
 		builder.CreateCondBr(Condition, DoLoopBB, DoEndBB);
@@ -1682,10 +1687,14 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
         //Generate code in the "WhileLoop" block
         WhileLoopBB->insertInto(function);
 		builder.SetInsertPoint(WhileLoopBB);
+
+        std::pair<llvm::BasicBlock *, llvm::BasicBlock *> while_BB_pair(WhileCondBB, WhileEndBB);
+        this->cond_done_BB_pair = &while_BB_pair;
 		if (ctx->statement() != nullptr) {
             // TODO: 还需要处理 break 和 continue 语句
 			visitStatement(ctx->statement());
 		}
+        this->cond_done_BB_pair = nullptr;
 		TerminateBlockByBr(WhileCondBB);
 
 		//Finish "WhileEnd" block
@@ -1705,13 +1714,14 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		llvm::BasicBlock* ForTailBB = llvm::BasicBlock::Create(*llvm_context, "ForTail");
 		llvm::BasicBlock* ForEndBB = llvm::BasicBlock::Create(*llvm_context, "ForEnd");
         
-        Scope for_scope(currentScope().currentFunction);
-        scopes.push_back(for_scope);
-        if (ctx->forInitStatement() != nullptr) {
-            visitForInitStatement(ctx->forInitStatement());
-        } else if (ctx->forRangeDeclaration() != nullptr) {
+        // 创建作用域用来管理 FOR 块中的局部变量
+        scopes.push_back(Scope(function));
+
+        if (auto ForInitStatement = ctx->forInitStatement()) {
+            visitForInitStatement(ForInitStatement);
+        } else if (auto ForRangeDeclaration = ctx->forRangeDeclaration()) {
             // TODO: for (auto i : v)
-            visitForRangeDeclaration(ctx->forRangeDeclaration());
+            visitForRangeDeclaration(ForRangeDeclaration);
             visitForRangeInitializer(ctx->forRangeInitializer());
         }
 		TerminateBlockByBr(ForCondBB);
@@ -1723,6 +1733,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 			// If it has a loop condition, evaluate it (cast the type to i1 if necessary).
 			llvm::Value* Condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
 			if (!(Condition = Cast2I1(Condition))) {
+                scopes.pop_back();
 				throw std::logic_error("The condition value of for-statement must be either an integer, or a floating-point number, or a pointer.");
 				return nullptr;
 			}
@@ -1736,6 +1747,9 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		// Generate code in the "ForLoop" block
         ForLoopBB->insertInto(function);
 		builder.SetInsertPoint(ForLoopBB);
+
+        std::pair<llvm::BasicBlock *, llvm::BasicBlock *> for_BB_pair(ForTailBB, ForEndBB);
+        this->cond_done_BB_pair = &for_BB_pair;
 		if (ctx->statement() != nullptr) {
             // TODO: 还需要处理 break 和 continue 语句
             visitStatement(ctx->statement());
@@ -1768,6 +1782,8 @@ std::any Visitor::visitForInitStatement(ZigCCParser::ForInitStatementContext *ct
     } else if (auto SimpleDeclaration = ctx->simpleDeclaration()) {
         visitSimpleDeclaration(SimpleDeclaration);
     }
+
+    return nullptr;
 }
 
 std::any Visitor::visitForRangeDeclaration(ZigCCParser::ForRangeDeclarationContext *ctx)
@@ -1783,9 +1799,21 @@ std::any Visitor::visitForRangeInitializer(ZigCCParser::ForRangeInitializerConte
 std::any Visitor::visitJumpStatement(ZigCCParser::JumpStatementContext *ctx)
 {
     if (ctx->Break() != nullptr) {
-
+        // Second with WHILE_DONE & FOR_DONE
+        if(nullptr == this->cond_done_BB_pair) {
+            std::cout << "Error: Using break out of loop-body." << std::endl;
+            return nullptr;
+        }
+        builder.CreateBr(cond_done_BB_pair->second);
+        return nullptr;
     } else if (ctx->Continue() != nullptr) {
-
+        // Firtst with WHILE_COND & FOR_TAIL
+        if(nullptr == cond_done_BB_pair) {
+            std::cout << "Error: Using break out of loop-body." << std::endl;
+            return nullptr;
+        }
+        builder.CreateBr(cond_done_BB_pair->first);
+        return nullptr;
     } else if (ctx->Return() != nullptr) {
         llvm::Function* function = currentScope().currentFunction;
         if (function == nullptr) {
