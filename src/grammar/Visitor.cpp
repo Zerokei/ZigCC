@@ -1543,6 +1543,10 @@ std::any Visitor::visitSelectionStatement(ZigCCParser::SelectionStatementContext
             std::cout << "Error: If statement not within a function." << std::endl;
             return nullptr;
         }
+
+        // 创建新的作用域管理 IF 块中的局部变量
+        scopes.push_back(Scope(function));
+
         // llvm::LLVMContext &block_ctx = builder.getContext();
         llvm::BasicBlock* thenBlock = llvm::BasicBlock::Create(*llvm_context);
         llvm::BasicBlock* elseBlock = llvm::BasicBlock::Create(*llvm_context);
@@ -1571,6 +1575,9 @@ std::any Visitor::visitSelectionStatement(ZigCCParser::SelectionStatementContext
             mergeBlock->insertInto(function);
 			builder.SetInsertPoint(mergeBlock);
 		}
+
+        // 退出当前作用域
+        scopes.pop_back();
     } else if (ctx->Switch() != nullptr) {
         // TODO: 注意 switch 语句的条件不允许赋值，这和 if 语句不同，并且也不一定需要是 bool 类型
         llvm::Value* condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
@@ -1619,8 +1626,12 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		llvm::Value* Condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
 		if (!(Condition = Cast2I1(Condition))) {
 			throw std::logic_error("The condition value of while-statement must be either an integer, or a floating-point number, or a pointer.");
-			return NULL;
+			return nullptr;
 		}
+
+        // 创建新的作用域，管理 WHILE 块内的局部变量
+        scopes.push_back(Scope(function));
+
 		builder.CreateCondBr(Condition, WhileLoopBB, WhileEndBB);
 		
         //Generate code in the "WhileLoop" block
@@ -1635,7 +1646,9 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 		//Finish "WhileEnd" block
         WhileEndBB->insertInto(function);
 		builder.SetInsertPoint(WhileEndBB);
-		return NULL;
+
+        scopes.pop_back();
+		return nullptr;
     } else if (ctx->Do() != nullptr) {
         llvm::Function* function = currentScope().currentFunction;
         if (function == nullptr) {
@@ -1896,7 +1909,6 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     }
 
     std::cout << "SimpleDeclaration" << std::endl;
-    std::string temp_name;
     llvm::Type* type = nullptr;
     std::string temp_name;
     if (auto DeclSpecifierSeq = ctx->declSpecifierSeq()) {
