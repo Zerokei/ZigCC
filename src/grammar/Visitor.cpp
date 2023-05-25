@@ -698,6 +698,7 @@ std::any Visitor::visitLambdaDeclarator(ZigCCParser::LambdaDeclaratorContext *ct
 std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *ctx)
 {
     if (ctx->PlusPlus() != nullptr) { // i++
+        std::cout << "PostfixExpression: i++" << std::endl;
         llvm::Value* operand_alloc = nullptr;
         llvm::Value* operand = nullptr;
         auto PostfixExpression = visitPostfixExpression(ctx->postfixExpression());
@@ -753,9 +754,7 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
             return nullptr;
         }
     } else if (auto PrimaryExpression = ctx->primaryExpression()) {
-        std::cout << "Before visitPrimaryExpression" << std::endl;
         return visitPrimaryExpression(PrimaryExpression);
-        std::cout << "After visitPrimaryExpression" << std::endl;
     }
 }
 
@@ -824,7 +823,7 @@ std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
             } else if (UnaryOp->And() != nullptr) {
                 return operand_alloc;
             } else if (UnaryOp->Star() != nullptr) {
-                return builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
+                return (llvm::Value*)builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
             } else if (UnaryOp->Plus() != nullptr) {
                 return operand;
             } else if (UnaryOp->Minus() != nullptr) {
@@ -850,9 +849,7 @@ std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
             }
         }
     } else if (auto PostfixExpression = ctx->postfixExpression()) {
-        std::cout << "Before visitPostfixExpression" << std::endl;
         return visitPostfixExpression(PostfixExpression);
-        std::cout << "After visitPostfixExpression" << std::endl;
     }
 }
 
@@ -963,9 +960,7 @@ std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext
     llvm::Value* alloc = nullptr;
     llvm::Value* result = nullptr;
     // 判断返回的是变量名 string 还是表达式 llvm::Value
-    std::cout << "Before visitMultiplicativeExpression" << std::endl;
     auto multiplicativeExpression_0 = visitMultiplicativeExpression(ctx->multiplicativeExpression(0));
-    std::cout << "After visitMultiplicativeExpression" << std::endl;
     if (multiplicativeExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(multiplicativeExpression_0);
         alloc = this->getVariable(name);
@@ -1220,8 +1215,8 @@ std::any Visitor::visitExclusiveOrExpression(ZigCCParser::ExclusiveOrExpressionC
 std::any Visitor::visitInclusiveOrExpression(ZigCCParser::InclusiveOrExpressionContext *ctx)
 {
     llvm::Value* alloc = nullptr;
-   llvm::Value* result = nullptr;
-   auto exclusiveOrExpression_0 = visitExclusiveOrExpression(ctx->exclusiveOrExpression(0));
+    llvm::Value* result = nullptr;
+    auto exclusiveOrExpression_0 = visitExclusiveOrExpression(ctx->exclusiveOrExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (exclusiveOrExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(exclusiveOrExpression_0);
@@ -1490,7 +1485,6 @@ std::any Visitor::visitStatement(ZigCCParser::StatementContext *ctx)
         visitJumpStatement(JumpStatement);
     } else if (auto DeclarationStatement = ctx->declarationStatement()) {
         visitDeclarationStatement(DeclarationStatement);
-        std::cout << "Declaration statement end" << std::endl;
     } else if (auto TryBlock = ctx->tryBlock()) {
         visitTryBlock(TryBlock);
     } else if (auto AttributeSpecifierSeq = ctx->attributeSpecifierSeq()) {
@@ -1506,7 +1500,10 @@ std::any Visitor::visitLabeledStatement(ZigCCParser::LabeledStatementContext *ct
 
 std::any Visitor::visitExpressionStatement(ZigCCParser::ExpressionStatementContext *ctx)
 {
-
+    if (auto Expression = ctx->expression()) {
+        visitExpression(Expression);
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitCompoundStatement(ZigCCParser::CompoundStatementContext *ctx)
@@ -1814,7 +1811,6 @@ std::any Visitor::visitDeclarationStatement(ZigCCParser::DeclarationStatementCon
 {
     if (auto BlockDeclaration = ctx->blockDeclaration()) {
         visitBlockDeclaration(BlockDeclaration);
-        std::cout << "BlockDeclaration end" << std::endl;
     }
     return nullptr;
 }
@@ -1855,10 +1851,8 @@ std::any Visitor::visitDeclaration(ZigCCParser::DeclarationContext *ctx)
 
 std::any Visitor::visitBlockDeclaration(ZigCCParser::BlockDeclarationContext *ctx)
 {
-    std::cout << "BlockDeclaration" << std::endl;
     if (auto SimpleDeclaration = ctx->simpleDeclaration()) {
         visitSimpleDeclaration(SimpleDeclaration);
-        std::cout << "SimpleDeclaration end" << std::endl;
     } else if (auto AsmDefinition = ctx->asmDefinition()) {
         visitAsmDefinition(AsmDefinition);
     } else if (auto NamespaceAliasDefinition = ctx->namespaceAliasDefinition()) {
@@ -1904,6 +1898,7 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     std::cout << "SimpleDeclaration" << std::endl;
     std::string temp_name;
     llvm::Type* type = nullptr;
+    std::string temp_name;
     if (auto DeclSpecifierSeq = ctx->declSpecifierSeq()) {
         auto VisitDeclSpecifierSeq = visitDeclSpecifierSeq(DeclSpecifierSeq);
         if(VisitDeclSpecifierSeq.type() == typeid(llvm::Type *)) {
@@ -1912,7 +1907,6 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
             temp_name = std::any_cast<std::string>(VisitDeclSpecifierSeq);
         }
     }
-    std::cout << "type: " << type << std::endl;
     std::vector< std::pair<std::string, llvm::Value*> > vars;
     int pointer_cnt = 0;
     std::vector<llvm::Value*> array_cnt;
@@ -1983,8 +1977,8 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
             }
         }
         // 判断是否有数组，创建数组类型（TODO: int a[][5] 这类的实现）
-        auto NoPointerDeclarator = decl->declarator()->noPointerDeclarator();
-        if (NoPointerDeclarator) { // NOTE: Maybe NULL
+        auto NoPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator();
+        if (NoPointerDeclarator != nullptr) { // NOTE: Maybe NULL
             while (NoPointerDeclarator->LeftBracket() != nullptr) {
                 if (NoPointerDeclarator->constantExpression() != nullptr) {
                     // 检查下标是否是整数类型
@@ -1993,20 +1987,22 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
                         std::cout << "Error: Array size must be an integer." << std::endl;
                         return nullptr;
                     }
-                    array_cnt.push_back(array_size);
+                    array_cnt.insert(array_cnt.begin(), array_size);
                 } else {
-                    array_cnt.push_back(nullptr);
+                    array_cnt.insert(array_cnt.begin(), nullptr);
                 }
                 NoPointerDeclarator = NoPointerDeclarator->noPointerDeclarator();
             }
         }
         std::string name;
         if (array_cnt.size() > 0) {
-            for (int i = array_cnt.size() - 1; i >= 0; i--) {
-                if (array_cnt[i] != nullptr) {
-                    type = llvm::ArrayType::get(type, static_cast<llvm::ConstantInt*>(array_cnt[i])->getSExtValue());
-                } else {
-                    type = llvm::ArrayType::get(type, 0);
+            if (type != nullptr) {
+                for (int i = array_cnt.size() - 1; i >= 0; i--) {
+                    if (array_cnt[i] != nullptr) {
+                        type = llvm::ArrayType::get(type, static_cast<llvm::ConstantInt*>(array_cnt[i])->getSExtValue());
+                    } else {
+                        type = llvm::ArrayType::get(type, 0);
+                    }
                 }
             }
             name = std::any_cast<std::string>(visitNoPointerDeclarator(NoPointerDeclarator));
@@ -2032,23 +2028,20 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
             }
         }
         vars.push_back(std::make_pair(name, value));
-        std::cout << "name: " << name << std::endl;
-        std::cout << "value: " << value << std::endl;
     }
     if (currentScope().currentFunction != nullptr) { // 局部变量的情况
         if (type == nullptr) { // 没有 type，说明此时是赋值
             for (auto var : vars) {
-                std::cout << "assign var: " << std::get<0>(var) << std::endl;
                 // 因此需要判断当前变量是否已经定义过
                 llvm::Value* var_alloc = getVariable(var.first);
                 if (var_alloc == nullptr) {
                     std::cout << "Error: Variable " + var.first + " is not defined before." << std::endl;
                     return nullptr;
                 }
-                // 数组下标转换
-                for (int i = array_cnt.size() - 1; i >= 0; i--) {
-                    var_alloc = builder.CreateLoad(var_alloc->getType()->getNonOpaquePointerElementType(), var_alloc);
-                    var_alloc = builder.CreateAdd(var_alloc, array_cnt[i]);
+                // 数组下标转换（TODO: 判断数组下标是否都存在）
+                if (array_cnt.size() > 0) {
+                    array_cnt.insert(array_cnt.begin(), llvm::ConstantInt::get(llvm::Type::getInt32Ty(*llvm_context), 0));
+                    var_alloc = builder.CreateInBoundsGEP(var_alloc->getType()->getNonOpaquePointerElementType(), var_alloc, array_cnt);
                 }
                 // 指针解引用转换
                 for (int i = 0; i < pointer_cnt; i++) {
@@ -2057,13 +2050,10 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
                 // 类型检查与赋值
                 // NOTE: 可能全局变量不能如此赋值！
                 this->CreateAssignment(var_alloc, var.second);
-                // builder.CreateStore(var.second, var_alloc);
-                std::cout << "finish assign var: " << std::get<0>(var) << std::endl;
             }
         }
         else {
             for (auto var : vars) {
-                std::cout << "create var: " << std::get<0>(var) << std::endl;
                 // TODO: 数组初始化
                 // 类型检查
                 if (std::get<1>(var) != nullptr && !TypeCheck(var.second->getType(), type)) {
@@ -2077,7 +2067,6 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
                     builder.CreateStore(var.second, alloca);
                 }
                 this->currentScope().setVariable(std::get<0>(var), alloca);
-                std::cout << "finish create var: " << std::get<0>(var) << std::endl;
             }
         }
     } else { // 全局变量的情况
@@ -2165,10 +2154,11 @@ std::any Visitor::visitTypeSpecifier(ZigCCParser::TypeSpecifierContext *ctx)
     if (auto TrailingTypeSpecifier = ctx->trailingTypeSpecifier()) {
 	    return visitTrailingTypeSpecifier(TrailingTypeSpecifier);
     } else if (auto ClassSpecifier = ctx->classSpecifier()) {
-        return visitClassSpecifier(ClassSpecifier);
+        visitClassSpecifier(ClassSpecifier);
     } else if (auto EnumSpecifier = ctx->enumSpecifier()) {
-        return visitEnumSpecifier(EnumSpecifier);
+        visitEnumSpecifier(EnumSpecifier);
     }
+    return nullptr;
 }
 
 std::any Visitor::visitTrailingTypeSpecifier(ZigCCParser::TrailingTypeSpecifierContext *ctx)
@@ -2697,24 +2687,55 @@ std::any Visitor::visitBracedInitList(ZigCCParser::BracedInitListContext *ctx)
 
 std::any Visitor::visitClassName(ZigCCParser::ClassNameContext *ctx)
 {
-    if(auto Identifier = ctx->Identifier()) {
-        return std::string(Identifier->getText());
+    if (ctx->Identifier() != nullptr) {
+        return ctx->Identifier()->getText();
     }
+    return std::string("");
 }
 
 std::any Visitor::visitClassSpecifier(ZigCCParser::ClassSpecifierContext *ctx)
 {
-
+    // TODO: 目前强制最标准的 class/struct/union 定义，不支持匿名定义等
+    std::string classtype, classname;
+    if (ctx->classHead() != nullptr) {
+        std::pair<std::string, std::string> ret = std::any_cast< std::pair<std::string, std::string> >(visitClassHead(ctx->classHead()));
+        classtype = ret.first;
+        classname = ret.second;
+        if (classtype == "class") {
+            if (auto MemberSpecification = ctx->memberSpecification()) {
+                visitMemberSpecification(MemberSpecification);
+            }
+        } else if (classtype == "struct") {
+            if (auto MemberSpecification = ctx->memberSpecification()) {
+                visitMemberSpecification(MemberSpecification);
+            }
+        } else if (classtype == "union") {
+            if (auto MemberSpecification = ctx->memberSpecification()) {
+                visitMemberSpecification(MemberSpecification);
+            }
+        }
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitClassHead(ZigCCParser::ClassHeadContext *ctx)
 {
-
+    if (ctx->Union() != nullptr) {
+        return std::make_pair("union", std::any_cast<std::string>(visitClassHeadName(ctx->classHeadName())));
+    } else if (auto ClassKey = ctx->classKey()) {
+        return std::make_pair(std::any_cast<std::string>(visitClassKey(ClassKey)), std::any_cast<std::string>(visitClassHeadName(ctx->classHeadName())));
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitClassHeadName(ZigCCParser::ClassHeadNameContext *ctx)
 {
-
+    if (auto className = ctx->className()) {
+        return visitClassName(className);
+    } else if (auto nestedNameSpecifier = ctx->nestedNameSpecifier()) {
+        return visitNestedNameSpecifier(nestedNameSpecifier);
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitClassVirtSpecifier(ZigCCParser::ClassVirtSpecifierContext *ctx)
@@ -2724,12 +2745,17 @@ std::any Visitor::visitClassVirtSpecifier(ZigCCParser::ClassVirtSpecifierContext
 
 std::any Visitor::visitClassKey(ZigCCParser::ClassKeyContext *ctx)
 {
-
+    if (ctx->Class() != nullptr) {
+        return std::string("class");
+    } else if (ctx->Struct() != nullptr) {
+        return std::string("struct");
+    }
+    return std::string("");
 }
 
 std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationContext *ctx)
 {
-
+    
 }
 
 [[deprecated("First rule not implemented")]]
@@ -2804,7 +2830,14 @@ std::any Visitor::visitBaseTypeSpecifier(ZigCCParser::BaseTypeSpecifierContext *
 
 std::any Visitor::visitAccessSpecifier(ZigCCParser::AccessSpecifierContext *ctx)
 {
-
+    if (ctx->Private() != nullptr) {
+        return std::string("private");
+    } else if (ctx->Protected() != nullptr) {
+        return std::string("protected");
+    } else if (ctx->Public() != nullptr) {
+        return std::string("public");
+    }
+    return std::string("");
 }
 
 std::any Visitor::visitConversionFunctionId(ZigCCParser::ConversionFunctionIdContext *ctx)

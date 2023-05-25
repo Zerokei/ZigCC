@@ -82,7 +82,6 @@ int main(int argc, char* argv[])
             symbolMap[interner("scanf")] = llvm::JITEvaluatedSymbol::fromPointer(scanf);
             return symbolMap;
         });
-
     // 使用 lookup() 函数查找名为 "main" 的函数，并将其转换为一个函数指针类型（int()）。
     auto entry = jit->lookup<int()>("main");
     if (!entry) {
