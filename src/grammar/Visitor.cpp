@@ -698,6 +698,7 @@ std::any Visitor::visitLambdaDeclarator(ZigCCParser::LambdaDeclaratorContext *ct
 std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *ctx)
 {
     if (ctx->PlusPlus() != nullptr) { // i++
+        std::cout << "PostfixExpression: i++" << std::endl;
         llvm::Value* operand_alloc = nullptr;
         llvm::Value* operand = nullptr;
         auto PostfixExpression = visitPostfixExpression(ctx->postfixExpression());
@@ -753,9 +754,7 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
             return nullptr;
         }
     } else if (auto PrimaryExpression = ctx->primaryExpression()) {
-        std::cout << "Before visitPrimaryExpression" << std::endl;
         return visitPrimaryExpression(PrimaryExpression);
-        std::cout << "After visitPrimaryExpression" << std::endl;
     }
 }
 
@@ -850,9 +849,7 @@ std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
             }
         }
     } else if (auto PostfixExpression = ctx->postfixExpression()) {
-        std::cout << "Before visitPostfixExpression" << std::endl;
         return visitPostfixExpression(PostfixExpression);
-        std::cout << "After visitPostfixExpression" << std::endl;
     }
 }
 
@@ -963,9 +960,7 @@ std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext
     llvm::Value* alloc = nullptr;
     llvm::Value* result = nullptr;
     // 判断返回的是变量名 string 还是表达式 llvm::Value
-    std::cout << "Before visitMultiplicativeExpression" << std::endl;
     auto multiplicativeExpression_0 = visitMultiplicativeExpression(ctx->multiplicativeExpression(0));
-    std::cout << "After visitMultiplicativeExpression" << std::endl;
     if (multiplicativeExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(multiplicativeExpression_0);
         alloc = this->getVariable(name);
@@ -1220,8 +1215,8 @@ std::any Visitor::visitExclusiveOrExpression(ZigCCParser::ExclusiveOrExpressionC
 std::any Visitor::visitInclusiveOrExpression(ZigCCParser::InclusiveOrExpressionContext *ctx)
 {
     llvm::Value* alloc = nullptr;
-   llvm::Value* result = nullptr;
-   auto exclusiveOrExpression_0 = visitExclusiveOrExpression(ctx->exclusiveOrExpression(0));
+    llvm::Value* result = nullptr;
+    auto exclusiveOrExpression_0 = visitExclusiveOrExpression(ctx->exclusiveOrExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (exclusiveOrExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(exclusiveOrExpression_0);
@@ -1490,7 +1485,6 @@ std::any Visitor::visitStatement(ZigCCParser::StatementContext *ctx)
         visitJumpStatement(JumpStatement);
     } else if (auto DeclarationStatement = ctx->declarationStatement()) {
         visitDeclarationStatement(DeclarationStatement);
-        std::cout << "Declaration statement end" << std::endl;
     } else if (auto TryBlock = ctx->tryBlock()) {
         visitTryBlock(TryBlock);
     } else if (auto AttributeSpecifierSeq = ctx->attributeSpecifierSeq()) {
@@ -1506,7 +1500,10 @@ std::any Visitor::visitLabeledStatement(ZigCCParser::LabeledStatementContext *ct
 
 std::any Visitor::visitExpressionStatement(ZigCCParser::ExpressionStatementContext *ctx)
 {
-
+    if (auto Expression = ctx->expression()) {
+        visitExpression(Expression);
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitCompoundStatement(ZigCCParser::CompoundStatementContext *ctx)
@@ -1814,7 +1811,6 @@ std::any Visitor::visitDeclarationStatement(ZigCCParser::DeclarationStatementCon
 {
     if (auto BlockDeclaration = ctx->blockDeclaration()) {
         visitBlockDeclaration(BlockDeclaration);
-        std::cout << "BlockDeclaration end" << std::endl;
     }
     return nullptr;
 }
@@ -1855,10 +1851,8 @@ std::any Visitor::visitDeclaration(ZigCCParser::DeclarationContext *ctx)
 
 std::any Visitor::visitBlockDeclaration(ZigCCParser::BlockDeclarationContext *ctx)
 {
-    std::cout << "BlockDeclaration" << std::endl;
     if (auto SimpleDeclaration = ctx->simpleDeclaration()) {
         visitSimpleDeclaration(SimpleDeclaration);
-        std::cout << "SimpleDeclaration end" << std::endl;
     } else if (auto AsmDefinition = ctx->asmDefinition()) {
         visitAsmDefinition(AsmDefinition);
     } else if (auto NamespaceAliasDefinition = ctx->namespaceAliasDefinition()) {
@@ -1895,12 +1889,10 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     // TODO: 目前暂未考虑一行中有两种类型的情况（const int 之类的）
     // 当前只考虑 int x, y = 0; int x = y = 0; 这种情况，enum 以及 class 等复杂类型之后再作处理（添加分支处理（？））
     // 还有强制类型转换可以做（感觉应该不难）
-    std::cout << "SimpleDeclaration" << std::endl;
     llvm::Type* type = nullptr;
     if (auto DeclSpecifierSeq = ctx->declSpecifierSeq()) {
         type = std::any_cast<llvm::Type*>(visitDeclSpecifierSeq(DeclSpecifierSeq));
     }
-    std::cout << "type: " << type << std::endl;
     std::vector< std::pair<std::string, llvm::Value*> > vars;
     int pointer_cnt = 0;
     std::vector<llvm::Value*> array_cnt;
@@ -1932,8 +1924,8 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
             }
         }
         // 判断是否有数组，创建数组类型（TODO: int a[][5] 这类的实现）
-        auto NoPointerDeclarator = decl->declarator()->noPointerDeclarator();
-        if (NoPointerDeclarator) { // NOTE: Maybe NULL
+        auto NoPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator();
+        if (NoPointerDeclarator != nullptr) { // NOTE: Maybe NULL
             while (NoPointerDeclarator->LeftBracket() != nullptr) {
                 if (NoPointerDeclarator->constantExpression() != nullptr) {
                     // 检查下标是否是整数类型
@@ -1942,20 +1934,22 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
                         std::cout << "Error: Array size must be an integer." << std::endl;
                         return nullptr;
                     }
-                    array_cnt.push_back(array_size);
+                    array_cnt.insert(array_cnt.begin(), array_size);
                 } else {
-                    array_cnt.push_back(nullptr);
+                    array_cnt.insert(array_cnt.begin(), nullptr);
                 }
                 NoPointerDeclarator = NoPointerDeclarator->noPointerDeclarator();
             }
         }
         std::string name;
         if (array_cnt.size() > 0) {
-            for (int i = array_cnt.size() - 1; i >= 0; i--) {
-                if (array_cnt[i] != nullptr) {
-                    type = llvm::ArrayType::get(type, static_cast<llvm::ConstantInt*>(array_cnt[i])->getSExtValue());
-                } else {
-                    type = llvm::ArrayType::get(type, 0);
+            if (type != nullptr) {
+                for (int i = array_cnt.size() - 1; i >= 0; i--) {
+                    if (array_cnt[i] != nullptr) {
+                        type = llvm::ArrayType::get(type, static_cast<llvm::ConstantInt*>(array_cnt[i])->getSExtValue());
+                    } else {
+                        type = llvm::ArrayType::get(type, 0);
+                    }
                 }
             }
             name = std::any_cast<std::string>(visitNoPointerDeclarator(NoPointerDeclarator));
@@ -1994,10 +1988,10 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
                     std::cout << "Error: Variable " + var.first + " is not defined before." << std::endl;
                     return nullptr;
                 }
-                // 数组下标转换
-                for (int i = array_cnt.size() - 1; i >= 0; i--) {
-                    var_alloc = builder.CreateLoad(var_alloc->getType()->getNonOpaquePointerElementType(), var_alloc);
-                    var_alloc = builder.CreateAdd(var_alloc, array_cnt[i]);
+                // 数组下标转换（TODO: 判断数组下标是否都存在）
+                if (array_cnt.size() > 0) {
+                    array_cnt.insert(array_cnt.begin(), llvm::ConstantInt::get(llvm::Type::getInt32Ty(*llvm_context), 0));
+                    var_alloc = builder.CreateInBoundsGEP(var_alloc->getType()->getNonOpaquePointerElementType(), var_alloc, array_cnt);
                 }
                 // 指针解引用转换
                 for (int i = 0; i < pointer_cnt; i++) {
@@ -2006,7 +2000,6 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
                 // 类型检查与赋值
                 // NOTE: 可能全局变量不能如此赋值！
                 this->CreateAssignment(var_alloc, var.second);
-                // builder.CreateStore(var.second, var_alloc);
                 std::cout << "finish assign var: " << std::get<0>(var) << std::endl;
             }
         }
@@ -2023,6 +2016,7 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
                 auto alloca = builder.CreateAlloca(type, nullptr, std::get<0>(var));
                 // 当进行了初始化时，CreateStore 函数将赋值的表达式存入上一步开辟的地址空间 alloca 中
                 if (std::get<1>(var) != nullptr) {
+                    std::cout << "Before CreateStore" << std::endl;
                     builder.CreateStore(var.second, alloca);
                 }
                 this->currentScope().setVariable(std::get<0>(var), alloca);

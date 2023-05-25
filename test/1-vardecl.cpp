@@ -1,6 +1,7 @@
-int main(int z)
+void f()
 {
-    int x;
-    x = 1;
-    return x;
+    int a = 1;
+    int* b = &a;
+    int c = *b;
+    return ;
 }
