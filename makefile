@@ -6,7 +6,7 @@ CC = g++
 # Command used to remove files
 RM = -rm -f
 # Compiler and pre-processor options
-CPPFLAGS = -Wall -std=c++17 -O1 -lLLVM-14
+CPPFLAGS = -Wall -std=c++17 -O1 -lLLVM-14 -Wno-return-type
 # Add -Ofast for opt
 # Debug flags
 DEBUGFLAGS = -g
