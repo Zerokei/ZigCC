@@ -2023,7 +2023,15 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
                 if(nullptr == type) {
                     type = (llvm::Type *)llvm::Type::getInt32Ty(*llvm_context);
                 }
+                
                 std::string fun_name = std::any_cast<std::string>(visitNoPointerDeclarator(_function_decl_noPointerDeclarator));
+                
+                if(nullptr != module->getFunction(fun_name)) {
+                    // 在函数定义后声明
+                    std::cout << "Warning: Function " << fun_name << " with declaration after its defination." << std::endl;
+                    continue;
+                }
+                
                 std::vector< std::pair<std::string, llvm::Type *> > params;
                 params = std::any_cast< std::vector< std::pair<std::string, llvm::Type *> > >
                             (visitParametersAndQualifiers(_function_decl_parametersAndQualifiers));
