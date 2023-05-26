@@ -2043,6 +2043,8 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
                                                     llvm::GlobalValue::LinkageTypes::ExternalLinkage,
                                                     fun_name,
                                                     this->module.get());
+
+                continue;
             }
         }
 
@@ -2675,6 +2677,13 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
 
     auto declarator = ctx->declarator();
     std::string fun_name = std::any_cast<std::string>(visitDeclarator(declarator));
+
+    // 判断当前处理函数是否已经声明
+    llvm::Function *function_decl = module->getFunction(fun_name);
+    llvm::FunctionType *function_decl_type = nullptr;
+    if(nullptr != function_decl) {
+        function_decl_type = function_decl->getFunctionType();
+    }
     
     // 获得参数列表
     std::vector< std::pair<std::string, llvm::Type *> > params;
@@ -2689,16 +2698,37 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
         param_types.push_back(param.second);
     }
 
-    // 添加 Function
     llvm::FunctionType *function_type;
-    function_type = llvm::FunctionType::get(type, 
-                                   llvm::ArrayRef<llvm::Type *>(param_types),
-                                   false);
     llvm::Function *function;
-    function = llvm::Function::Create(function_type,
-                                      llvm::GlobalValue::LinkageTypes::ExternalLinkage,
-                                      fun_name,
-                                      this->module.get());
+    if(nullptr != function_decl) {
+        // 如果函数之前已经声明过，需要检查现在定义的函数参数列表和声明的是否相同
+        llvm::ArrayRef<llvm::Type *> _arrayref_param_types_decl = function_decl_type->params();
+        std::vector<llvm::Type *> param_types_decl(_arrayref_param_types_decl.begin(), _arrayref_param_types_decl.end());
+        if(param_types_decl.size() != param_types.size()) {
+            std::cout << "Error: Conflicts between parameters of function " << fun_name << " declared in function definition and declaration." << std::endl;
+            return nullptr;
+        }
+        for(size_t i = 0; i < param_types_decl.size(); ++i) {
+            if(false == TypeCheck(param_types_decl[i], param_types[i])) {
+                std::cout << "Error: Conflicts between parameters of function " << fun_name << " declared in function definition and declaration." << std::endl;
+                return nullptr;
+            }
+        }
+        function = function_decl;
+        function_type = function_decl->getFunctionType();
+    } else {
+        // 直接定义，添加 Function
+        function_type = llvm::FunctionType::get(type, 
+                                    llvm::ArrayRef<llvm::Type *>(param_types),
+                                    false);
+        
+        function = llvm::Function::Create(function_type,
+                                        llvm::GlobalValue::LinkageTypes::ExternalLinkage,
+                                        fun_name,
+                                        this->module.get());
+    }
+
+    
 
     auto block = llvm::BasicBlock::Create(*llvm_context, llvm::Twine(std::string("entry_")+fun_name), function);
     builder.SetInsertPoint(block);
