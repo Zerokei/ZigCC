@@ -629,15 +629,12 @@ std::any Visitor::visitUnqualifiedId(ZigCCParser::UnqualifiedIdContext *ctx)
 {
     if (auto Identifier = ctx->Identifier()) {
         return std::string(Identifier->getText());
-    } else if (auto OperatorFunctionId = ctx->operatorFunctionId()) {
-        return visitOperatorFunctionId(OperatorFunctionId);
-    } else if (auto ConversionFunctionId = ctx->conversionFunctionId()) {
-        return visitConversionFunctionId(ConversionFunctionId);
-    } else if (auto LiteralOperatorId = ctx->literalOperatorId()) {
-        return visitLiteralOperatorId(LiteralOperatorId);
-    } else if (auto TemplateId = ctx->templateId()) {
-        return visitTemplateId(TemplateId);
+    } else if (ctx->Tilde() != nullptr) {
+        if (auto ClassName = ctx->className()) {
+            return "~" + std::any_cast<std::string>(visitClassName(ClassName));
+        }
     }
+    return nullptr;
 }
 
 std::any Visitor::visitQualifiedId(ZigCCParser::QualifiedIdContext *ctx)
@@ -2702,7 +2699,7 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     this->scopes.pop_back();
 
     // NOTE: What to return?
-    return nullptr;
+    return function;
 }
 
 std::any Visitor::visitFunctionBody(ZigCCParser::FunctionBodyContext *ctx)
@@ -2773,26 +2770,41 @@ std::any Visitor::visitClassName(ZigCCParser::ClassNameContext *ctx)
 std::any Visitor::visitClassSpecifier(ZigCCParser::ClassSpecifierContext *ctx)
 {
     // TODO: 目前强制最标准的 class/struct/union 定义，不支持匿名定义等
-    std::string classtype, classname;
+    ClassType* classinfo = new ClassType();
+    std::string classtype, classname, baseclass, heritance_access;
+    std::vector<llvm::Type*> member_types;
+
     if (ctx->classHead() != nullptr) {
-        std::pair<std::string, std::string> ret = std::any_cast< std::pair<std::string, std::string> >(visitClassHead(ctx->classHead()));
-        classtype = ret.first;
-        classname = ret.second;
+        std::tuple<std::string, std::string, std::string, std::string> ret = std::any_cast< std::tuple<std::string, std::string, std::string, std::string> >(visitClassHead(ctx->classHead()));
+        classtype = std::get<0>(ret);
+        classname = std::get<1>(ret);
+        baseclass = std::get<2>(ret);
+        heritance_access = std::get<3>(ret);
+
+        classinfo->ParentClass = baseclass;
+        scopes.back().classes.push_back(std::make_pair(classname, classinfo));
+
+        if (auto MemberSpecification = ctx->memberSpecification()) {
+            member_types = std::any_cast< std::vector<llvm::Type*> >(visitMemberSpecification(MemberSpecification));
+        }
+
         if (classtype == "class") {
             auto newclass = llvm::StructType::create(*llvm_context, "class." + classname);
-            if (auto MemberSpecification = ctx->memberSpecification()) {
-                visitMemberSpecification(MemberSpecification);
-            }
+            newclass->setBody(member_types);
         } else if (classtype == "struct") {
             auto newstruct = llvm::StructType::create(*llvm_context, "struct." + classname);
-            if (auto MemberSpecification = ctx->memberSpecification()) {
-                visitMemberSpecification(MemberSpecification);
-            }
+            newstruct->setBody(member_types);
         } else if (classtype == "union") {
             auto newunion = llvm::StructType::create(*llvm_context, "union." + classname);
-            if (auto MemberSpecification = ctx->memberSpecification()) {
-                visitMemberSpecification(MemberSpecification);
+            llvm::Type* MaxSizeType = nullptr;
+            for (auto member_type : member_types) {
+                if (MaxSizeType == nullptr) {
+                    MaxSizeType = member_type;
+                } else if (DL->getTypeAllocSize(member_type) > DL->getTypeAllocSize(MaxSizeType)) {
+                    MaxSizeType = member_type;
+                }
             }
+            newunion->setBody(MaxSizeType);
         }
     }
     return nullptr;
@@ -2800,17 +2812,19 @@ std::any Visitor::visitClassSpecifier(ZigCCParser::ClassSpecifierContext *ctx)
 
 std::any Visitor::visitClassHead(ZigCCParser::ClassHeadContext *ctx)
 {
+    std::string classname = std::any_cast<std::string>(visitClassHeadName(ctx->classHeadName()));
     if (ctx->Union() != nullptr) {
-        return std::make_pair("union", std::any_cast<std::string>(visitClassHeadName(ctx->classHeadName())));
+        return std::make_tuple(std::string("union"), classname, std::string(""), std::string(""));
     }
+    std::string classtype = std::any_cast<std::string>(visitClassKey(ctx->classKey()));
     auto baseclass = std::string("");
+    auto heritance_access = std::string("");
     if (auto baseClause = ctx->baseClause()) {
-        baseclass = std::any_cast<std::string>(visitBaseClause(baseClause));
+        auto pair = std::any_cast< std::pair<std::string, std::string> >(visitBaseClause(baseClause));
+        baseclass = pair.first;
+        heritance_access = pair.second;
     }
-    if (auto ClassKey = ctx->classKey()) {
-        return std::make_pair(std::any_cast<std::string>(visitClassKey(ClassKey)), std::any_cast<std::string>(visitClassHeadName(ctx->classHeadName())));
-    }
-    return nullptr;
+    return std::make_tuple(classtype, classname, baseclass, heritance_access);
 }
 
 std::any Visitor::visitClassHeadName(ZigCCParser::ClassHeadNameContext *ctx)
@@ -2843,9 +2857,22 @@ std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationConte
     // 由于自动生成语法树的问题，此处只能强制要求 class 的每个变量前都要规定 private/protected/public
     // 强制要求 struct 和 union 都是 public，不允许加限制
     std::string classname = scopes.back().classes.back().first;
+    ClassType* classinfo = scopes.back().classes.back().second;
+
     auto MemberDecl = ctx->memberdeclaration(0);
     size_t accessnum = ctx->accessSpecifier().size();
+
+    llvm::Function *destructor = nullptr;
+    llvm::Function *defaultConstructor = nullptr;
+    llvm::Function *copyConstructor = nullptr;
+    llvm::Function *moveConstructor = nullptr;
     std::unordered_map<std::string, Access> variables;
+    std::unordered_map<std::string, Access> functions;
+    std::unordered_map<std::string, Access> constructors;
+    std::vector<std::string> VTable;
+
+    std::vector<llvm::Type*> member_types;
+
     if (MemberDecl != nullptr) {
         for (int i = 0; i < ctx->memberdeclaration().size(); i++) {
             Access access = Access::Public;
@@ -2859,15 +2886,94 @@ std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationConte
                     access = Access::Public;
                 }
             }
-            visitMemberdeclaration(ctx->memberdeclaration(i));
+            auto Member = visitMemberdeclaration(ctx->memberdeclaration(i));
+            if (Member.type() == typeid(std::pair<llvm::Function*, std::string>)) {
+                std::pair<llvm::Function*, std::string> pair = std::any_cast<std::pair<llvm::Function*, std::string>>(Member);
+                functions[pair.first->getName().str()] = access;
+                if (pair.second == "dtor") {
+                    destructor = pair.first;
+                    functions[pair.first->getName().str()] = access;
+                } else if (pair.second == "default") {
+                    defaultConstructor = pair.first;
+                    functions[pair.first->getName().str()] = access;
+                } else if (pair.second == "copy") {
+                    copyConstructor = pair.first;
+                    functions[pair.first->getName().str()] = access;
+                } else if (pair.second == "ctor") {
+                    constructors[pair.first->getName().str()] = access;
+                } else if (pair.second == "method") {
+                    functions[pair.first->getName().str()] = access;
+                }
+            } else if (Member.type() == typeid(std::pair< llvm::Type*, std::vector<std::string> >)) {
+                std::pair< llvm::Type*, std::vector<std::string> > pair = std::any_cast<std::pair< llvm::Type*, std::vector<std::string> >>(Member);
+                for (auto name : pair.second) {
+                    variables[name] = access;
+                }
+                for (int i = 0; i < pair.second.size(); i++) {
+                    member_types.push_back(pair.first);
+                }
+            }
         }
     }
+    if (destructor == nullptr) {
+        
+    }
+    if (defaultConstructor == nullptr) {
+        
+    }
+    if (copyConstructor == nullptr) {
+        
+    }
+    if (moveConstructor == nullptr) {
+        // TODO: move constructor
+    }
+    classinfo->destructor = destructor;
+    classinfo->defaultConstructor = defaultConstructor;
+    classinfo->copyConstructor = copyConstructor;
+    classinfo->moveConstructor = moveConstructor;
+    classinfo->variables = variables;
+    classinfo->functions = functions;
+    classinfo->constructors = constructors;
+    classinfo->VTable = VTable;
+
+    return member_types;
 }
 
 std::any Visitor::visitMemberdeclaration(ZigCCParser::MemberdeclarationContext *ctx)
 {
+    // 由于时间有限，目前实现的类只能在类内定义函数而不能声明函数
+    static int i = 0; // 重载的构造函数的下标
     if (auto FunctionDefinition = ctx->functionDefinition()) {
-        visitFunctionDefinition(FunctionDefinition);
+        std::string classname = scopes.back().classes.back().first;
+        llvm::Function* function = std::any_cast<llvm::Function*>(visitFunctionDefinition(FunctionDefinition));
+        std::string func_name = function->getName().str();
+        std::string func_attr = std::string("");
+        if (func_name == classname) { // 判断构造函数和析构函数
+            if (FunctionDefinition->declSpecifierSeq() != nullptr) {
+                std::cout << "Error: Constructor cannot have return type" << std::endl;
+            }
+            func_name = classname + "_ctor" + std::to_string(i++);
+            function->setName(func_name);
+            if (function->arg_size() == 0) {
+                func_attr = std::string("default");
+            } else if (function->arg_size() == 1) { // 此处实现耍流氓，我认为构造函数为拷贝构造函数当且仅当只有一个参数
+                func_attr = std::string("copy");
+            } else {
+                func_attr = std::string("ctor");
+            }
+        } else if (func_name == "~" + classname) {
+            if (FunctionDefinition->declSpecifierSeq() != nullptr) {
+                std::cout << "Error: Destructor cannot have return type" << std::endl;
+            }
+            func_name = classname + "_dtor";
+            function->setName(func_name);
+            func_attr = std::string("dtor");
+        } else {
+            func_name = classname + "_" + func_name;
+            function->setName(func_name);
+            func_attr = std::string("method");
+        }
+        return std::make_pair(function, func_attr);
     } else if (auto UsingDeclaration = ctx->usingDeclaration()) {
         visitUsingDeclaration(UsingDeclaration);
     } else if (auto StaticAssertDeclaration = ctx->staticAssertDeclaration()) {
