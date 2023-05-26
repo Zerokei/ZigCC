@@ -11,6 +11,7 @@ enum Access {
 };
 class ClassType {
 public:
+    // 暂时只考虑单继承以及 public 继承
     std::string ParentClass = "";
     llvm::Function *destructor = nullptr;
     llvm::Function *defaultConstructor = nullptr;
@@ -20,6 +21,8 @@ public:
     std::unordered_map<std::string, Access> variables;
     std::unordered_map<std::string, Access> functions;
     std::unordered_map<std::string, Access> constructors;
+
+    std::vector<std::string> VTable;
 };
 class Scope
 {

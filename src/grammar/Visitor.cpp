@@ -1939,7 +1939,7 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     // 还有强制类型转换可以做（感觉应该不难）
     
     // 判断空语句
-    if(!ctx->declSpecifierSeq() && !ctx->initDeclaratorList() && !ctx->attributeSpecifierSeq()) {
+    if (!ctx->declSpecifierSeq() && !ctx->initDeclaratorList() && !ctx->attributeSpecifierSeq()) {
         return nullptr;
     }
 
@@ -1947,7 +1947,7 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     std::string temp_name;
     if (auto DeclSpecifierSeq = ctx->declSpecifierSeq()) {
         auto VisitDeclSpecifierSeq = visitDeclSpecifierSeq(DeclSpecifierSeq);
-        if(VisitDeclSpecifierSeq.type() == typeid(llvm::Type *)) {
+        if (VisitDeclSpecifierSeq.type() == typeid(llvm::Type *)) {
             type = std::any_cast<llvm::Type*>(VisitDeclSpecifierSeq);
         } else if(VisitDeclSpecifierSeq.type() == typeid(std::string)) {
             temp_name = std::any_cast<std::string>(VisitDeclSpecifierSeq);
@@ -1960,7 +1960,7 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
         antlr4::tree::TerminalNode *L_paren = nullptr;
 
         // 判断是否进行函数调用
-        if(auto _L_paren_noPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator()) {
+        if (auto _L_paren_noPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator()) {
             std::string fun_name;
             llvm::Function *callee;
             llvm::FunctionType *callee_type;
@@ -1974,11 +1974,11 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
                 std::string param_name = std::any_cast<std::string>(visitPointerDeclarator(PointerDeclarator));
                 param_names.push_back(param_name);
             } else if(auto _L_paren_parametersAndQualifiers = _L_paren_noPointerDeclarator->parametersAndQualifiers()) {
-                if(L_paren = _L_paren_parametersAndQualifiers->LeftParen()) {
+                if (L_paren = _L_paren_parametersAndQualifiers->LeftParen()) {
                     // 无参数或多参数
                     fun_name = std::any_cast<std::string>(visitNoPointerDeclarator(_L_paren_noPointerDeclarator));
                     auto ParametersAndQualifiers = visitParametersAndQualifiers(_L_paren_parametersAndQualifiers);
-                    if(_L_paren_parametersAndQualifiers->parameterDeclarationClause()) {
+                    if (_L_paren_parametersAndQualifiers->parameterDeclarationClause()) {
                         param_names = std::any_cast< std::vector<std::string> >(ParametersAndQualifiers);
                     }
                 }
@@ -1992,7 +1992,7 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
             // 根据参数名，获得对应参数 type & value
             for (const auto& name: param_names) {
                 llvm::Value *value = getVariable(name);
-                if(nullptr == value) {
+                if (nullptr == value) {
                     std::cout << "Error: Undefined variable " + name + "." << std::endl;
                     return nullptr;
                 }
@@ -2154,7 +2154,6 @@ std::any Visitor::visitAttributeDeclaration(ZigCCParser::AttributeDeclarationCon
 
 }
 
-[[deprecated("Terminal not implemented")]]
 std::any Visitor::visitDeclSpecifier(ZigCCParser::DeclSpecifierContext *ctx)
 {
     if (auto StorageClassSpecifier = ctx->storageClassSpecifier()) {
@@ -2164,30 +2163,56 @@ std::any Visitor::visitDeclSpecifier(ZigCCParser::DeclSpecifierContext *ctx)
     } else if (auto FunctionSpecifier = ctx->functionSpecifier()) {
         return visitFunctionSpecifier(FunctionSpecifier);
     } else if (auto Friend = ctx->Friend()) {
-        return "";
+        return std::string("Friend");
     } else if (auto Typedef = ctx->Typedef()) {
-        return "";
+        return std::string("Typedef");
     } else if (auto Constexpr = ctx->Constexpr()) {
-        return "";
+        return std::string("Constexpr");
     }
 }
 
 std::any Visitor::visitDeclSpecifierSeq(ZigCCParser::DeclSpecifierSeqContext *ctx)
 {
-    // 显然是不能这么写代码的，但是目前只考虑只有一个 declSpecifier 的情况
-    for (auto decl : ctx->declSpecifier())
-        return visitDeclSpecifier(decl);
+    // 目前只考虑只有一个或两个 declSpecifier 的情况
+    auto DeclSpecifier = ctx->declSpecifier();
+    if (DeclSpecifier.size() == 1) {
+        return visitDeclSpecifier(DeclSpecifier[0]);
+    } else if (DeclSpecifier.size() == 2) {
+        // 例如 virtual inline const static 出现在第一个位置，第二个是位置普通类型
+        // 可以扩展为支持更多，但目前没有必要
+        auto DeclSpecifier1 = visitDeclSpecifier(DeclSpecifier[0]);
+        auto DeclSpecifier2 = visitDeclSpecifier(DeclSpecifier[1]);
+        return std::make_pair(DeclSpecifier1, DeclSpecifier2);
+    }
     // TODO: attributeSpecifierSeq()
 }
 
 std::any Visitor::visitStorageClassSpecifier(ZigCCParser::StorageClassSpecifierContext *ctx)
 {
-
+    if (ctx->Register() != nullptr) {
+        return std::string("Register");
+    } else if (ctx->Static() != nullptr) {
+        return std::string("Static");
+    } else if (ctx->Thread_local() != nullptr) {
+        return std::string("Thread_local");
+    } else if (ctx->Extern() != nullptr) {
+        return std::string("Extern");
+    } else if (ctx->Mutable() != nullptr) {
+        return std::string("Mutable");
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitFunctionSpecifier(ZigCCParser::FunctionSpecifierContext *ctx)
 {
-
+    if (ctx->Inline() != nullptr) {
+        return std::string("Inline");
+    } else if (ctx->Virtual() != nullptr) {
+        return std::string("Virtual");
+    } else if (ctx->Explicit() != nullptr) {
+        return std::string("Explicit");
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitTypedefName(ZigCCParser::TypedefNameContext *ctx)
@@ -2200,9 +2225,9 @@ std::any Visitor::visitTypeSpecifier(ZigCCParser::TypeSpecifierContext *ctx)
     if (auto TrailingTypeSpecifier = ctx->trailingTypeSpecifier()) {
 	    return visitTrailingTypeSpecifier(TrailingTypeSpecifier);
     } else if (auto ClassSpecifier = ctx->classSpecifier()) {
-        visitClassSpecifier(ClassSpecifier);
+        return visitClassSpecifier(ClassSpecifier);
     } else if (auto EnumSpecifier = ctx->enumSpecifier()) {
-        visitEnumSpecifier(EnumSpecifier);
+        return visitEnumSpecifier(EnumSpecifier);
     }
     return nullptr;
 }
@@ -2603,7 +2628,13 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     // 默认返回值类型 int32
     llvm::Type *type = (llvm::Type *)llvm::Type::getInt32Ty(*llvm_context);
     if (auto declSpecifierSeq = ctx->declSpecifierSeq()) {
-        type = std::any_cast<llvm::Type *>(visitDeclSpecifierSeq(declSpecifierSeq));
+        auto DeclSpecifierSeq = visitDeclSpecifierSeq(declSpecifierSeq);
+        if (DeclSpecifierSeq.type() == typeid(llvm::Type *)) {
+            type = std::any_cast<llvm::Type *>(DeclSpecifierSeq);
+        } else if (DeclSpecifierSeq.type() == typeid(std::pair<std::string, llvm::Value*>)) {
+            auto pair = std::any_cast<std::pair<std::string, llvm::Value*>>(DeclSpecifierSeq);
+            type = std::any_cast<llvm::Type *>(pair.second);
+        }
     }
 
     auto declarator = ctx->declarator();
@@ -2771,7 +2802,12 @@ std::any Visitor::visitClassHead(ZigCCParser::ClassHeadContext *ctx)
 {
     if (ctx->Union() != nullptr) {
         return std::make_pair("union", std::any_cast<std::string>(visitClassHeadName(ctx->classHeadName())));
-    } else if (auto ClassKey = ctx->classKey()) {
+    }
+    auto baseclass = std::string("");
+    if (auto baseClause = ctx->baseClause()) {
+        baseclass = std::any_cast<std::string>(visitBaseClause(baseClause));
+    }
+    if (auto ClassKey = ctx->classKey()) {
         return std::make_pair(std::any_cast<std::string>(visitClassKey(ClassKey)), std::any_cast<std::string>(visitClassHeadName(ctx->classHeadName())));
     }
     return nullptr;
@@ -2823,17 +2859,14 @@ std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationConte
                     access = Access::Public;
                 }
             }
-            
+            visitMemberdeclaration(ctx->memberdeclaration(i));
         }
     }
 }
 
-[[deprecated("First rule not implemented")]]
 std::any Visitor::visitMemberdeclaration(ZigCCParser::MemberdeclarationContext *ctx)
 {
-    if(1) {
-        
-    } else if (auto FunctionDefinition = ctx->functionDefinition()) {
+    if (auto FunctionDefinition = ctx->functionDefinition()) {
         visitFunctionDefinition(FunctionDefinition);
     } else if (auto UsingDeclaration = ctx->usingDeclaration()) {
         visitUsingDeclaration(UsingDeclaration);
@@ -2845,7 +2878,21 @@ std::any Visitor::visitMemberdeclaration(ZigCCParser::MemberdeclarationContext *
         visitAliasDeclaration(AliasDeclaration);
     } else if (auto EmptyDeclaration = ctx->emptyDeclaration()) {
         visitEmptyDeclaration(EmptyDeclaration);
+    } else if (auto decl = ctx->declSpecifierSeq()) {
+        llvm::Type* type = nullptr;
+        std::string temp_name;
+        auto VisitDeclSpecifierSeq = visitDeclSpecifierSeq(decl);
+        if (VisitDeclSpecifierSeq.type() == typeid(llvm::Type *)) {
+            type = std::any_cast<llvm::Type*>(VisitDeclSpecifierSeq);
+        } else if(VisitDeclSpecifierSeq.type() == typeid(std::string)) {
+            temp_name = std::any_cast<std::string>(VisitDeclSpecifierSeq);
+        }
+        // TODO: 函数声明，暂时只允许在类内定义函数
+        if (auto MemberDeclaratorList = ctx->memberDeclaratorList()) {
+            visitMemberDeclaratorList(MemberDeclaratorList);
+        }
     }
+    return nullptr;
 }
 
 std::any Visitor::visitMemberDeclaratorList(ZigCCParser::MemberDeclaratorListContext *ctx)
@@ -2875,27 +2922,61 @@ std::any Visitor::visitPureSpecifier(ZigCCParser::PureSpecifierContext *ctx)
 
 std::any Visitor::visitBaseClause(ZigCCParser::BaseClauseContext *ctx)
 {
-
+    // 暂时只考虑单继承以及 public 继承
+    if (auto baseSpecifierList = ctx->baseSpecifierList()) {
+        return visitBaseSpecifierList(baseSpecifierList);
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitBaseSpecifierList(ZigCCParser::BaseSpecifierListContext *ctx)
 {
-
+    if (auto BaseSpecifier = ctx->baseSpecifier(0)) {
+        return visitBaseSpecifier(BaseSpecifier);
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitBaseSpecifier(ZigCCParser::BaseSpecifierContext *ctx)
 {
+    Access access = Access::Private;
+    if (auto accessSpecifier = ctx->accessSpecifier()) {
+        std::string access = std::any_cast<std::string>(visitAccessSpecifier(accessSpecifier));
+        if (access == "private") {
+            access = Access::Private;
+        } else if (access == "protected") {
+            access = Access::Protected;
+        } else if (access == "public") {
+            access = Access::Public;
+        }
+    }
 
+    std::string baseclassname = std::string("");
+    if (auto baseTypeSpecifier = ctx->baseTypeSpecifier()) {
+        baseclassname = std::any_cast<std::string>(visitBaseTypeSpecifier(baseTypeSpecifier));
+    }
+
+    // TODO: attribute
+    return std::make_pair(baseclassname, access);
 }
 
 std::any Visitor::visitClassOrDeclType(ZigCCParser::ClassOrDeclTypeContext *ctx)
 {
-
+    if (auto nestedNameSpecifier = ctx->nestedNameSpecifier()) {
+        return visitNestedNameSpecifier(nestedNameSpecifier);
+    } else if (auto ClassName = ctx->className()) {
+        return visitClassName(ClassName);
+    } else if (auto decltypeSpecifier = ctx->decltypeSpecifier()) {
+        return visitDecltypeSpecifier(decltypeSpecifier);
+    }
 }
 
 std::any Visitor::visitBaseTypeSpecifier(ZigCCParser::BaseTypeSpecifierContext *ctx)
 {
-
+    if (auto ClassorDeclType = ctx->classOrDeclType()) {
+        return visitClassOrDeclType(ClassorDeclType);
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitAccessSpecifier(ZigCCParser::AccessSpecifierContext *ctx)
