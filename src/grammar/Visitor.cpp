@@ -2596,6 +2596,18 @@ std::any Visitor::visitParameterDeclarationList(ZigCCParser::ParameterDeclaratio
         for(const auto& param_dec_ctx: param_list) {
             auto dec_specifier = param_dec_ctx->declSpecifierSeq();
             llvm::Type *type = std::any_cast<llvm::Type *>(visitDeclSpecifierSeq(dec_specifier));
+
+            size_t pointer_cnt = 0;
+            if(auto _param_dec_ctx_pointerDeclarator = param_dec_ctx->declarator()->pointerDeclarator())
+            if(auto _param_dec_ctx_pointerOperator_size = _param_dec_ctx_pointerDeclarator->pointerOperator().size()) {
+                pointer_cnt = _param_dec_ctx_pointerOperator_size;
+            }
+            
+            if(nullptr != type)
+            for(size_t i = 0; i < pointer_cnt; ++i) {
+                type = llvm::PointerType::get(type, 0);
+            }
+
             auto declarator = param_dec_ctx->declarator();
             std::string name= std::any_cast<std::string>(visitDeclarator(declarator));
             params.push_back(std::pair< std::string, llvm::Type * >(name, type));
