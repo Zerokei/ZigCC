@@ -2019,6 +2019,13 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
         if(auto _L_paren_noPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator()) {
             if(auto _function_decl_noPointerDeclarator = _L_paren_noPointerDeclarator->noPointerDeclarator()) 
             if(auto _function_decl_parametersAndQualifiers = _L_paren_noPointerDeclarator->parametersAndQualifiers()) {
+                // 管理变长参数
+                bool has_ellipsis = false;
+                if(auto _function_decl_paramDeclClause = _function_decl_parametersAndQualifiers->parameterDeclarationClause()) 
+                if(_function_decl_paramDeclClause->Ellipsis()) {
+                     has_ellipsis = true;
+                }
+
                 // 如果没有指定函数返回值类型，默认为 int32
                 if(nullptr == type) {
                     type = (llvm::Type *)llvm::Type::getInt32Ty(*llvm_context);
@@ -2045,7 +2052,7 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
                 llvm::FunctionType *function_type;
                 function_type = llvm::FunctionType::get(type, 
                                                         llvm::ArrayRef<llvm::Type *>(param_types),
-                                                        false);
+                                                        has_ellipsis);
                 llvm::Function *function;
                 function = llvm::Function::Create(function_type,
                                                     llvm::GlobalValue::LinkageTypes::ExternalLinkage,
@@ -2700,6 +2707,13 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     params = std::any_cast<std::vector< std::pair<std::string, llvm::Type *> > >
         (visitParametersAndQualifiers(parametersAndQualifiers));
 
+    // 判断是否为可变长参数
+    bool has_ellipsis = false;
+    if(auto _parameterDeclarationClause = parametersAndQualifiers->parameterDeclarationClause()) 
+    if(_parameterDeclarationClause->Ellipsis()) {
+        has_ellipsis = true;
+    }
+
 
     std::vector<llvm::Type *> param_types;
     for (const auto& param: params) {
@@ -2728,7 +2742,7 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
         // 直接定义，添加 Function
         function_type = llvm::FunctionType::get(type, 
                                     llvm::ArrayRef<llvm::Type *>(param_types),
-                                    false);
+                                    has_ellipsis);
         
         function = llvm::Function::Create(function_type,
                                         llvm::GlobalValue::LinkageTypes::ExternalLinkage,
