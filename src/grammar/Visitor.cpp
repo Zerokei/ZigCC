@@ -1959,7 +1959,8 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     for (auto decl : ctx->initDeclaratorList()->initDeclarator()) {
         antlr4::tree::TerminalNode *L_paren = nullptr;
 
-        // 判断是否进行函数调用
+        // 判断是否进行函数调用，函数调用**一定**发生在函数内部
+        if(nullptr != currentScope().currentFunction)
         if (auto _L_paren_noPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator()) {
             std::string fun_name;
             llvm::Function *callee;
@@ -2012,6 +2013,55 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
             continue;
         }
 _ZIGCC_DECL_NOT_FUNCTION_CALL:
+
+        // 判断是不是函数声明，NOTE: !!!!函数声明一定在全局进行!!!!
+        if(nullptr == currentScope().currentFunction)
+        if(auto _L_paren_noPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator()) {
+            if(auto _function_decl_noPointerDeclarator = _L_paren_noPointerDeclarator->noPointerDeclarator()) 
+            if(auto _function_decl_parametersAndQualifiers = _L_paren_noPointerDeclarator->parametersAndQualifiers()) {
+                // 管理变长参数
+                bool has_ellipsis = false;
+                if(auto _function_decl_paramDeclClause = _function_decl_parametersAndQualifiers->parameterDeclarationClause()) 
+                if(_function_decl_paramDeclClause->Ellipsis()) {
+                     has_ellipsis = true;
+                }
+
+                // 如果没有指定函数返回值类型，默认为 int32
+                if(nullptr == type) {
+                    type = (llvm::Type *)llvm::Type::getInt32Ty(*llvm_context);
+                }
+                
+                std::string fun_name = std::any_cast<std::string>(visitNoPointerDeclarator(_function_decl_noPointerDeclarator));
+                
+                if(nullptr != module->getFunction(fun_name)) {
+                    // 在函数定义后声明
+                    std::cout << "Warning: Function " << fun_name << " with declaration after its defination." << std::endl;
+                    continue;
+                }
+                
+                std::vector< std::pair<std::string, llvm::Type *> > params;
+                params = std::any_cast< std::vector< std::pair<std::string, llvm::Type *> > >
+                            (visitParametersAndQualifiers(_function_decl_parametersAndQualifiers));
+
+                // 因为是函数声明，我们只在乎参数类型，并不在乎形参名
+                std::vector<llvm::Type *> param_types;
+                for(const auto &param : params) {
+                    param_types.push_back(param.second);
+                }
+
+                llvm::FunctionType *function_type;
+                function_type = llvm::FunctionType::get(type, 
+                                                        llvm::ArrayRef<llvm::Type *>(param_types),
+                                                        has_ellipsis);
+                llvm::Function *function;
+                function = llvm::Function::Create(function_type,
+                                                    llvm::GlobalValue::LinkageTypes::ExternalLinkage,
+                                                    fun_name,
+                                                    this->module.get());
+
+                continue;
+            }
+        }
 
         // 我们先处理指针，再处理数组，因此默认 int *a[] 为指针数组
         // TODO: 数组指针需特判是否为 int (*a)[]
@@ -2589,21 +2639,8 @@ std::any Visitor::visitParameterDeclarationList(ZigCCParser::ParameterDeclaratio
 {
     auto param_list = ctx->parameterDeclaration();
     
-    if(ctx->parameterDeclaration(0)->declarator()) {
-        // Visit param with name & type
-        std::vector< std::pair< std::string, llvm::Type* > > params;
-
-        for(const auto& param_dec_ctx: param_list) {
-            auto dec_specifier = param_dec_ctx->declSpecifierSeq();
-            llvm::Type *type = std::any_cast<llvm::Type *>(visitDeclSpecifierSeq(dec_specifier));
-            auto declarator = param_dec_ctx->declarator();
-            std::string name= std::any_cast<std::string>(visitDeclarator(declarator));
-            params.push_back(std::pair< std::string, llvm::Type * >(name, type));
-        }
-
-        return params;
-    } else {
-        // Return className
+    if(nullptr == ctx->parameterDeclaration(0)->declarator() && ctx->parameterDeclaration(0)->declSpecifierSeq()->declSpecifier(0)->typeSpecifier()->trailingTypeSpecifier()->simpleTypeSpecifier()->theTypeName()) {
+         // Return className
         std::vector<std::string> param_names;
         for(const auto &param_dec_ctx : param_list) {
             if(auto _param_decl_typeSpecifier = param_dec_ctx->declSpecifierSeq()->declSpecifier(0)->typeSpecifier())
@@ -2614,6 +2651,22 @@ std::any Visitor::visitParameterDeclarationList(ZigCCParser::ParameterDeclaratio
             }
         }
         return param_names;
+    } else {
+        // Visit param with type & name(name may be empty)
+        std::vector< std::pair< std::string, llvm::Type* > > params;
+
+        for(const auto& param_dec_ctx: param_list) {
+            auto dec_specifier = param_dec_ctx->declSpecifierSeq();
+            llvm::Type *type = std::any_cast<llvm::Type *>(visitDeclSpecifierSeq(dec_specifier));
+            auto declarator = param_dec_ctx->declarator();
+            std::string name;
+            if(declarator) {
+                name = std::any_cast<std::string>(visitDeclarator(declarator));
+            } 
+            params.push_back(std::pair< std::string, llvm::Type * >(name, type));
+        }
+
+        return params;
     }
     
 }
@@ -2639,6 +2692,13 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
 
     auto declarator = ctx->declarator();
     std::string fun_name = std::any_cast<std::string>(visitDeclarator(declarator));
+
+    // 判断当前处理函数是否已经声明
+    llvm::Function *function_decl = module->getFunction(fun_name);
+    llvm::FunctionType *function_decl_type = nullptr;
+    if(nullptr != function_decl) {
+        function_decl_type = function_decl->getFunctionType();
+    }
     
     // 获得参数列表
     std::vector< std::pair<std::string, llvm::Type *> > params;
@@ -2647,22 +2707,50 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     params = std::any_cast<std::vector< std::pair<std::string, llvm::Type *> > >
         (visitParametersAndQualifiers(parametersAndQualifiers));
 
+    // 判断是否为可变长参数
+    bool has_ellipsis = false;
+    if(auto _parameterDeclarationClause = parametersAndQualifiers->parameterDeclarationClause()) 
+    if(_parameterDeclarationClause->Ellipsis()) {
+        has_ellipsis = true;
+    }
+
 
     std::vector<llvm::Type *> param_types;
     for (const auto& param: params) {
         param_types.push_back(param.second);
     }
 
-    // 添加 Function
     llvm::FunctionType *function_type;
-    function_type = llvm::FunctionType::get(type, 
-                                   llvm::ArrayRef<llvm::Type *>(param_types),
-                                   false);
     llvm::Function *function;
-    function = llvm::Function::Create(function_type,
-                                      llvm::GlobalValue::LinkageTypes::ExternalLinkage,
-                                      fun_name,
-                                      this->module.get());
+    if(nullptr != function_decl) {
+        // 如果函数之前已经声明过，需要检查现在定义的函数参数列表和声明的是否相同
+        llvm::ArrayRef<llvm::Type *> _arrayref_param_types_decl = function_decl_type->params();
+        std::vector<llvm::Type *> param_types_decl(_arrayref_param_types_decl.begin(), _arrayref_param_types_decl.end());
+        if(param_types_decl.size() != param_types.size()) {
+            std::cout << "Error: Conflicts between parameters of function " << fun_name << " declared in function definition and declaration." << std::endl;
+            return nullptr;
+        }
+        for(size_t i = 0; i < param_types_decl.size(); ++i) {
+            if(false == TypeCheck(param_types_decl[i], param_types[i])) {
+                std::cout << "Error: Conflicts between parameters of function " << fun_name << " declared in function definition and declaration." << std::endl;
+                return nullptr;
+            }
+        }
+        function = function_decl;
+        function_type = function_decl->getFunctionType();
+    } else {
+        // 直接定义，添加 Function
+        function_type = llvm::FunctionType::get(type, 
+                                    llvm::ArrayRef<llvm::Type *>(param_types),
+                                    has_ellipsis);
+        
+        function = llvm::Function::Create(function_type,
+                                        llvm::GlobalValue::LinkageTypes::ExternalLinkage,
+                                        fun_name,
+                                        this->module.get());
+    }
+
+    
 
     auto block = llvm::BasicBlock::Create(*llvm_context, llvm::Twine(std::string("entry_")+fun_name), function);
     builder.SetInsertPoint(block);
