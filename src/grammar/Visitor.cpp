@@ -2004,13 +2004,15 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
             // 根据函数，获得函数要求的参数类型
             llvm::ArrayRef<llvm::Type *> _array_need_param_types = callee_type->params();
             std::vector<llvm::Type *> need_param_types(_array_need_param_types.begin(), _array_need_param_types.end());
-            if(need_param_types.size() != param_types.size()) {
+
+            if(need_param_types.size() == param_types.size() || callee_type->isVarArg() && need_param_types.size() <= param_types.size()) {
+                // TODO: 类型检查与匹配，如果无法 cast 应报错
+                builder.CreateCall(callee_type, callee, param_values);
+                continue;
+            } else {
                 std::cout << "Error: Wrong number of parameters when calling " + fun_name + "." << std::endl;
                 return nullptr;
-            }
-            // TODO: 类型检查与匹配，如果无法 cast 应报错
-            builder.CreateCall(callee_type, callee, param_values);
-            continue;
+            }          
         }
 _ZIGCC_DECL_NOT_FUNCTION_CALL:
 
