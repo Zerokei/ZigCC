@@ -1943,7 +1943,6 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
         return nullptr;
     }
 
-    std::cout << "SimpleDeclaration" << std::endl;
     llvm::Type* type = nullptr;
     std::string temp_name;
     if (auto DeclSpecifierSeq = ctx->declSpecifierSeq()) {
@@ -2807,23 +2806,24 @@ std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationConte
 {
     // 由于自动生成语法树的问题，此处只能强制要求 class 的每个变量前都要规定 private/protected/public
     // 强制要求 struct 和 union 都是 public，不允许加限制
+    std::string classname = scopes.back().classes.back().first;
     auto MemberDecl = ctx->memberdeclaration(0);
     size_t accessnum = ctx->accessSpecifier().size();
+    std::unordered_map<std::string, Access> variables;
     if (MemberDecl != nullptr) {
         for (int i = 0; i < ctx->memberdeclaration().size(); i++) {
-            Access access = Access::PUBLIC;
+            Access access = Access::Public;
             if (accessnum > 0) {
                 std::string access = std::any_cast<std::string>(visitAccessSpecifier(ctx->accessSpecifier(i)));
                 if (access == "private") {
-                    access = Access::PRIVATE;
+                    access = Access::Private;
                 } else if (access == "protected") {
-                    access = Access::PROTECTED;
+                    access = Access::Protected;
                 } else if (access == "public") {
-                    access = Access::PUBLIC;
+                    access = Access::Public;
                 }
             }
-            std::unordered_map<std::string, Access> variables;
-
+            
         }
     }
 }

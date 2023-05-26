@@ -22,18 +22,22 @@ llvm::Value *Scope::getVariable(const std::string &name)
 
 bool Scope::setClass(const std::string &name, ClassType *classType)
 {
-    if (this->classes.find(name) != this->classes.end()) {
-        return false;
+    for (auto &pair : this->classes) {
+        if (pair.first == name) {
+            return false;
+        }
     }
-    this->classes[name] = classType;
+    this->classes.push_back(std::make_pair(name, classType));
     return true;
 }
 
 ClassType *Scope::getClass(const std::string &name)
 {
-    try {
-        return this->classes.at(name);
-    } catch (std::out_of_range) {
-        return nullptr;
+    
+    for (auto &pair : this->classes) {
+        if (pair.first == name) {
+            return pair.second;
+        }
     }
+    return nullptr;
 }

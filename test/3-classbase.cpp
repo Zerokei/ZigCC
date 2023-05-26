@@ -1,11 +1,15 @@
 class Point {
 public:
     Point(int x, int y) : x(x), y(y) {}
+public:
     Point() : Point(0, 0) { nothing(); }
+public:
     Point(const Point &p) : Point(p.x, p.y) {}
 private:
     int x;
+private:
     int y;
+private:
     void nothing() {
         int x = this->x;
         int y = this->y;
