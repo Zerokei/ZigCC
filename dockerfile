@@ -23,10 +23,12 @@ RUN apt-get install -y g++
 RUN apt-get install -y gcc
 RUN apt-get install -y make
 RUN apt-get install -y vim
-	
+RUN apt-get install -y gcc-riscv64-linux-gnu gdb-multiarch
+
+RUN echo "export LD_LIBRARY_PATH=/zigcc/antlr4/dist" >> ~/.bashrc
 # 设置环境变量（示例） 
 # ENV ENV_VARIABLE=value 
 # 定义容器启动时要执行的命令 
-# CMD ["make"] 
+# CMD ["make"]
 # 暴露容器的端口（示例） 
 # EXPOSE 8080
