@@ -1959,7 +1959,8 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     for (auto decl : ctx->initDeclaratorList()->initDeclarator()) {
         antlr4::tree::TerminalNode *L_paren = nullptr;
 
-        // 判断是否进行函数调用
+        // 判断是否进行函数调用，函数调用**一定**发生在函数内部
+        if(nullptr != currentScope().currentFunction)
         if (auto _L_paren_noPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator()) {
             std::string fun_name;
             llvm::Function *callee;
@@ -2012,6 +2013,38 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
             continue;
         }
 _ZIGCC_DECL_NOT_FUNCTION_CALL:
+
+        // 判断是不是函数声明，NOTE: !!!!函数声明一定在全局进行!!!!
+        if(nullptr == currentScope().currentFunction)
+        if(auto _L_paren_noPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator()) {
+            if(auto _function_decl_noPointerDeclarator = _L_paren_noPointerDeclarator->noPointerDeclarator()) 
+            if(auto _function_decl_parametersAndQualifiers = _L_paren_noPointerDeclarator->parametersAndQualifiers()) {
+                // 如果没有指定函数返回值类型，默认为 int32
+                if(nullptr == type) {
+                    type = (llvm::Type *)llvm::Type::getInt32Ty(*llvm_context);
+                }
+                std::string fun_name = std::any_cast<std::string>(visitNoPointerDeclarator(_function_decl_noPointerDeclarator));
+                std::vector< std::pair<std::string, llvm::Type *> > params;
+                params = std::any_cast< std::vector< std::pair<std::string, llvm::Type *> > >
+                            (visitParametersAndQualifiers(_function_decl_parametersAndQualifiers));
+
+                // 因为是函数声明，我们只在乎参数类型，并不在乎形参名
+                std::vector<llvm::Type *> param_types;
+                for(const auto &param : params) {
+                    param_types.push_back(param.second);
+                }
+
+                llvm::FunctionType *function_type;
+                function_type = llvm::FunctionType::get(type, 
+                                                        llvm::ArrayRef<llvm::Type *>(param_types),
+                                                        false);
+                llvm::Function *function;
+                function = llvm::Function::Create(function_type,
+                                                    llvm::GlobalValue::LinkageTypes::ExternalLinkage,
+                                                    fun_name,
+                                                    this->module.get());
+            }
+        }
 
         // 我们先处理指针，再处理数组，因此默认 int *a[] 为指针数组
         // TODO: 数组指针需特判是否为 int (*a)[]
@@ -2589,21 +2622,8 @@ std::any Visitor::visitParameterDeclarationList(ZigCCParser::ParameterDeclaratio
 {
     auto param_list = ctx->parameterDeclaration();
     
-    if(ctx->parameterDeclaration(0)->declarator()) {
-        // Visit param with name & type
-        std::vector< std::pair< std::string, llvm::Type* > > params;
-
-        for(const auto& param_dec_ctx: param_list) {
-            auto dec_specifier = param_dec_ctx->declSpecifierSeq();
-            llvm::Type *type = std::any_cast<llvm::Type *>(visitDeclSpecifierSeq(dec_specifier));
-            auto declarator = param_dec_ctx->declarator();
-            std::string name= std::any_cast<std::string>(visitDeclarator(declarator));
-            params.push_back(std::pair< std::string, llvm::Type * >(name, type));
-        }
-
-        return params;
-    } else {
-        // Return className
+    if(nullptr == ctx->parameterDeclaration(0)->declarator() && ctx->parameterDeclaration(0)->declSpecifierSeq()->declSpecifier(0)->typeSpecifier()->trailingTypeSpecifier()->simpleTypeSpecifier()->theTypeName()) {
+         // Return className
         std::vector<std::string> param_names;
         for(const auto &param_dec_ctx : param_list) {
             if(auto _param_decl_typeSpecifier = param_dec_ctx->declSpecifierSeq()->declSpecifier(0)->typeSpecifier())
@@ -2614,6 +2634,22 @@ std::any Visitor::visitParameterDeclarationList(ZigCCParser::ParameterDeclaratio
             }
         }
         return param_names;
+    } else {
+        // Visit param with type & name(name may be empty)
+        std::vector< std::pair< std::string, llvm::Type* > > params;
+
+        for(const auto& param_dec_ctx: param_list) {
+            auto dec_specifier = param_dec_ctx->declSpecifierSeq();
+            llvm::Type *type = std::any_cast<llvm::Type *>(visitDeclSpecifierSeq(dec_specifier));
+            auto declarator = param_dec_ctx->declarator();
+            std::string name;
+            if(declarator) {
+                name = std::any_cast<std::string>(visitDeclarator(declarator));
+            } 
+            params.push_back(std::pair< std::string, llvm::Type * >(name, type));
+        }
+
+        return params;
     }
     
 }
