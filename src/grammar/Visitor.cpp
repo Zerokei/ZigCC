@@ -1620,6 +1620,8 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
         DoLoopBB->insertInto(function);
 		builder.SetInsertPoint(DoLoopBB);
 
+        auto prev_cond_done_BB_pair = this->cond_done_BB_pair;
+
         std::pair<llvm::BasicBlock *, llvm::BasicBlock *> do_BB_pair(DoCondBB, DoEndBB);
         this->cond_done_BB_pair = &do_BB_pair;
 
@@ -1627,7 +1629,7 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
 			// TODO: 还需要处理 break 和 continue 语句
 			visitStatement(ctx->statement());
 		}
-        this->cond_done_BB_pair = nullptr;
+        this->cond_done_BB_pair = prev_cond_done_BB_pair;
 		TerminateBlockByBr(DoCondBB);
 		
         //Evaluate the loop condition (cast the type to i1 if necessary).
@@ -1684,13 +1686,15 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
         WhileLoopBB->insertInto(function);
 		builder.SetInsertPoint(WhileLoopBB);
 
+        auto prev_cond_done_BB_pair = this->cond_done_BB_pair;
+
         std::pair<llvm::BasicBlock *, llvm::BasicBlock *> while_BB_pair(WhileCondBB, WhileEndBB);
         this->cond_done_BB_pair = &while_BB_pair;
 		if (ctx->statement() != nullptr) {
             // TODO: 还需要处理 break 和 continue 语句
 			visitStatement(ctx->statement());
 		}
-        this->cond_done_BB_pair = nullptr;
+        this->cond_done_BB_pair = prev_cond_done_BB_pair;
 		TerminateBlockByBr(WhileCondBB);
 
 		//Finish "WhileEnd" block
@@ -1744,12 +1748,16 @@ std::any Visitor::visitIterationStatement(ZigCCParser::IterationStatementContext
         ForLoopBB->insertInto(function);
 		builder.SetInsertPoint(ForLoopBB);
 
+        auto prev_cond_done_BB_pair = this->cond_done_BB_pair;
+
         std::pair<llvm::BasicBlock *, llvm::BasicBlock *> for_BB_pair(ForTailBB, ForEndBB);
         this->cond_done_BB_pair = &for_BB_pair;
 		if (ctx->statement() != nullptr) {
             // TODO: 还需要处理 break 和 continue 语句
             visitStatement(ctx->statement());
         }
+
+        this->cond_done_BB_pair = prev_cond_done_BB_pair;
 
 		// If not terminated, jump to "ForTail"
 		TerminateBlockByBr(ForTailBB);
