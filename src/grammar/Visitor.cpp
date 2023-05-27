@@ -749,6 +749,119 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
             std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(PostfixExpression) << "'" << std::endl;
             return nullptr;
         }
+    } else if (ctx->Dot() != nullptr) { // a.x
+        std::string objname = "";
+        if (auto PostfixExpression = ctx->postfixExpression()) {
+            if (auto PrimaryExpression = PostfixExpression->primaryExpression()) {
+                if (auto ID = PrimaryExpression->idExpression()) {
+                    if (auto UnqualifiedId = ID->unqualifiedId()) {
+                        if (auto Identifier = UnqualifiedId->Identifier()) {
+                            objname = Identifier->getText();
+                        }
+                    }
+                }
+            }
+        }
+        
+        std::string classname = "";
+        llvm::Value* object_alloc = nullptr;
+        for (auto it = scopes.rbegin(); it != scopes.rend(); it++) {
+            for (auto object : it->objects) {
+                if (std::get<0>(object) == objname) {
+                    classname = std::get<1>(object).first;
+                    object_alloc = std::get<1>(object).second;
+                    break;
+                }
+            }
+        }
+        if (classname == "") {
+            std::cout << "Error: Use . after a none object name '" << objname << "'" << std::endl;
+            return nullptr;
+        }
+
+        std::string membername;
+        if (auto ID = ctx->idExpression()) {
+            if (auto UnqualifiedId = ID->unqualifiedId()) {
+                if (auto Identifier = UnqualifiedId->Identifier()) {
+                    membername = Identifier->getText();
+                }
+            }
+        }
+
+        size_t member_index = -1;
+        llvm::Function* func = nullptr;
+        for (auto it = scopes.rbegin(); it != scopes.rend(); it++) {
+            for (auto thisclass : it->classes) {
+                if (std::get<0>(thisclass) == classname) {
+                    auto classinfo = std::get<1>(thisclass);
+                    for (int i = 0; i < classinfo->variables.size(); i++) {
+                        if (classinfo->variables[i].first == membername) {
+                            member_index = i;
+                            break;
+                        }
+                    }
+                    if (classinfo->functions.find(classname + "_" + membername) != classinfo->functions.end()) {
+                        func = module->getFunction(classname + "_" + membername);
+                    }
+                    // TODO: 我们不考虑主动调用构造函数和析构函数的情况，只考虑调用成员函数
+                }
+            }
+        }
+        if (member_index == -1 && func == nullptr) {
+            std::cout << "Error: Use of undeclared identifier '" << classname << "." << membername << "'" << std::endl;
+            return nullptr;
+        } else if (member_index != -1) {
+            std::vector<llvm::Value*> Indices;
+			Indices.push_back(builder.getInt32(0));
+			Indices.push_back(builder.getInt32(member_index));
+			return builder.CreateGEP(object_alloc->getType()->getNonOpaquePointerElementType(), object_alloc, Indices);
+        } else if (func != nullptr) {
+
+        }
+    } else if (ctx->Arrow() != nullptr) { // a->x
+        // this
+    } else if (ctx->LeftBracket() && ctx->RightBracket()) {
+        std::vector<llvm::Value*> Indices;
+        auto TempExpr = ctx;
+        while (TempExpr->LeftBracket() != nullptr) {
+            if (TempExpr->expression() != nullptr) {
+                // 检查下标是否是整数类型
+                llvm::Value* array_size = std::any_cast<llvm::Value*>(visitExpression(TempExpr->expression()));
+                if (array_size != nullptr && !array_size->getType()->isIntegerTy()) {
+                    std::cout << "Error: Array size must be an integer." << std::endl;
+                    return nullptr;
+                }
+                Indices.insert(Indices.begin(), array_size);
+            } else {
+                std::cout << "Error: Array size must be an integer." << std::endl;
+            }
+            TempExpr = TempExpr->postfixExpression();
+        }
+
+        std::string arrayname = "";
+        if (auto PostfixExpression = ctx->postfixExpression()) {
+            if (auto PrimaryExpression = PostfixExpression->primaryExpression()) {
+                if (auto ID = PrimaryExpression->idExpression()) {
+                    if (auto UnqualifiedId = ID->unqualifiedId()) {
+                        if (auto Identifier = UnqualifiedId->Identifier()) {
+                            arrayname = Identifier->getText();
+                        }
+                    }
+                }
+            }
+        }
+        llvm::Value* array_alloc = getVariable(arrayname);
+        if (array_alloc == nullptr) {
+            std::cout << "Error: Use of undeclared identifier '" << arrayname << "'" << std::endl;
+            return nullptr;
+        }
+        Indices.insert(Indices.begin(), llvm::ConstantInt::get(llvm::Type::getInt32Ty(*llvm_context), 0));
+
+        llvm::Value* array = builder.CreateLoad(array_alloc->getType()->getNonOpaquePointerElementType(), array_alloc);
+        llvm::Type* element_type = array->getType()->getArrayElementType();
+        auto GEP = builder.CreateInBoundsGEP(array_alloc->getType()->getNonOpaquePointerElementType(), array_alloc, Indices);
+        return (llvm::Value*)builder.CreateLoad(element_type, GEP);
+        
     } else if (auto PrimaryExpression = ctx->primaryExpression()) {
         return visitPrimaryExpression(PrimaryExpression);
     }
@@ -3087,7 +3200,7 @@ std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationConte
     llvm::Function *defaultConstructor = nullptr;
     llvm::Function *copyConstructor = nullptr;
     llvm::Function *moveConstructor = nullptr;
-    std::unordered_map<std::string, Access> variables;
+    std::vector< std::pair<std::string, Access> > variables;
     std::unordered_map<std::string, Access> functions;
     std::unordered_map<std::string, Access> constructors;
     std::vector<std::string> VTable;
@@ -3113,25 +3226,19 @@ std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationConte
                 functions[pair.first->getName().str()] = access;
                 if (pair.second == "dtor") {
                     destructor = pair.first;
-                    functions[pair.first->getName().str()] = access;
                 } else if (pair.second == "default") {
                     defaultConstructor = pair.first;
-                    functions[pair.first->getName().str()] = access;
                 } else if (pair.second == "copy") {
                     copyConstructor = pair.first;
-                    functions[pair.first->getName().str()] = access;
                 } else if (pair.second == "ctor") {
                     constructors[pair.first->getName().str()] = access;
-                } else if (pair.second == "method") {
-                    functions[pair.first->getName().str()] = access;
                 } else if (pair.second == "virtual") {
-                    functions[pair.first->getName().str()] = access;
                     VTable.push_back(pair.first->getName().str());
                 }
             } else if (Member.type() == typeid(std::pair< llvm::Type*, std::vector<std::string> >)) {
                 std::pair< llvm::Type*, std::vector<std::string> > pair = std::any_cast<std::pair< llvm::Type*, std::vector<std::string> >>(Member);
                 for (auto name : pair.second) {
-                    variables[name] = access;
+                    variables.push_back(std::make_pair(name, access));
                 }
                 for (int i = 0; i < pair.second.size(); i++) {
                     member_types.push_back(pair.first);
