@@ -1,11 +1,11 @@
 int printf(char *s, ...);
 int scanf(char *s, ...);
 
-int A[200000];
-int B[200000];
-int C[200000];
+int A[2000];
+int B[2000];
+int C[2000];
 
-char input[100000];
+char input[1000];
 
 int main() {
     int A_M;
