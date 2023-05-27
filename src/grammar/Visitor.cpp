@@ -1957,6 +1957,16 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     int pointer_cnt = 0;
     std::vector<llvm::Value*> array_cnt;
     for (auto decl : ctx->initDeclaratorList()->initDeclarator()) {
+        // 我们先处理指针，再处理数组，因此默认 int *a[] 为指针数组
+        // TODO: 数组指针需特判是否为 int (*a)[]
+        // 首先判断是否有 * 运算符，创建指针类型
+        pointer_cnt = decl->declarator()->pointerDeclarator()->pointerOperator().size();
+        if (type != nullptr && pointer_cnt > 0) {
+            for (int i = 0; i < pointer_cnt; i++) {
+                type = llvm::PointerType::get(type, 0);
+            }
+        }
+
         antlr4::tree::TerminalNode *L_paren = nullptr;
 
         // 判断是否进行函数调用，函数调用**一定**发生在函数内部
@@ -2065,15 +2075,6 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
             }
         }
 
-        // 我们先处理指针，再处理数组，因此默认 int *a[] 为指针数组
-        // TODO: 数组指针需特判是否为 int (*a)[]
-        // 首先判断是否有 * 运算符，创建指针类型
-        pointer_cnt = decl->declarator()->pointerDeclarator()->pointerOperator().size();
-        if (type != nullptr && pointer_cnt > 0) {
-            for (int i = 0; i < pointer_cnt; i++) {
-                type = llvm::PointerType::get(type, 0);
-            }
-        }
         // 判断是否有数组，创建数组类型（TODO: int a[][5] 这类的实现）
         auto NoPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator();
         if (NoPointerDeclarator != nullptr) { // NOTE: Maybe NULL
