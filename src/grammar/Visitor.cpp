@@ -2683,8 +2683,8 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
         auto DeclSpecifierSeq = visitDeclSpecifierSeq(declSpecifierSeq);
         if (DeclSpecifierSeq.type() == typeid(llvm::Type *)) {
             type = std::any_cast<llvm::Type *>(DeclSpecifierSeq);
-        } else if (DeclSpecifierSeq.type() == typeid(std::pair<std::string, llvm::Value*>)) {
-            auto pair = std::any_cast<std::pair<std::string, llvm::Value*>>(DeclSpecifierSeq);
+        } else if (DeclSpecifierSeq.type() == typeid(std::pair<std::string, llvm::Type*>)) {
+            auto pair = std::any_cast<std::pair<std::string, llvm::Type*>>(DeclSpecifierSeq);
             type = std::any_cast<llvm::Type *>(pair.second);
         }
     }
@@ -2993,6 +2993,9 @@ std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationConte
                     constructors[pair.first->getName().str()] = access;
                 } else if (pair.second == "method") {
                     functions[pair.first->getName().str()] = access;
+                } else if (pair.second == "virtual") {
+                    functions[pair.first->getName().str()] = access;
+                    VTable.push_back(pair.first->getName().str());
                 }
             } else if (Member.type() == typeid(std::pair< llvm::Type*, std::vector<std::string> >)) {
                 std::pair< llvm::Type*, std::vector<std::string> > pair = std::any_cast<std::pair< llvm::Type*, std::vector<std::string> >>(Member);
@@ -3008,7 +3011,8 @@ std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationConte
     if (destructor == nullptr) {
         
     }
-    if (defaultConstructor == nullptr) {
+    if (defaultConstructor == nullptr && copyConstructor == nullptr && moveConstructor == nullptr && constructors.size() == 0) {
+        // 不能有其他构造函数，否则默认构造函数将会被遮蔽，不会自动生成
         
     }
     if (copyConstructor == nullptr) {
@@ -3032,25 +3036,28 @@ std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationConte
 std::any Visitor::visitMemberdeclaration(ZigCCParser::MemberdeclarationContext *ctx)
 {
     // 由于时间有限，目前实现的类只能在类内定义函数而不能声明函数
-    static int i = 0; // 重载的构造函数的下标
+    static int i = 3; // 重载的构造函数的下标
     if (auto FunctionDefinition = ctx->functionDefinition()) {
         std::string classname = scopes.back().classes.back().first;
         llvm::Function* function = std::any_cast<llvm::Function*>(visitFunctionDefinition(FunctionDefinition));
         std::string func_name = function->getName().str();
         std::string func_attr = std::string("");
+
         if (func_name == classname) { // 判断构造函数和析构函数
             if (FunctionDefinition->declSpecifierSeq() != nullptr) {
                 std::cout << "Error: Constructor cannot have return type" << std::endl;
             }
-            func_name = classname + "_ctor" + std::to_string(i++);
-            function->setName(func_name);
             if (function->arg_size() == 0) {
+                func_name = classname + "_ctor" + std::to_string(0);
                 func_attr = std::string("default");
             } else if (function->arg_size() == 1) { // 此处实现耍流氓，我认为构造函数为拷贝构造函数当且仅当只有一个参数
+                func_name = classname + "_ctor" + std::to_string(1);
                 func_attr = std::string("copy");
             } else {
+                func_name = classname + "_ctor" + std::to_string(i++);
                 func_attr = std::string("ctor");
             }
+            function->setName(func_name);
         } else if (func_name == "~" + classname) {
             if (FunctionDefinition->declSpecifierSeq() != nullptr) {
                 std::cout << "Error: Destructor cannot have return type" << std::endl;
@@ -3062,6 +3069,18 @@ std::any Visitor::visitMemberdeclaration(ZigCCParser::MemberdeclarationContext *
             func_name = classname + "_" + func_name;
             function->setName(func_name);
             func_attr = std::string("method");
+            auto declSpecifierSeq = FunctionDefinition->declSpecifierSeq();
+            auto DeclSpecifierSeq = visitDeclSpecifierSeq(declSpecifierSeq);
+            if (DeclSpecifierSeq.type() == typeid(std::pair<std::string, llvm::Type*>)) {
+                auto pair = std::any_cast<std::pair<std::string, llvm::Type*>>(DeclSpecifierSeq);
+                if (pair.first == "virtual") {
+                    func_attr = std::string("virtual");
+                } else if (pair.first == "static") {
+                    func_attr = std::string("static");
+                } else if (pair.first == "inline") {
+                    func_attr = std::string("inline");
+                }
+            }
         }
         return std::make_pair(function, func_attr);
     } else if (auto UsingDeclaration = ctx->usingDeclaration()) {
@@ -3075,6 +3094,8 @@ std::any Visitor::visitMemberdeclaration(ZigCCParser::MemberdeclarationContext *
     } else if (auto EmptyDeclaration = ctx->emptyDeclaration()) {
         visitEmptyDeclaration(EmptyDeclaration);
     } else if (auto decl = ctx->declSpecifierSeq()) {
+        std::pair< llvm::Type*, std::vector<std::string> > ret;
+
         llvm::Type* type = nullptr;
         std::string temp_name;
         auto VisitDeclSpecifierSeq = visitDeclSpecifierSeq(decl);
@@ -3083,22 +3104,66 @@ std::any Visitor::visitMemberdeclaration(ZigCCParser::MemberdeclarationContext *
         } else if(VisitDeclSpecifierSeq.type() == typeid(std::string)) {
             temp_name = std::any_cast<std::string>(VisitDeclSpecifierSeq);
         }
+
         // TODO: 函数声明，暂时只允许在类内定义函数
-        if (auto MemberDeclaratorList = ctx->memberDeclaratorList()) {
-            visitMemberDeclaratorList(MemberDeclaratorList);
+        for (auto MemberDeclarator : ctx->memberDeclaratorList()->memberDeclarator()) {
+            // TODO: 有漏洞！一行只允许一个类型，int *x, y 未实现
+            int pointer_cnt = 0;
+            std::vector<llvm::Value*> array_cnt;
+
+            pointer_cnt = MemberDeclarator->declarator()->pointerDeclarator()->pointerOperator().size();
+            if (type != nullptr && pointer_cnt > 0) {
+                for (int i = 0; i < pointer_cnt; i++) {
+                    type = llvm::PointerType::get(type, 0);
+                }
+            }
+
+            auto NoPointerDeclarator = MemberDeclarator->declarator()->pointerDeclarator()->noPointerDeclarator();
+            if (NoPointerDeclarator != nullptr) { // NOTE: Maybe NULL
+                while (NoPointerDeclarator->LeftBracket() != nullptr) {
+                    if (NoPointerDeclarator->constantExpression() != nullptr) {
+                        // 检查下标是否是整数类型
+                        llvm::Value* array_size = std::any_cast<llvm::Value*>(visitConstantExpression(NoPointerDeclarator->constantExpression()));
+                        if (array_size != nullptr && !array_size->getType()->isIntegerTy()) {
+                            std::cout << "Error: Array size must be an integer." << std::endl;
+                            return nullptr;
+                        }
+                        array_cnt.insert(array_cnt.begin(), array_size);
+                    } else {
+                        array_cnt.insert(array_cnt.begin(), nullptr);
+                    }
+                    NoPointerDeclarator = NoPointerDeclarator->noPointerDeclarator();
+                }
+            }
+            std::string name;
+            if (array_cnt.size() > 0) {
+                for (int i = array_cnt.size() - 1; i >= 0; i--) {
+                    if (array_cnt[i] != nullptr) {
+                        type = llvm::ArrayType::get(type, static_cast<llvm::ConstantInt*>(array_cnt[i])->getSExtValue());
+                    } else {
+                        type = llvm::ArrayType::get(type, 0);
+                    }
+                }
+            }
+            name = std::any_cast<std::string>(visitNoPointerDeclarator(NoPointerDeclarator));
+            ret.second.push_back(name);
         }
+        ret.first = type;
+        return ret;
     }
     return nullptr;
 }
 
 std::any Visitor::visitMemberDeclaratorList(ZigCCParser::MemberDeclaratorListContext *ctx)
 {
-
+    // 该函数在上层被略过
+    return nullptr;
 }
 
 std::any Visitor::visitMemberDeclarator(ZigCCParser::MemberDeclaratorContext *ctx)
 {
-
+    // 该函数在上层被略过
+    return nullptr;
 }
 
 std::any Visitor::visitVirtualSpecifierSeq(ZigCCParser::VirtualSpecifierSeqContext *ctx)
