@@ -1082,17 +1082,40 @@ std::any Visitor::visitNewExpression(ZigCCParser::NewExpressionContext *ctx)
             for (auto it = scopes.rbegin(); it != scopes.rend(); it++) {
                 for (auto thisclass : it->classes) {
                     if (std::get<0>(thisclass) == classname) {
-                        
+                        if (ctx->newTypeId()->newDeclarator() != nullptr) {
+                            // 定义数组
+
+                        } else if (ctx->newInitializer() == nullptr) {
+                            // 无参数构造函数
+                            
+                        } else {
+                            // 有参数构造函数
+                            
+                        }
                     }
                 }
             }
         } else {
             // 是 new 基本类型
-            auto type = visitTypeSpecifierSeq(ctx->newTypeId()->typeSpecifierSeq());
-            if (type.type() == typeid(llvm::Type*)) {
-                auto type_alloc = std::any_cast<llvm::Type*>(type);
-                return builder.CreateAlloca(type_alloc);
+            auto type = std::any_cast<llvm::Type*>(visitSimpleTypeSpecifier(ctx->newTypeId()->typeSpecifierSeq()->typeSpecifier(0)->trailingTypeSpecifier()->simpleTypeSpecifier()));
+            if (ctx->newTypeId()->newDeclarator() != nullptr) {
+                // int* a = new int[10];
+                llvm::Value* array_size = std::any_cast<llvm::Value*>(visitExpression(ctx->newTypeId()->newDeclarator()->noPointerNewDeclarator()->expression()));
+                llvm::Type* array_type = llvm::ArrayType::get(type, static_cast<llvm::ConstantInt*>(array_size)->getSExtValue());
+                llvm::Value* array_alloc = builder.CreateAlloca(array_type);
+                return array_alloc;
+            } else if (ctx->newInitializer() != nullptr) {
+                // int* a = new int(10);
+                llvm::Value* init_value = std::any_cast<llvm::Value*>(visitAssignmentExpression(ctx->newInitializer()->expressionList()->initializerList()->initializerClause(0)->assignmentExpression()));
+                llvm::Value* alloc = builder.CreateAlloca(type);
+                builder.CreateStore(init_value, alloc);
+                return alloc;
+            } else {
+                // int* a = new int;
+                llvm::Value* alloc = builder.CreateAlloca(type);
+                return alloc;
             }
+
         }
     }
     return nullptr;
@@ -1105,12 +1128,14 @@ std::any Visitor::visitNewPlacement(ZigCCParser::NewPlacementContext *ctx)
 
 std::any Visitor::visitNewTypeId(ZigCCParser::NewTypeIdContext *ctx)
 {
-
+    // 上述函数已经处理，这里不需要处理
+    return nullptr;
 }
 
 std::any Visitor::visitNewDeclarator(ZigCCParser::NewDeclaratorContext *ctx)
 {
-
+    // 上述函数已经处理，这里不需要处理
+    return nullptr;
 }
 
 std::any Visitor::visitNoPointerNewDeclarator(ZigCCParser::NoPointerNewDeclaratorContext *ctx)
@@ -1120,12 +1145,64 @@ std::any Visitor::visitNoPointerNewDeclarator(ZigCCParser::NoPointerNewDeclarato
 
 std::any Visitor::visitNewInitializer(ZigCCParser::NewInitializerContext *ctx)
 {
-
+    // 上述函数已经处理，这里不需要处理
+    return nullptr;
 }
 
 std::any Visitor::visitDeleteExpression(ZigCCParser::DeleteExpressionContext *ctx)
 {
-
+    if (ctx->Delete() != nullptr) {
+        std::string name = ctx->castExpression()->unaryExpression()->postfixExpression()->primaryExpression()->idExpression()->unqualifiedId()->Identifier()->getText();
+        llvm::Value* alloc = getVariable(name);
+        llvm::Value* operand = builder.CreateLoad(alloc->getType()->getNonOpaquePointerElementType(), alloc);
+        
+        bool isVariable = false;
+        for (auto it = scopes.rbegin(); it != scopes.rend(); it++) {
+            std::unordered_map<std::string, llvm::Value *>::iterator variable;
+            for (variable = it->variables.begin(); variable != it->variables.end(); variable++) {
+                if (std::get<0>(*variable) == name) {
+                    isVariable = true;
+                    it->variables.erase(variable);
+                    break;
+                }
+            }
+            if (isVariable) {
+                break;
+            }
+        }
+        
+        bool isObject = false;
+        for (auto it = scopes.rbegin(); it != scopes.rend(); it++) {
+            std::unordered_map< std::string, std::pair<std::string, llvm::Value *> >::iterator object;
+            for (object = it->objects.begin(); object != it->objects.end(); object++) {
+                if (std::get<0>(*object) == name) {
+                    isObject = true;
+                    it->objects.erase(object);
+                    break;
+                }
+            }
+            if (isObject) {
+                break;
+            }
+        }
+        if (ctx->LeftBracket() != nullptr) {
+            // delete[] a;
+            if (operand->getType()->isArrayTy()) {
+                if (isObject) {
+                    // 调用析构函数（如果析构函数不可见不允许 delete）
+                    
+                }
+                std::cout << "Error: Variable '" << name << "' is not an array" << std::endl;
+            }
+        } else {
+            // delete a;
+            if (isObject) {
+                // 调用析构函数
+                
+            }
+        }
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitNoExceptExpression(ZigCCParser::NoExceptExpressionContext *ctx)
