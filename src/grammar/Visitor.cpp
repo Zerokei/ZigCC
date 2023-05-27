@@ -627,6 +627,7 @@ std::any Visitor::visitIdExpression(ZigCCParser::IdExpressionContext *ctx)
     } else if (auto QualifiedId = ctx->qualifiedId()) {
         return visitQualifiedId(QualifiedId);
     }
+    return nullptr;
 }
 
 std::any Visitor::visitUnqualifiedId(ZigCCParser::UnqualifiedIdContext *ctx)
@@ -963,7 +964,12 @@ std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
         }
     } else if (auto PostfixExpression = ctx->postfixExpression()) {
         return visitPostfixExpression(PostfixExpression);
+    } else if (auto NewExpression = ctx->newExpression()) {
+        return visitNewExpression(NewExpression);
+    } else if (auto DeleteExpression = ctx->deleteExpression()) {
+        return visitDeleteExpression(DeleteExpression);
     }
+    return nullptr;
 }
 
 std::any Visitor::visitUnaryOperator(ZigCCParser::UnaryOperatorContext *ctx)
@@ -973,7 +979,22 @@ std::any Visitor::visitUnaryOperator(ZigCCParser::UnaryOperatorContext *ctx)
 
 std::any Visitor::visitNewExpression(ZigCCParser::NewExpressionContext *ctx)
 {
-
+    // 支持 new 基本类型和对象
+    if (ctx->New() != nullptr) {
+        if (ctx->newTypeId()->typeSpecifierSeq()->typeSpecifier(0)->trailingTypeSpecifier()->simpleTypeSpecifier()->theTypeName() != nullptr) {
+            // 是 new 对象
+            std::string classname = ctx->newTypeId()->typeSpecifierSeq()->typeSpecifier(0)->trailingTypeSpecifier()->simpleTypeSpecifier()->theTypeName()->className()->Identifier()->getText();
+            
+        } else {
+            // 是 new 基本类型
+            auto type = visitTypeSpecifierSeq(ctx->newTypeId()->typeSpecifierSeq());
+            if (type.type() == typeid(llvm::Type*)) {
+                auto type_alloc = std::any_cast<llvm::Type*>(type);
+                return builder.CreateAlloca(type_alloc);
+            }
+        }
+    }
+    return nullptr;
 }
 
 std::any Visitor::visitNewPlacement(ZigCCParser::NewPlacementContext *ctx)
