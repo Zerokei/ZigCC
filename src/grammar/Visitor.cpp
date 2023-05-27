@@ -1954,6 +1954,16 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     int pointer_cnt = 0;
     std::vector<llvm::Value*> array_cnt;
     for (auto decl : ctx->initDeclaratorList()->initDeclarator()) {
+        // 我们先处理指针，再处理数组，因此默认 int *a[] 为指针数组
+        // TODO: 数组指针需特判是否为 int (*a)[]
+        // 首先判断是否有 * 运算符，创建指针类型
+        pointer_cnt = decl->declarator()->pointerDeclarator()->pointerOperator().size();
+        if (type != nullptr && pointer_cnt > 0) {
+            for (int i = 0; i < pointer_cnt; i++) {
+                type = llvm::PointerType::get(type, 0);
+            }
+        }
+
         antlr4::tree::TerminalNode *L_paren = nullptr;
 
         // 判断是否进行函数调用，函数调用**一定**发生在函数内部
@@ -2062,15 +2072,6 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
             }
         }
 
-        // 我们先处理指针，再处理数组，因此默认 int *a[] 为指针数组
-        // TODO: 数组指针需特判是否为 int (*a)[]
-        // 首先判断是否有 * 运算符，创建指针类型
-        pointer_cnt = decl->declarator()->pointerDeclarator()->pointerOperator().size();
-        if (type != nullptr && pointer_cnt > 0) {
-            for (int i = 0; i < pointer_cnt; i++) {
-                type = llvm::PointerType::get(type, 0);
-            }
-        }
         // 判断是否有数组，创建数组类型（TODO: int a[][5] 这类的实现）
         auto NoPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator();
         if (NoPointerDeclarator != nullptr) { // NOTE: Maybe NULL
@@ -2657,6 +2658,19 @@ std::any Visitor::visitParameterDeclarationList(ZigCCParser::ParameterDeclaratio
         for(const auto& param_dec_ctx: param_list) {
             auto dec_specifier = param_dec_ctx->declSpecifierSeq();
             llvm::Type *type = std::any_cast<llvm::Type *>(visitDeclSpecifierSeq(dec_specifier));
+            
+            // 分析指针类型
+            size_t pointer_cnt = 0;
+            if(auto _param_dec_ctx_pointerDeclarator = param_dec_ctx->declarator()->pointerDeclarator())
+            if(auto _param_dec_ctx_pointerOperator_size = _param_dec_ctx_pointerDeclarator->pointerOperator().size()) {
+                pointer_cnt = _param_dec_ctx_pointerOperator_size;
+            }
+
+            if(nullptr != type)
+            for(size_t i = 0; i < pointer_cnt; ++i) {
+                type = llvm::PointerType::get(type, 0);
+            }
+
             auto declarator = param_dec_ctx->declarator();
             std::string name;
             if(declarator) {
@@ -2677,8 +2691,7 @@ std::any Visitor::visitParameterDeclaration(ZigCCParser::ParameterDeclarationCon
 
 std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext *ctx)
 {
-    // 默认返回值类型 int32
-    llvm::Type *type = (llvm::Type *)llvm::Type::getInt32Ty(*llvm_context);
+    llvm::Type *type = nullptr;
     if (auto declSpecifierSeq = ctx->declSpecifierSeq()) {
         auto DeclSpecifierSeq = visitDeclSpecifierSeq(declSpecifierSeq);
         if (DeclSpecifierSeq.type() == typeid(llvm::Type *)) {
@@ -2687,6 +2700,20 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
             auto pair = std::any_cast<std::pair<std::string, llvm::Value*>>(DeclSpecifierSeq);
             type = std::any_cast<llvm::Type *>(pair.second);
         }
+    }
+
+    if(nullptr != type) {
+        // 判断返回值类型是不是指针
+        if(auto _type_pointerDeclarator = ctx->declarator()->pointerDeclarator()) {
+            size_t pointer_cnt = 0;
+            pointer_cnt = _type_pointerDeclarator->pointerOperator().size();
+            for(size_t i = 0; i < pointer_cnt; ++i) {
+                type = llvm::PointerType::get(type, 0);
+            }
+        }
+    } else {
+        // 默认返回值类型 int32
+        type = (llvm::Type *)llvm::Type::getInt32Ty(*llvm_context);
     }
 
     auto declarator = ctx->declarator();
