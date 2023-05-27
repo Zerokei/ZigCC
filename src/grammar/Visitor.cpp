@@ -761,7 +761,9 @@ std::any Visitor::visitTypeIdOfTheTypeId(ZigCCParser::TypeIdOfTheTypeIdContext *
 
 std::any Visitor::visitExpressionList(ZigCCParser::ExpressionListContext *ctx)
 {
-
+    if(auto InitializerList = ctx->initializerList()) {
+        return visitInitializerList(InitializerList);
+    }
 }
 
 std::any Visitor::visitPseudoDestructorName(ZigCCParser::PseudoDestructorNameContext *ctx)
@@ -1987,60 +1989,79 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
         antlr4::tree::TerminalNode *L_paren = nullptr;
 
         // 判断是否进行函数调用，函数调用**一定**发生在函数内部
-        if(nullptr != currentScope().currentFunction)
-        if (auto _L_paren_noPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator()) {
-            std::string fun_name;
-            llvm::Function *callee;
-            llvm::FunctionType *callee_type;
-            std::vector<std::string> param_names;
-            std::vector<llvm::Value *> param_values;
-            std::vector<llvm::Type *> param_types;
-            if(L_paren = _L_paren_noPointerDeclarator->LeftParen()) {
-                // 单参数
-                fun_name = temp_name;
-                auto PointerDeclarator =  _L_paren_noPointerDeclarator->pointerDeclarator();
-                std::string param_name = std::any_cast<std::string>(visitPointerDeclarator(PointerDeclarator));
-                param_names.push_back(param_name);
-            } else if(auto _L_paren_parametersAndQualifiers = _L_paren_noPointerDeclarator->parametersAndQualifiers()) {
-                if (L_paren = _L_paren_parametersAndQualifiers->LeftParen()) {
-                    // 无参数或多参数
-                    fun_name = std::any_cast<std::string>(visitNoPointerDeclarator(_L_paren_noPointerDeclarator));
-                    auto ParametersAndQualifiers = visitParametersAndQualifiers(_L_paren_parametersAndQualifiers);
-                    if (_L_paren_parametersAndQualifiers->parameterDeclarationClause()) {
-                        param_names = std::any_cast< std::vector<std::string> >(ParametersAndQualifiers);
+        if (nullptr != currentScope().currentFunction) {
+            auto _L_paren_noPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator();
+            auto _L_paren_initializer = decl->initializer();
+            if (_L_paren_noPointerDeclarator) {
+                std::string fun_name;
+                llvm::Function *callee;
+                llvm::FunctionType *callee_type;
+                std::vector<std::string> param_names;
+                std::vector<llvm::Value *> param_values;
+                std::vector<llvm::Type *> param_types;
+                if(L_paren = _L_paren_noPointerDeclarator->LeftParen()) {
+                    // 单参数
+                    fun_name = temp_name;
+                    auto PointerDeclarator =  _L_paren_noPointerDeclarator->pointerDeclarator();
+                    std::string param_name = std::any_cast<std::string>(visitPointerDeclarator(PointerDeclarator));
+                    param_names.push_back(param_name);
+                } else if(auto _L_paren_parametersAndQualifiers = _L_paren_noPointerDeclarator->parametersAndQualifiers()) {
+                    if (L_paren = _L_paren_parametersAndQualifiers->LeftParen()) {
+                        // 无参数或多参数
+                        fun_name = std::any_cast<std::string>(visitNoPointerDeclarator(_L_paren_noPointerDeclarator));
+                        auto ParametersAndQualifiers = visitParametersAndQualifiers(_L_paren_parametersAndQualifiers);
+                        if (_L_paren_parametersAndQualifiers->parameterDeclarationClause()) {
+                            param_names = std::any_cast< std::vector<std::string> >(ParametersAndQualifiers);
+                        }
+                    }
+                } else if(_L_paren_initializer && _L_paren_initializer->LeftParen()) {
+                    // 函数调用中有式子
+                    fun_name = std::any_cast<std::string>(visitDeclarator(decl->declarator()));
+                    auto temp_values = std::any_cast<std::vector<llvm::Value *> >(visitInitializer(_L_paren_initializer));
+                    param_values = temp_values;
+                } else {
+                    goto _ZIGCC_DECL_NOT_FUNCTION_CALL;
+                }
+
+                callee = module->getFunction(fun_name);
+                callee_type = callee->getFunctionType();
+                
+                // 根据参数名，获得对应参数 type & value
+                if(0 == param_values.size()) {
+                    for (const auto& name: param_names) {
+                        llvm::Value *value = getVariable(name);
+                        if (nullptr == value) {
+                            std::cout << "Error: Undefined variable " + name + "." << std::endl;
+                            return nullptr;
+                        }
+                        param_types.push_back(value->getType());
+                        param_values.push_back(value);
+                    }
+                } else {
+                    // 通过式子值获得参数类型
+                    for(const auto &value: param_values) {
+                        llvm::Type *temp_type = value->getType();
+                        if(value)
+                        param_types.push_back(temp_type);
                     }
                 }
-            } else {
-                goto _ZIGCC_DECL_NOT_FUNCTION_CALL;
-            }
+                
 
-            callee = module->getFunction(fun_name);
-            callee_type = callee->getFunctionType();
-            
-            // 根据参数名，获得对应参数 type & value
-            for (const auto& name: param_names) {
-                llvm::Value *value = getVariable(name);
-                if (nullptr == value) {
-                    std::cout << "Error: Undefined variable " + name + "." << std::endl;
+                // 根据函数，获得函数要求的参数类型
+                llvm::ArrayRef<llvm::Type *> _array_need_param_types = callee_type->params();
+                std::vector<llvm::Type *> need_param_types(_array_need_param_types.begin(), _array_need_param_types.end());
+
+                if (need_param_types.size() == param_types.size() || callee_type->isVarArg() && need_param_types.size() <= param_types.size()) {
+                    // TODO: 类型检查与匹配，如果无法 cast 应报错
+                    builder.CreateCall(callee_type, callee, param_values);
+                    continue;
+                } else {
+                    std::cout << "Error: Wrong number of parameters when calling " + fun_name + "." << std::endl;
                     return nullptr;
-                }
-                param_types.push_back(value->getType());
-                param_values.push_back(value);
+                }          
             }
-
-            // 根据函数，获得函数要求的参数类型
-            llvm::ArrayRef<llvm::Type *> _array_need_param_types = callee_type->params();
-            std::vector<llvm::Type *> need_param_types(_array_need_param_types.begin(), _array_need_param_types.end());
-
-            if (need_param_types.size() == param_types.size() || callee_type->isVarArg() && need_param_types.size() <= param_types.size()) {
-                // TODO: 类型检查与匹配，如果无法 cast 应报错
-                builder.CreateCall(callee_type, callee, param_values);
-                continue;
-            } else {
-                std::cout << "Error: Wrong number of parameters when calling " + fun_name + "." << std::endl;
-                return nullptr;
-            }          
         }
+        
 _ZIGCC_DECL_NOT_FUNCTION_CALL:
 
         // 判断是不是函数声明，NOTE: !!!!函数声明一定在全局进行!!!!
@@ -2936,7 +2957,15 @@ std::any Visitor::visitInitializerClause(ZigCCParser::InitializerClauseContext *
 
 std::any Visitor::visitInitializerList(ZigCCParser::InitializerListContext *ctx)
 {
-
+    std::vector<llvm::Value *> res;
+    auto InitializerClause = ctx->initializerClause();
+    if(0 != InitializerClause.size()) {
+        for(const auto &clause : InitializerClause) {
+            auto temp_value = std::any_cast<llvm::Value *>(visitInitializerClause(clause));
+            res.push_back(temp_value);
+        }
+    }
+    return res;
 }
 
 std::any Visitor::visitBracedInitList(ZigCCParser::BracedInitListContext *ctx)
