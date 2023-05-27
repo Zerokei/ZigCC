@@ -969,6 +969,7 @@ std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
                 // TODO: 这是啥情况，没看懂 |x 是什么意思
                 return nullptr;
             } else if (UnaryOp->And() != nullptr) {
+                // &a[0]
                 return operand_alloc;
             } else if (UnaryOp->Star() != nullptr) {
                 return (llvm::Value*)builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
