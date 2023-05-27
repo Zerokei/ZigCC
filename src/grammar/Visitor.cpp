@@ -1950,6 +1950,20 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
             temp_name = std::any_cast<std::string>(VisitDeclSpecifierSeq);
         }
     }
+
+    // 判断是否是对象的定义
+    ClassType* classinfo = nullptr;
+    for (auto scope = scopes.rbegin(); scope != scopes.rend(); scope++) {
+        auto classes = scope->classes;
+        for (auto thisclass : classes) {
+            if (std::get<0>(thisclass) == temp_name) {
+                classinfo = std::get<1>(thisclass);
+                type = std::get<2>(thisclass);
+                break;
+            }
+        }
+    }
+
     std::vector< std::pair<std::string, llvm::Value*> > vars;
     int pointer_cnt = 0;
     std::vector<llvm::Value*> array_cnt;
@@ -2012,7 +2026,7 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
             llvm::ArrayRef<llvm::Type *> _array_need_param_types = callee_type->params();
             std::vector<llvm::Type *> need_param_types(_array_need_param_types.begin(), _array_need_param_types.end());
 
-            if(need_param_types.size() == param_types.size() || callee_type->isVarArg() && need_param_types.size() <= param_types.size()) {
+            if (need_param_types.size() == param_types.size() || callee_type->isVarArg() && need_param_types.size() <= param_types.size()) {
                 // TODO: 类型检查与匹配，如果无法 cast 应报错
                 builder.CreateCall(callee_type, callee, param_values);
                 continue;
@@ -2024,25 +2038,25 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
 _ZIGCC_DECL_NOT_FUNCTION_CALL:
 
         // 判断是不是函数声明，NOTE: !!!!函数声明一定在全局进行!!!!
-        if(nullptr == currentScope().currentFunction)
-        if(auto _L_paren_noPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator()) {
-            if(auto _function_decl_noPointerDeclarator = _L_paren_noPointerDeclarator->noPointerDeclarator()) 
-            if(auto _function_decl_parametersAndQualifiers = _L_paren_noPointerDeclarator->parametersAndQualifiers()) {
+        if (nullptr == currentScope().currentFunction)
+        if (auto _L_paren_noPointerDeclarator = decl->declarator()->pointerDeclarator()->noPointerDeclarator()) {
+            if (auto _function_decl_noPointerDeclarator = _L_paren_noPointerDeclarator->noPointerDeclarator()) 
+            if (auto _function_decl_parametersAndQualifiers = _L_paren_noPointerDeclarator->parametersAndQualifiers()) {
                 // 管理变长参数
                 bool has_ellipsis = false;
-                if(auto _function_decl_paramDeclClause = _function_decl_parametersAndQualifiers->parameterDeclarationClause()) 
-                if(_function_decl_paramDeclClause->Ellipsis()) {
+                if (auto _function_decl_paramDeclClause = _function_decl_parametersAndQualifiers->parameterDeclarationClause()) 
+                if (_function_decl_paramDeclClause->Ellipsis()) {
                      has_ellipsis = true;
                 }
 
                 // 如果没有指定函数返回值类型，默认为 int32
-                if(nullptr == type) {
+                if (nullptr == type) {
                     type = (llvm::Type *)llvm::Type::getInt32Ty(*llvm_context);
                 }
                 
                 std::string fun_name = std::any_cast<std::string>(visitNoPointerDeclarator(_function_decl_noPointerDeclarator));
                 
-                if(nullptr != module->getFunction(fun_name)) {
+                if (nullptr != module->getFunction(fun_name)) {
                     // 在函数定义后声明
                     std::cout << "Warning: Function " << fun_name << " with declaration after its defination." << std::endl;
                     continue;
@@ -2054,7 +2068,7 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
 
                 // 因为是函数声明，我们只在乎参数类型，并不在乎形参名
                 std::vector<llvm::Type *> param_types;
-                for(const auto &param : params) {
+                for (const auto &param : params) {
                     param_types.push_back(param.second);
                 }
 
@@ -2109,6 +2123,18 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
         // TODO: 数组初始化
         llvm::Value* alloca = nullptr;
         llvm::Value* value = nullptr;
+
+        // 首先进行对象的初始化
+        if (classinfo != nullptr) {
+            if (decl->initializer() == nullptr) { // Point p; 会调用 Point 的默认构造函数
+
+            } else if (decl->initializer()->braceOrEqualInitializer() != nullptr) { // Point p2 = p1; 会调用 Point 的拷贝构造函数
+
+            } else { // Point p(1, 2); 会调用 Point 的对应的构造函数
+
+            }
+        }
+
         if (auto Initializer = decl->initializer()) {
             auto AssignExpr = visitInitializer(Initializer);
             if (AssignExpr.type() == typeid(std::string)) {
@@ -2339,7 +2365,7 @@ std::any Visitor::visitSimpleTypeSpecifier(ZigCCParser::SimpleTypeSpecifierConte
     } else if (ctx->Auto() != nullptr) {
         // TODO: auto
     } else {
-        if(auto TheTypeName = ctx->theTypeName()) {
+        if (auto TheTypeName = ctx->theTypeName()) {
             return visitTheTypeName(TheTypeName);
         }
         // TODO: "error: unknown type specifier"
@@ -2899,7 +2925,8 @@ std::any Visitor::visitClassSpecifier(ZigCCParser::ClassSpecifierContext *ctx)
         heritance_access = std::get<3>(ret);
 
         classinfo->ParentClass = baseclass;
-        scopes.back().classes.push_back(std::make_pair(classname, classinfo));
+        auto classtuple = std::make_tuple(classname, classinfo, nullptr);
+        scopes.back().classes.push_back(classtuple);
 
         if (auto MemberSpecification = ctx->memberSpecification()) {
             member_types = std::any_cast< std::vector<llvm::Type*> >(visitMemberSpecification(MemberSpecification));
@@ -2908,9 +2935,13 @@ std::any Visitor::visitClassSpecifier(ZigCCParser::ClassSpecifierContext *ctx)
         if (classtype == "class") {
             auto newclass = llvm::StructType::create(*llvm_context, "class." + classname);
             newclass->setBody(member_types);
+            scopes.back().classes.pop_back();
+            scopes.back().classes.push_back(std::make_tuple(classname, classinfo, newclass));
         } else if (classtype == "struct") {
             auto newstruct = llvm::StructType::create(*llvm_context, "struct." + classname);
             newstruct->setBody(member_types);
+            scopes.back().classes.pop_back();
+            scopes.back().classes.push_back(std::make_tuple(classname, classinfo, newstruct));
         } else if (classtype == "union") {
             auto newunion = llvm::StructType::create(*llvm_context, "union." + classname);
             llvm::Type* MaxSizeType = nullptr;
@@ -2922,6 +2953,8 @@ std::any Visitor::visitClassSpecifier(ZigCCParser::ClassSpecifierContext *ctx)
                 }
             }
             newunion->setBody(MaxSizeType);
+            scopes.back().classes.pop_back();
+            scopes.back().classes.push_back(std::make_tuple(classname, classinfo, newunion));
         }
     }
     return nullptr;
@@ -2973,8 +3006,8 @@ std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationConte
 {
     // 由于自动生成语法树的问题，此处只能强制要求 class 的每个变量前都要规定 private/protected/public
     // 强制要求 struct 和 union 都是 public，不允许加限制
-    std::string classname = scopes.back().classes.back().first;
-    ClassType* classinfo = scopes.back().classes.back().second;
+    std::string classname = std::get<0>(scopes.back().classes.back());
+    ClassType* classinfo = std::get<1>(scopes.back().classes.back());
 
     auto MemberDecl = ctx->memberdeclaration(0);
     size_t accessnum = ctx->accessSpecifier().size();
@@ -3040,7 +3073,7 @@ std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationConte
     }
     if (defaultConstructor == nullptr && copyConstructor == nullptr && moveConstructor == nullptr && constructors.size() == 0) {
         // 不能有其他构造函数，否则默认构造函数将会被遮蔽，不会自动生成
-        
+
     }
     if (copyConstructor == nullptr) {
         
@@ -3064,8 +3097,8 @@ std::any Visitor::visitMemberdeclaration(ZigCCParser::MemberdeclarationContext *
 {
     // 由于时间有限，目前实现的类只能在类内定义函数而不能声明函数
     static int i = 3; // 重载的构造函数的下标
+    std::string classname = std::get<0>(scopes.back().classes.back());
     if (auto FunctionDefinition = ctx->functionDefinition()) {
-        std::string classname = scopes.back().classes.back().first;
         llvm::Function* function = std::any_cast<llvm::Function*>(visitFunctionDefinition(FunctionDefinition));
         std::string func_name = function->getName().str();
         std::string func_attr = std::string("");
@@ -3131,7 +3164,6 @@ std::any Visitor::visitMemberdeclaration(ZigCCParser::MemberdeclarationContext *
         } else if(VisitDeclSpecifierSeq.type() == typeid(std::string)) {
             temp_name = std::any_cast<std::string>(VisitDeclSpecifierSeq);
         }
-
         // TODO: 函数声明，暂时只允许在类内定义函数
         for (auto MemberDeclarator : ctx->memberDeclaratorList()->memberDeclarator()) {
             // TODO: 有漏洞！一行只允许一个类型，int *x, y 未实现
@@ -3173,6 +3205,10 @@ std::any Visitor::visitMemberdeclaration(ZigCCParser::MemberdeclarationContext *
                 }
             }
             name = std::any_cast<std::string>(visitNoPointerDeclarator(NoPointerDeclarator));
+            if (name == classname) {
+                std::cout << "Error: Variable name cannot be the same as class name." << std::endl;
+                return nullptr;
+            }
             ret.second.push_back(name);
         }
         ret.first = type;

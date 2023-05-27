@@ -20,14 +20,14 @@ llvm::Value *Scope::getVariable(const std::string &name)
     }
 }
 
-bool Scope::setClass(const std::string &name, ClassType *classType)
+bool Scope::setClass(const std::string &name, ClassType *classType, llvm::Type *type)
 {
     for (auto &pair : this->classes) {
-        if (pair.first == name) {
+        if (std::get<0>(pair) == name) {
             return false;
         }
     }
-    this->classes.push_back(std::make_pair(name, classType));
+    this->classes.push_back(std::make_tuple(name, classType, type));
     return true;
 }
 
@@ -35,8 +35,8 @@ ClassType *Scope::getClass(const std::string &name)
 {
     
     for (auto &pair : this->classes) {
-        if (pair.first == name) {
-            return pair.second;
+        if (std::get<0>(pair) == name) {
+            return std::get<1>(pair);
         }
     }
     return nullptr;

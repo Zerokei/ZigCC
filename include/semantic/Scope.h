@@ -28,13 +28,13 @@ class Scope
 {
 public:
     std::unordered_map<std::string, llvm::Value *> variables;
-    std::vector< std::pair<std::string, ClassType *> > classes;
+    std::vector< std::tuple<std::string, ClassType *, llvm::Type*> > classes;
     llvm::Function *currentFunction = nullptr; // 如果是 nullptr 则说明当前是全局变量的 scope（有且仅有一个这样的 scope）
     
     Scope(llvm::Function *_currentFunction = nullptr) : currentFunction(_currentFunction) {}
     bool setVariable(const std::string &name, llvm::Value *);
     llvm::Value *getVariable(const std::string &name);
-    bool setClass(const std::string &name, ClassType *classType);
+    bool setClass(const std::string &name, ClassType *classType, llvm::Type *type);
     ClassType *getClass(const std::string &name);
 };
 }
