@@ -753,6 +753,38 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
             std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(PostfixExpression) << "'" << std::endl;
             return nullptr;
         }
+    } else if(ctx->LeftParen() && ctx->RightParen()) {
+        auto _function_call_postfixExpression = ctx->postfixExpression();
+        std::string fun_name = std::any_cast<std::string>(visitPostfixExpression(_function_call_postfixExpression));
+        auto function = this->module->getFunction(fun_name);
+        if(nullptr == function) {
+            std::cout << "Error: Function " << fun_name << " not declared." << std::endl;
+            return nullptr;
+        }
+        auto function_type = function->getFunctionType();
+
+        std::vector<llvm::Value *> param_values;
+        std::vector<llvm::Type *> param_types;
+        if(auto _function_call_expressionList = ctx->expressionList()) {
+            param_values = std::any_cast<std::vector<llvm::Value *> >(visitExpressionList(_function_call_expressionList));
+        }
+        for(const auto &value: param_values) {
+            param_types.push_back(value->getType());
+        }
+
+        // 根据函数，获得函数要求的参数类型
+        llvm::ArrayRef<llvm::Type *> _array_need_param_types = function_type->params();
+        std::vector<llvm::Type *> need_param_types(_array_need_param_types.begin(), _array_need_param_types.end());
+
+        if (need_param_types.size() == param_types.size() || function_type->isVarArg() && need_param_types.size() <= param_types.size()) {
+            // TODO: 类型检查与匹配，如果无法 cast 应报错
+            auto call = builder.CreateCall(function_type, function, param_values);
+            return static_cast<llvm::Value *>(call);
+        } else {
+            std::cout << "Error: Wrong number of parameters when calling " + fun_name + "." << std::endl;
+            return nullptr;
+        }
+        
     } else if (ctx->Dot() != nullptr) { // a.x
         std::string objname = "";
         if (auto PostfixExpression = ctx->postfixExpression()) {
@@ -2141,6 +2173,10 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
                 }
 
                 callee = module->getFunction(fun_name);
+                if(nullptr == callee) {
+                    std::cout << "Error: Function " << fun_name << " not declared." << std::endl;
+                    return nullptr;
+                }
                 callee_type = callee->getFunctionType();
                 
                 // 根据参数名，获得对应参数 type & value
