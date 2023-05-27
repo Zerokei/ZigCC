@@ -3780,7 +3780,13 @@ std::any Visitor::visitLiteral(ZigCCParser::LiteralContext *ctx)
     } else if (ctx->FloatingLiteral() != nullptr) {
         return (llvm::Value *)llvm::ConstantFP::get(llvm::Type::getFloatTy(*llvm_context), std::stof(ctx->FloatingLiteral()->getText()));
     } else if (ctx->StringLiteral() != nullptr) {
-        return (llvm::Value *)builder.CreateGlobalStringPtr(ctx->StringLiteral()->getText());
+        std::string temp = ctx->StringLiteral()->getText();
+        temp.erase(std::remove(temp.begin(), temp.end(), '\"'), temp.end());
+        std::string::size_type pos = 0;
+        while((pos = temp.find("\\n")) != std::string::npos) {
+            temp.replace(pos, 2, "\n");
+        }
+        return (llvm::Value *)builder.CreateGlobalStringPtr(temp);
     } else if (ctx->BooleanLiteral() != nullptr) {
         return (llvm::Value *)llvm::ConstantInt::get(llvm::Type::getInt1Ty(*llvm_context), ctx->BooleanLiteral()->getText() == "true");
     } else if (ctx->PointerLiteral() != nullptr) {
