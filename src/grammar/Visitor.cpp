@@ -2935,7 +2935,8 @@ std::any Visitor::visitParameterDeclarationList(ZigCCParser::ParameterDeclaratio
             
             // 分析指针类型
             size_t pointer_cnt = 0;
-            if(auto _param_dec_ctx_pointerDeclarator = param_dec_ctx->declarator()->pointerDeclarator())
+            if(auto _param_dec_ctx_declarator = param_dec_ctx->declarator())
+            if(auto _param_dec_ctx_pointerDeclarator = _param_dec_ctx_declarator->pointerDeclarator())
             if(auto _param_dec_ctx_pointerOperator_size = _param_dec_ctx_pointerDeclarator->pointerOperator().size()) {
                 pointer_cnt = _param_dec_ctx_pointerOperator_size;
             }
@@ -2949,7 +2950,8 @@ std::any Visitor::visitParameterDeclarationList(ZigCCParser::ParameterDeclaratio
             std::vector<llvm::Value *> array_cnt;
             std::string name;
 
-            if(auto _param_dec_ctx_array_pointerDeclarator = param_dec_ctx->declarator()->pointerDeclarator()) {
+            if(auto _param_dec_ctx_array_declarator = param_dec_ctx->declarator())
+            if(auto _param_dec_ctx_array_pointerDeclarator = _param_dec_ctx_array_declarator->pointerDeclarator()) {
                 if(auto _param_dec_ctx_array_noPointerDeclarator = _param_dec_ctx_array_pointerDeclarator->noPointerDeclarator()) {
                     while(nullptr != _param_dec_ctx_array_noPointerDeclarator->LeftBracket()) {
                         if(auto _param_dec_ctx_array_constantExpression = _param_dec_ctx_array_noPointerDeclarator->constantExpression()) {
