@@ -1,0 +1,14 @@
+int x = 0;
+void fun(int aa) {
+    ;
+}
+int main(int z) {
+	z = 1;
+	int y = 2;
+    do {
+        x = 2;
+        int y = 1;
+        y = 3;
+    } while(x+y < z);
+	fun(y);
+}
