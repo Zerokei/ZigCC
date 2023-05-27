@@ -895,10 +895,18 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
         Indices.insert(Indices.begin(), llvm::ConstantInt::get(llvm::Type::getInt32Ty(*llvm_context), 0));
 
         llvm::Value* array = builder.CreateLoad(array_alloc->getType()->getNonOpaquePointerElementType(), array_alloc);
-        llvm::Type* element_type = array->getType()->getArrayElementType();
-        auto GEP = builder.CreateInBoundsGEP(array_alloc->getType()->getNonOpaquePointerElementType(), array_alloc, Indices);
-        return (llvm::Value*)builder.CreateLoad(element_type, GEP);
-        
+        if (array->getType()->isArrayTy()) {
+            llvm::Type* element_type = array->getType()->getArrayElementType();
+            auto GEP = builder.CreateInBoundsGEP(array_alloc->getType()->getNonOpaquePointerElementType(), array_alloc, Indices);
+            return (llvm::Value*)builder.CreateLoad(element_type, GEP);
+        } else if (array->getType()->isPointerTy()) {
+            llvm::Type* element_type = array->getType()->getNonOpaquePointerElementType();
+            auto GEP = builder.CreateGEP(element_type, array, Indices[1]); // 暂时只考虑一维数组
+            return (llvm::Value*)builder.CreateLoad(element_type, GEP);
+        } else {
+            std::cout << "Error: Array type error." << std::endl;
+            return nullptr;
+        }
     } else if (auto PrimaryExpression = ctx->primaryExpression()) {
         return visitPrimaryExpression(PrimaryExpression);
     }
@@ -977,9 +985,18 @@ std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
                 Indices.insert(Indices.begin(), llvm::ConstantInt::get(llvm::Type::getInt32Ty(*llvm_context), 0));
 
                 llvm::Value* array = builder.CreateLoad(array_alloc->getType()->getNonOpaquePointerElementType(), array_alloc);
-                llvm::Type* element_type = array->getType()->getArrayElementType();
-                operand_alloc = builder.CreateInBoundsGEP(array_alloc->getType()->getNonOpaquePointerElementType(), array_alloc, Indices);
-                operand = (llvm::Value*)builder.CreateLoad(element_type, operand_alloc);
+                if (array->getType()->isArrayTy()) {
+                    llvm::Type* element_type = array->getType()->getArrayElementType();
+                    operand_alloc = builder.CreateInBoundsGEP(array_alloc->getType()->getNonOpaquePointerElementType(), array_alloc, Indices);
+                    operand = (llvm::Value*)builder.CreateLoad(element_type, operand_alloc);
+                } else if (array->getType()->isPointerTy()) {
+                    llvm::Type* element_type = array->getType()->getNonOpaquePointerElementType();
+                    operand_alloc = builder.CreateGEP(element_type, array, Indices[1]); // 暂时只考虑一维数组
+                    operand = (llvm::Value*)builder.CreateLoad(element_type, operand_alloc);
+                } else {
+                    std::cout << "Error: Array type error." << std::endl;
+                    return nullptr;
+                }
             }
         }
         if (ctx->PlusPlus() != nullptr) { // ++i
@@ -2418,7 +2435,16 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
                 // 数组下标转换（TODO: 判断数组下标是否都存在）
                 if (array_cnt.size() > 0) {
                     array_cnt.insert(array_cnt.begin(), llvm::ConstantInt::get(llvm::Type::getInt32Ty(*llvm_context), 0));
-                    var_alloc = builder.CreateInBoundsGEP(var_alloc->getType()->getNonOpaquePointerElementType(), var_alloc, array_cnt);
+                    llvm::Value* array = builder.CreateLoad(var_alloc->getType()->getNonOpaquePointerElementType(), var_alloc);
+                    if (array->getType()->isArrayTy()) {
+                        var_alloc = builder.CreateInBoundsGEP(var_alloc->getType()->getNonOpaquePointerElementType(), var_alloc, array_cnt);
+                    } else if (array->getType()->isPointerTy()) {
+                        llvm::Type* element_type = array->getType()->getNonOpaquePointerElementType();
+                        var_alloc = builder.CreateGEP(element_type, array, array_cnt[1]); // 暂时只考虑一维数组
+                    } else {
+                        std::cout << "Error: Array type error." << std::endl;
+                        return nullptr;
+                    }                    
                 }
                 // 指针解引用转换
                 for (int i = 0; i < pointer_cnt; i++) {

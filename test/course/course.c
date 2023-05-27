@@ -2,10 +2,10 @@ int printf(char *s, ...);
 int scanf(char *s, ...);
 char *gets(char *);
 
-char course_info[1000000];
-char pre_course[1000000];
-int pass_course[11100];
-int course_id[11100];
+char course_info[10000];
+char pre_course[10000];
+int pass_course[111];
+int course_id[111];
 
 int main() {
     int total_credit = 0;
