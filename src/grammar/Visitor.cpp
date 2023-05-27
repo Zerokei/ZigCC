@@ -2459,8 +2459,12 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
                 return nullptr;
             }
             // 先不考虑 const 的情况
+            llvm::Constant* Initializer = (llvm::Constant*)std::get<1>(var);
+            if (Initializer == nullptr) {
+                Initializer = llvm::UndefValue::get(type);
+            }
             auto alloca = new llvm::GlobalVariable(*module, type, false, llvm::Function::ExternalLinkage, 
-                                                    (llvm::Constant *)var.second, std::get<0>(var));
+                                                    Initializer, std::get<0>(var));
             if (!this->currentScope().setVariable(std::get<0>(var), alloca)) {
                 std::cout << "Error: Redefinition of '" << std::get<0>(var) << "'" << std::endl;
                 alloca->eraseFromParent();

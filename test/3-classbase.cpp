@@ -22,11 +22,12 @@ int main() {
     Point p1;
     Point p2(1, 2);
     Point p3 = p1;
-    Point p4 = Point(3, 4);
-    Point p5 = {5, 6};
-    Point p6{7, 8};
-    Point* p7 = new Point(9, 10);
+    Point* p4 = new Point(9, 10);
+    Point* p5 = new Point;
+    Point* p6 = new Point(p2);
+    Point* p7 = new Point[10];
     int* a = new int(1);
+    int* b = new int[10];
     delete a;
     return 0;
 }
