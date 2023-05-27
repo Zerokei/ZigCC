@@ -34,7 +34,7 @@ void quicksort(int A[10], int left, int right) {
 
 int main()
 {
-    int B[1000000];
+    int B[10000];
     int N;
     scanf("%d", &N);
     int i = 0;

@@ -937,6 +937,50 @@ std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
             operand = builder.CreateLoad(operand_alloc->getType()->getNonOpaquePointerElementType(), operand_alloc);
         } else if (UnaryExpression.type() == typeid(llvm::Value*)) {
             operand = std::any_cast<llvm::Value*>(UnaryExpression);
+
+            // 如果出现 &a[0] 这种情况
+            std::vector<llvm::Value*> Indices;
+            std::string arrayname = "";
+            if (auto UnaryExpr = ctx->unaryExpression()) {
+                if (auto PostfixExpr = UnaryExpr->postfixExpression()) {
+                    while (PostfixExpr->LeftBracket() != nullptr) {
+                        if (PostfixExpr->expression() != nullptr) {
+                            // 检查下标是否是整数类型
+                            llvm::Value* array_size = std::any_cast<llvm::Value*>(visitExpression(PostfixExpr->expression()));
+                            if (array_size != nullptr && !array_size->getType()->isIntegerTy()) {
+                                std::cout << "Error: Array size must be an integer." << std::endl;
+                                return nullptr;
+                            }
+                            Indices.insert(Indices.begin(), array_size);
+                        } else {
+                            std::cout << "Error: Array size must be an integer." << std::endl;
+                        }
+                        PostfixExpr = PostfixExpr->postfixExpression();
+                    }
+                    if (auto PrimaryExpression = PostfixExpr->primaryExpression()) {
+                        if (auto ID = PrimaryExpression->idExpression()) {
+                            if (auto UnqualifiedId = ID->unqualifiedId()) {
+                                if (auto Identifier = UnqualifiedId->Identifier()) {
+                                    arrayname = Identifier->getText();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (arrayname != "") {
+                llvm::Value* array_alloc = getVariable(arrayname);
+                if (array_alloc == nullptr) {
+                    std::cout << "Error: Use of undeclared identifier '" << arrayname << "'" << std::endl;
+                    return nullptr;
+                }
+                Indices.insert(Indices.begin(), llvm::ConstantInt::get(llvm::Type::getInt32Ty(*llvm_context), 0));
+
+                llvm::Value* array = builder.CreateLoad(array_alloc->getType()->getNonOpaquePointerElementType(), array_alloc);
+                llvm::Type* element_type = array->getType()->getArrayElementType();
+                operand_alloc = builder.CreateInBoundsGEP(array_alloc->getType()->getNonOpaquePointerElementType(), array_alloc, Indices);
+                operand = (llvm::Value*)builder.CreateLoad(element_type, operand_alloc);
+            }
         }
         if (ctx->PlusPlus() != nullptr) { // ++i
             // 类型检查
@@ -969,7 +1013,6 @@ std::any Visitor::visitUnaryExpression(ZigCCParser::UnaryExpressionContext *ctx)
                 // TODO: 这是啥情况，没看懂 |x 是什么意思
                 return nullptr;
             } else if (UnaryOp->And() != nullptr) {
-                // &a[0]
                 return operand_alloc;
             } else if (UnaryOp->Star() != nullptr) {
                 return (llvm::Value*)builder.CreateLoad(operand->getType()->getNonOpaquePointerElementType(), operand);
