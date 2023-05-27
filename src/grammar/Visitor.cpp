@@ -607,6 +607,9 @@ std::any Visitor::visitTranslationUnit(ZigCCParser::TranslationUnitContext *ctx)
 std::any Visitor::visitPrimaryExpression(ZigCCParser::PrimaryExpressionContext *ctx)
 {
     // TODO: 暂时只考虑了有一个 literal 的情况
+    if (ctx->LeftParen() != nullptr && ctx->RightParen() != nullptr) {
+        return visitExpression(ctx->expression());
+    }
     if (ctx->literal(0) != nullptr) {
         return visitLiteral(ctx->literal(0));
     } else if (ctx->idExpression() != nullptr) {
@@ -614,6 +617,7 @@ std::any Visitor::visitPrimaryExpression(ZigCCParser::PrimaryExpressionContext *
     } else if (ctx->lambdaExpression() != nullptr) {
         return visitLambdaExpression(ctx->lambdaExpression());
     }
+    return nullptr;
 }
 
 std::any Visitor::visitIdExpression(ZigCCParser::IdExpressionContext *ctx)
