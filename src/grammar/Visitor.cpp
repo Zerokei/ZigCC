@@ -1958,7 +1958,6 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
             temp_name = std::any_cast<std::string>(VisitDeclSpecifierSeq);
         }
     }
-
     // 判断是否是对象的定义
     ClassType* classinfo = nullptr;
     for (auto scope = scopes.rbegin(); scope != scopes.rend(); scope++) {
@@ -1971,7 +1970,6 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
             }
         }
     }
-
     std::vector< std::pair<std::string, llvm::Value*> > vars;
     int pointer_cnt = 0;
     std::vector<llvm::Value*> array_cnt;
@@ -2112,6 +2110,7 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
                 NoPointerDeclarator = NoPointerDeclarator->noPointerDeclarator();
             }
         }
+
         std::string name;
         if (array_cnt.size() > 0) {
             if (type != nullptr) {
@@ -2124,9 +2123,10 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
                 }
             }
             name = std::any_cast<std::string>(visitNoPointerDeclarator(NoPointerDeclarator));
-        } else { // visitDeclarator 函数返回变量名
+        } else {
             name = std::any_cast<std::string>(visitDeclarator(decl->declarator()));
         }
+
         // 如果进行了初始化，则将初始化的值存入 values 中
         // TODO: 数组初始化
         llvm::Value* alloca = nullptr;
@@ -2159,6 +2159,7 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
         }
         vars.push_back(std::make_pair(name, value));
     }
+
     if (currentScope().currentFunction != nullptr) { // 局部变量的情况
         if (type == nullptr) { // 没有 type，说明此时是赋值
             for (auto var : vars) {
@@ -2705,11 +2706,44 @@ std::any Visitor::visitParameterDeclarationList(ZigCCParser::ParameterDeclaratio
                 type = llvm::PointerType::get(type, 0);
             }
 
-            auto declarator = param_dec_ctx->declarator();
+            // 分析数组维度
+            std::vector<llvm::Value *> array_cnt;
             std::string name;
-            if(declarator) {
+
+            if(auto _param_dec_ctx_array_pointerDeclarator = param_dec_ctx->declarator()->pointerDeclarator()) {
+                if(auto _param_dec_ctx_array_noPointerDeclarator = _param_dec_ctx_array_pointerDeclarator->noPointerDeclarator()) {
+                    while(nullptr != _param_dec_ctx_array_noPointerDeclarator->LeftBracket()) {
+                        if(auto _param_dec_ctx_array_constantExpression = _param_dec_ctx_array_noPointerDeclarator->constantExpression()) {
+                            llvm::Value *array_size = std::any_cast<llvm::Value *>(visitConstantExpression(_param_dec_ctx_array_constantExpression));
+                            if(nullptr != array_size && !array_size->getType()->isIntegerTy()) {
+                                std::cout << "Error: Array size must be an integer." << std::endl;
+                                return nullptr;
+                            }
+                            array_cnt.insert(array_cnt.begin(), array_size);
+                        } else {
+                            array_cnt.insert(array_cnt.begin(), nullptr);
+                        }
+                        _param_dec_ctx_array_noPointerDeclarator = _param_dec_ctx_array_noPointerDeclarator->noPointerDeclarator();
+                    }
+                    name = std::any_cast<std::string>(visitNoPointerDeclarator(_param_dec_ctx_array_noPointerDeclarator));
+                } 
+            }
+
+            if(array_cnt.size() > 0) {
+                for(int i = array_cnt.size() - 1; i >= 0; --i) {
+                    if(nullptr != array_cnt[i]) {
+                        type = llvm::ArrayType::get(type, static_cast<llvm::ConstantInt *>(array_cnt[i])->getSExtValue());
+                    } else {
+                        type = llvm::ArrayType::get(type, 0);
+                    }
+                }
+            }
+
+            auto declarator = param_dec_ctx->declarator();
+            if(declarator && name == "") {
                 name = std::any_cast<std::string>(visitDeclarator(declarator));
             } 
+
             params.push_back(std::pair< std::string, llvm::Type * >(name, type));
         }
 
