@@ -2946,6 +2946,12 @@ std::any Visitor::visitParameterDeclarationList(ZigCCParser::ParameterDeclaratio
             
             // 分析指针类型
             size_t pointer_cnt = 0;
+            if(auto _pointer_without_name_abstract = param_dec_ctx->abstractDeclarator())
+            if(auto _poin_pointer_without_name_abstractDecl = _pointer_without_name_abstract->pointerAbstractDeclarator()) {
+                pointer_cnt = _poin_pointer_without_name_abstractDecl->pointerOperator().size();
+            }
+
+            if(0 == pointer_cnt)
             if(auto _param_dec_ctx_declarator = param_dec_ctx->declarator())
             if(auto _param_dec_ctx_pointerDeclarator = _param_dec_ctx_declarator->pointerDeclarator())
             if(auto _param_dec_ctx_pointerOperator_size = _param_dec_ctx_pointerDeclarator->pointerOperator().size()) {
