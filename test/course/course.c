@@ -1,4 +1,6 @@
-#include <stdio.h>
+int printf(char *s, ...);
+int scanf(char *s, ...);
+char *gets(char *);
 
 char course_info[1000000];
 char pre_course[1000000];

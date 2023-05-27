@@ -1,4 +1,5 @@
-#include <stdio.h>
+int printf(char *s, ...);
+int scanf(char *s, ...);
 
 void quicksort(int A[10], int left, int right) {
     int i;

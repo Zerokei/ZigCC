@@ -1,4 +1,5 @@
-#include <stdio.h>
+int printf(char *s, ...);
+int scanf(char *s, ...);
 
 int A[200000];
 int B[200000];
