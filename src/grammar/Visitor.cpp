@@ -860,7 +860,7 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
         llvm::Value* array = builder.CreateLoad(array_alloc->getType()->getNonOpaquePointerElementType(), array_alloc);
         llvm::Type* element_type = array->getType()->getArrayElementType();
         auto GEP = builder.CreateInBoundsGEP(array_alloc->getType()->getNonOpaquePointerElementType(), array_alloc, Indices);
-        return builder.CreateLoad(element_type, GEP);
+        return (llvm::Value*)builder.CreateLoad(element_type, GEP);
         
     } else if (auto PrimaryExpression = ctx->primaryExpression()) {
         return visitPrimaryExpression(PrimaryExpression);
