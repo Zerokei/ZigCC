@@ -856,8 +856,12 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
             return nullptr;
         }
         Indices.insert(Indices.begin(), llvm::ConstantInt::get(llvm::Type::getInt32Ty(*llvm_context), 0));
-        auto GEP = builder.CreateGEP(array_alloc->getType()->getNonOpaquePointerElementType(), array_alloc, Indices);
-        return builder.CreateLoad(array_alloc->getType()->getNonOpaquePointerElementType(), GEP);
+
+        llvm::Value* array = builder.CreateLoad(array_alloc->getType()->getNonOpaquePointerElementType(), array_alloc);
+        llvm::Type* element_type = array->getType()->getArrayElementType();
+        auto GEP = builder.CreateInBoundsGEP(array_alloc->getType()->getNonOpaquePointerElementType(), array_alloc, Indices);
+        return builder.CreateLoad(element_type, GEP);
+        
     } else if (auto PrimaryExpression = ctx->primaryExpression()) {
         return visitPrimaryExpression(PrimaryExpression);
     }
