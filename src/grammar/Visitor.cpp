@@ -1062,7 +1062,13 @@ std::any Visitor::visitNewExpression(ZigCCParser::NewExpressionContext *ctx)
         if (ctx->newTypeId()->typeSpecifierSeq()->typeSpecifier(0)->trailingTypeSpecifier()->simpleTypeSpecifier()->theTypeName() != nullptr) {
             // 是 new 对象
             std::string classname = ctx->newTypeId()->typeSpecifierSeq()->typeSpecifier(0)->trailingTypeSpecifier()->simpleTypeSpecifier()->theTypeName()->className()->Identifier()->getText();
-            
+            for (auto it = scopes.rbegin(); it != scopes.rend(); it++) {
+                for (auto thisclass : it->classes) {
+                    if (std::get<0>(thisclass) == classname) {
+                        
+                    }
+                }
+            }
         } else {
             // 是 new 基本类型
             auto type = visitTypeSpecifierSeq(ctx->newTypeId()->typeSpecifierSeq());
