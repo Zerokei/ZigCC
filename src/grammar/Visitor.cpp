@@ -2694,8 +2694,7 @@ std::any Visitor::visitParameterDeclaration(ZigCCParser::ParameterDeclarationCon
 
 std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext *ctx)
 {
-    // 默认返回值类型 int32
-    llvm::Type *type = (llvm::Type *)llvm::Type::getInt32Ty(*llvm_context);
+    llvm::Type *type = nullptr;
     if (auto declSpecifierSeq = ctx->declSpecifierSeq()) {
         auto DeclSpecifierSeq = visitDeclSpecifierSeq(declSpecifierSeq);
         if (DeclSpecifierSeq.type() == typeid(llvm::Type *)) {
@@ -2704,6 +2703,20 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
             auto pair = std::any_cast<std::pair<std::string, llvm::Value*>>(DeclSpecifierSeq);
             type = std::any_cast<llvm::Type *>(pair.second);
         }
+    }
+
+    if(nullptr != type) {
+        // 判断返回值类型是不是指针
+        if(auto _type_pointerDeclarator = ctx->declarator()->pointerDeclarator()) {
+            size_t pointer_cnt = 0;
+            pointer_cnt = _type_pointerDeclarator->pointerOperator().size();
+            for(size_t i = 0; i < pointer_cnt; ++i) {
+                type = llvm::PointerType::get(type, 0);
+            }
+        }
+    } else {
+        // 默认返回值类型 int32
+        type = (llvm::Type *)llvm::Type::getInt32Ty(*llvm_context);
     }
 
     auto declarator = ctx->declarator();
