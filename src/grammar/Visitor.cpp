@@ -2254,6 +2254,7 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
                 if(0 == param_values.size()) {
                     for (const auto& name: param_names) {
                         llvm::Value *value = getVariable(name);
+                        value = builder.CreateLoad(value->getType()->getNonOpaquePointerElementType(), value);
                         if (nullptr == value) {
                             std::cout << "Error: Undefined variable " + name + "." << std::endl;
                             return nullptr;
