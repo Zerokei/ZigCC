@@ -786,7 +786,12 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
             return nullptr;
         }
         
-    } else if (ctx->Dot() != nullptr) { // a.x
+    } else if ((ctx->Dot() != nullptr) || (ctx->LeftParen() != nullptr)) { // a.x
+        ZigCCParser::PostfixExpressionContext * prev_ctx = nullptr;
+        if ((ctx->LeftParen() != nullptr) && (ctx->postfixExpression() != nullptr) && (ctx->postfixExpression()->Dot() != nullptr)) {
+            prev_ctx = ctx;
+            ctx = ctx->postfixExpression();
+        }
         std::string objname = "";
         if (auto PostfixExpression = ctx->postfixExpression()) {
             if (auto PrimaryExpression = PostfixExpression->primaryExpression()) {
@@ -802,13 +807,20 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
         
         std::string classname = "";
         llvm::Value* object_alloc = nullptr;
+        bool FindClass = false;
+        bool isUnion = false;
         for (auto it = scopes.rbegin(); it != scopes.rend(); it++) {
             for (auto object : it->objects) {
                 if (std::get<0>(object) == objname) {
                     classname = std::get<1>(object).first;
                     object_alloc = std::get<1>(object).second;
+                    currentScope().thisPointer = builder.CreateLoad(object_alloc->getType()->getPointerElementType(), object_alloc);
+                    FindClass = true;
                     break;
                 }
+            }
+            if (FindClass) {
+                break;
             }
         }
         if (classname == "") {
@@ -825,38 +837,170 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
             }
         }
 
+        // 找到成员的定义并检查权限
         size_t member_index = -1;
         llvm::Function* func = nullptr;
         for (auto it = scopes.rbegin(); it != scopes.rend(); it++) {
             for (auto thisclass : it->classes) {
                 if (std::get<0>(thisclass) == classname) {
+                    auto classtype = std::get<2>(thisclass);
+                    if (((llvm::StructType*)classtype)->getName().str() == "union." + classname) {
+                        isUnion = true;
+                    }
                     auto classinfo = std::get<1>(thisclass);
                     for (int i = 0; i < classinfo->variables.size(); i++) {
                         if (classinfo->variables[i].first == membername) {
+                            if (classinfo->variables[i].second != Access::Public) {
+                                std::cout << "Error: Cannot access private member '" << classname << "." << membername << "'" << std::endl;
+                                return nullptr;
+                            }
                             member_index = i;
                             break;
                         }
                     }
                     if (classinfo->functions.find(classname + "_" + membername) != classinfo->functions.end()) {
+                        auto function = classinfo->functions.find(classname + "_" + membername);
+                        if (function->second != Access::Public) {
+                            std::cout << "Error: Cannot access private member '" << classname << "." << membername << "'" << std::endl;
+                            return nullptr;
+                        }
                         func = module->getFunction(classname + "_" + membername);
                     }
                     // TODO: 我们不考虑主动调用构造函数和析构函数的情况，只考虑调用成员函数
                 }
             }
         }
-        if (member_index == -1 && func == nullptr) {
+        if ((member_index == -1 && prev_ctx == nullptr) || (func == nullptr && prev_ctx != nullptr)) {
             std::cout << "Error: Use of undeclared identifier '" << classname << "." << membername << "'" << std::endl;
             return nullptr;
         } else if (member_index != -1) {
             std::vector<llvm::Value*> Indices;
-			Indices.push_back(builder.getInt32(0));
-			Indices.push_back(builder.getInt32(member_index));
-			return builder.CreateGEP(object_alloc->getType()->getNonOpaquePointerElementType(), object_alloc, Indices);
+            Indices.push_back(builder.getInt32(0));
+            Indices.push_back(builder.getInt32(member_index));
+            llvm::Value* ret = builder.CreateGEP(object_alloc->getType()->getNonOpaquePointerElementType(), object_alloc, Indices);
+            if (isUnion == false) {
+                return ret;
+            } else {
+                llvm::Type* ret_type = ret->getType()->getNonOpaquePointerElementType();
+                return builder.CreatePointerCast(object_alloc, ret_type->getPointerTo());
+            }
         } else if (func != nullptr) {
 
         }
-    } else if (ctx->Arrow() != nullptr) { // a->x
-        // this
+    } else if ((ctx->Arrow() != nullptr) || (ctx->LeftParen() != nullptr)) { // a->x
+        ZigCCParser::PostfixExpressionContext * prev_ctx = nullptr;
+        if ((ctx->LeftParen() != nullptr) && (ctx->postfixExpression() != nullptr) && (ctx->postfixExpression()->Arrow() != nullptr)) {
+            prev_ctx = ctx;
+            ctx = ctx->postfixExpression();
+        }
+        std::string objname = "";
+        bool isThis = false;
+        if (auto PostfixExpression = ctx->postfixExpression()) {
+            if (auto PrimaryExpression = PostfixExpression->primaryExpression()) {
+                if (auto ID = PrimaryExpression->idExpression()) {
+                    if (auto UnqualifiedId = ID->unqualifiedId()) {
+                        if (auto Identifier = UnqualifiedId->Identifier()) {
+                            objname = Identifier->getText();
+                        }
+                    }
+                }
+                else if (auto This = PrimaryExpression->This()) {
+                    auto thisPointer = currentScope().thisPointer;
+                    if (thisPointer == nullptr) {
+                        std::cout << "Error: Use  'this' in none-object function" << std::endl;
+                        return nullptr;
+                    }
+                    isThis = true;
+                    objname = thisPointer->getName().str();
+                }
+            }
+        }
+        
+        std::string classname = "";
+        llvm::Value* object_alloc = nullptr;
+        bool FindClass = false;
+        bool isUnion = false;
+        for (auto it = scopes.rbegin(); it != scopes.rend(); it++) {
+            for (auto object : it->objects) {
+                if (std::get<0>(object) == objname) {
+                    classname = std::get<1>(object).first;
+                    object_alloc = std::get<1>(object).second;
+                    object_alloc = builder.CreateLoad(object_alloc->getType()->getNonOpaquePointerElementType(), object_alloc);
+                    if (isThis == false) {
+                        currentScope().thisPointer = builder.CreateLoad(object_alloc->getType()->getPointerElementType(), object_alloc);
+                    }
+                    FindClass = true;
+                    break;
+                }
+            }
+            if (FindClass) {
+                break;
+            }
+        }
+        if (classname == "") {
+            std::cout << "Error: Use . after a none object name '" << objname << "'" << std::endl;
+            return nullptr;
+        }
+
+        std::string membername;
+        if (auto ID = ctx->idExpression()) {
+            if (auto UnqualifiedId = ID->unqualifiedId()) {
+                if (auto Identifier = UnqualifiedId->Identifier()) {
+                    membername = Identifier->getText();
+                }
+            }
+        }
+
+        // 找到成员的定义并检查权限
+        size_t member_index = -1;
+        llvm::Function* func = nullptr;
+        for (auto it = scopes.rbegin(); it != scopes.rend(); it++) {
+            for (auto thisclass : it->classes) {
+                if (std::get<0>(thisclass) == classname) {
+                    auto classtype = std::get<2>(thisclass);
+                    if (((llvm::StructType*)classtype)->getName().str() == "union." + classname) {
+                        isUnion = true;
+                    }
+                    auto classinfo = std::get<1>(thisclass);
+                    for (int i = 0; i < classinfo->variables.size(); i++) {
+                        if (classinfo->variables[i].first == membername) {
+                            if (classinfo->variables[i].second != Access::Public) {
+                                std::cout << "Error: Cannot access private member '" << classname << "." << membername << "'" << std::endl;
+                                return nullptr;
+                            }
+                            member_index = i;
+                            break;
+                        }
+                    }
+                    if (classinfo->functions.find(classname + "_" + membername) != classinfo->functions.end()) {
+                        auto function = classinfo->functions.find(classname + "_" + membername);
+                        if (function->second != Access::Public) {
+                            std::cout << "Error: Cannot access private member '" << classname << "." << membername << "'" << std::endl;
+                            return nullptr;
+                        }
+                        func = module->getFunction(classname + "_" + membername);
+                    }
+                    // TODO: 我们不考虑主动调用构造函数和析构函数的情况，只考虑调用成员函数
+                }
+            }
+        }
+        if ((member_index == -1 && prev_ctx == nullptr) || (func == nullptr && prev_ctx != nullptr)) {
+            std::cout << "Error: Use of undeclared identifier '" << classname << "." << membername << "'" << std::endl;
+            return nullptr;
+        } else if (member_index != -1) {
+            std::vector<llvm::Value*> Indices;
+            Indices.push_back(builder.getInt32(0));
+            Indices.push_back(builder.getInt32(member_index));
+            llvm::Value* ret = builder.CreateGEP(object_alloc->getType()->getNonOpaquePointerElementType(), object_alloc, Indices);
+            if (isUnion == false) {
+                return ret;
+            } else {
+                llvm::Type* ret_type = ret->getType()->getNonOpaquePointerElementType();
+                return builder.CreatePointerCast(object_alloc, ret_type->getPointerTo());
+            }
+        } else if (func != nullptr) {
+
+        }
     } else if (ctx->LeftBracket() && ctx->RightBracket()) {
         std::vector<llvm::Value*> Indices;
         auto TempExpr = ctx;

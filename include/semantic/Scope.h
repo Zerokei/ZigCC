@@ -33,7 +33,8 @@ public:
     std::unordered_map< std::string, std::pair<std::string, llvm::Value *> > objects;
     std::vector< std::tuple<std::string, ClassType *, llvm::Type*> > classes;
     llvm::Function *currentFunction = nullptr; // 如果是 nullptr 则说明当前是全局变量的 scope（有且仅有一个这样的 scope）
-    
+    llvm::Value *thisPointer = nullptr;
+
     Scope(llvm::Function *_currentFunction = nullptr) : currentFunction(_currentFunction) {}
     bool setVariable(const std::string &name, llvm::Value *);
     llvm::Value *getVariable(const std::string &name);
