@@ -877,15 +877,16 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
             std::vector<llvm::Value*> Indices;
             Indices.push_back(builder.getInt32(0));
             Indices.push_back(builder.getInt32(member_index));
-            llvm::Value* ret = builder.CreateGEP(object_alloc->getType()->getNonOpaquePointerElementType(), object_alloc, Indices);
+            llvm::Value* ret0 = builder.CreateGEP(object_alloc->getType()->getNonOpaquePointerElementType(), object_alloc, Indices);
             if (isUnion == false) {
-                return ret;
+                llvm::Value* ret1 = builder.CreateLoad(ret0->getType()->getNonOpaquePointerElementType(), ret0);
+                return std::make_pair(ret0, ret1); // 0 是地址，1 是值
             } else {
-                llvm::Type* ret_type = ret->getType()->getNonOpaquePointerElementType();
+                llvm::Type* ret_type = ret0->getType()->getNonOpaquePointerElementType();
                 return builder.CreatePointerCast(object_alloc, ret_type->getPointerTo());
             }
         } else if (func != nullptr) {
-
+            return nullptr;
         }
     } else if ((ctx->Arrow() != nullptr) || (ctx->LeftParen() != nullptr)) { // a->x
         ZigCCParser::PostfixExpressionContext * prev_ctx = nullptr;
@@ -991,11 +992,12 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
             std::vector<llvm::Value*> Indices;
             Indices.push_back(builder.getInt32(0));
             Indices.push_back(builder.getInt32(member_index));
-            llvm::Value* ret = builder.CreateGEP(object_alloc->getType()->getNonOpaquePointerElementType(), object_alloc, Indices);
+            llvm::Value* ret0 = builder.CreateGEP(object_alloc->getType()->getNonOpaquePointerElementType(), object_alloc, Indices);
             if (isUnion == false) {
-                return ret;
+                llvm::Value* ret1 = builder.CreateLoad(ret0->getType()->getNonOpaquePointerElementType(), ret0);
+                return std::make_pair(ret0, ret1);
             } else {
-                llvm::Type* ret_type = ret->getType()->getNonOpaquePointerElementType();
+                llvm::Type* ret_type = ret0->getType()->getNonOpaquePointerElementType();
                 return builder.CreatePointerCast(object_alloc, ret_type->getPointerTo());
             }
         } else if (func != nullptr) {
@@ -1372,6 +1374,7 @@ std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpre
     // 此处 * 是作为乘号的情况，作为解引用是一元运算符
     llvm::Value* alloc = nullptr;
     llvm::Value* result = nullptr;
+    llvm::Value* ret_ptr = nullptr;
     auto pointerMemberExpression_0 = visitPointerMemberExpression(ctx->pointerMemberExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (pointerMemberExpression_0.type() == typeid(std::string)) {
@@ -1384,6 +1387,9 @@ std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpre
         result = builder.CreateLoad(alloc->getType()->getNonOpaquePointerElementType(), alloc);
     } else if (pointerMemberExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(pointerMemberExpression_0);
+    } else if (pointerMemberExpression_0.type() == typeid(std::pair<llvm::Value*, llvm::Value*>)) {
+        ret_ptr = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(pointerMemberExpression_0).first;
+        result = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(pointerMemberExpression_0).second;
     }
     for (size_t i = 1; i < ctx->pointerMemberExpression().size(); i++) {
         llvm::Value* operand = nullptr;
@@ -1408,6 +1414,9 @@ std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpre
             result = this->CreateMod(result, operand);
         }
     }
+    if (ret_ptr != nullptr) {
+        return std::make_pair(ret_ptr, result);
+    }
     return result;
 }
 
@@ -1415,6 +1424,7 @@ std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext
 {
     llvm::Value* alloc = nullptr;
     llvm::Value* result = nullptr;
+    llvm::Value* ret_ptr = nullptr;
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     auto multiplicativeExpression_0 = visitMultiplicativeExpression(ctx->multiplicativeExpression(0));
     if (multiplicativeExpression_0.type() == typeid(std::string)) {
@@ -1427,6 +1437,9 @@ std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext
         result = builder.CreateLoad(alloc->getType()->getNonOpaquePointerElementType(), alloc);
     } else if (multiplicativeExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(multiplicativeExpression_0);
+    } else if (multiplicativeExpression_0.type() == typeid(std::pair<llvm::Value*, llvm::Value*>)) {
+        ret_ptr = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(multiplicativeExpression_0).first;
+        result = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(multiplicativeExpression_0).second;
     }
     for (size_t i = 1; i < ctx->multiplicativeExpression().size(); i++) {
         llvm::Value* operand = nullptr;
@@ -1449,6 +1462,9 @@ std::any Visitor::visitAdditiveExpression(ZigCCParser::AdditiveExpressionContext
             result = this->CreateSub(result, operand);
         }
     }
+    if (ret_ptr != nullptr) {
+        return std::make_pair(ret_ptr, result);
+    }
     return result;
 }
 
@@ -1456,6 +1472,7 @@ std::any Visitor::visitShiftExpression(ZigCCParser::ShiftExpressionContext *ctx)
 {
     llvm::Value* alloc = nullptr;
     llvm::Value* result = nullptr;
+    llvm::Value* ret_ptr = nullptr;
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     auto additiveExpression_0 = visitAdditiveExpression(ctx->additiveExpression(0));
     if (additiveExpression_0.type() == typeid(std::string)) {
@@ -1468,6 +1485,9 @@ std::any Visitor::visitShiftExpression(ZigCCParser::ShiftExpressionContext *ctx)
         result = builder.CreateLoad(alloc->getType()->getNonOpaquePointerElementType(), alloc);
     } else if (additiveExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(additiveExpression_0);
+    } else if (additiveExpression_0.type() == typeid(std::pair<llvm::Value*, llvm::Value*>)) {
+        ret_ptr = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(additiveExpression_0).first;
+        result = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(additiveExpression_0).second;
     }
     for (size_t i = 1; i < ctx->additiveExpression().size(); i++) {
         llvm::Value* operand = nullptr;
@@ -1491,6 +1511,9 @@ std::any Visitor::visitShiftExpression(ZigCCParser::ShiftExpressionContext *ctx)
             result = this->CreateShl(result, operand);
         }
     }
+    if (ret_ptr != nullptr) {
+        return std::make_pair(ret_ptr, result);
+    }
     return result;
 }
 
@@ -1512,6 +1535,7 @@ std::any Visitor::visitRelationalExpression(ZigCCParser::RelationalExpressionCon
 {
     llvm::Value* alloc = nullptr;
     llvm::Value* result = nullptr;
+    llvm::Value* ret_ptr = nullptr;
     auto shiftExpression_0 = visitShiftExpression(ctx->shiftExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (shiftExpression_0.type() == typeid(std::string)) {
@@ -1524,6 +1548,9 @@ std::any Visitor::visitRelationalExpression(ZigCCParser::RelationalExpressionCon
         result = builder.CreateLoad(alloc->getType()->getNonOpaquePointerElementType(), alloc);
     } else if (shiftExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(shiftExpression_0);
+    } else if (shiftExpression_0.type() == typeid(std::pair<llvm::Value*, llvm::Value*>)) {
+        ret_ptr = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(shiftExpression_0).first;
+        result = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(shiftExpression_0).second;
     }
     for (size_t i = 1; i < ctx->shiftExpression().size(); i++) {
         llvm::Value* operand = nullptr;
@@ -1550,6 +1577,9 @@ std::any Visitor::visitRelationalExpression(ZigCCParser::RelationalExpressionCon
             result = this->CreateCmpGE(result, operand);
         }
     }
+    if (ret_ptr != nullptr) {
+        return std::make_pair(ret_ptr, result);
+    }
     return result;
 }
 
@@ -1557,6 +1587,7 @@ std::any Visitor::visitEqualityExpression(ZigCCParser::EqualityExpressionContext
 {
     llvm::Value* alloc = nullptr;
     llvm::Value* result = nullptr;
+    llvm::Value* ret_ptr = nullptr;
     auto relationalExpression_0 = visitRelationalExpression(ctx->relationalExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (relationalExpression_0.type() == typeid(std::string)) {
@@ -1569,6 +1600,9 @@ std::any Visitor::visitEqualityExpression(ZigCCParser::EqualityExpressionContext
         result = builder.CreateLoad(alloc->getType()->getNonOpaquePointerElementType(), alloc);
     } else if (relationalExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(relationalExpression_0);
+    } else if (relationalExpression_0.type() == typeid(std::pair<llvm::Value*, llvm::Value*>)) {
+        ret_ptr = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(relationalExpression_0).first;
+        result = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(relationalExpression_0).second;
     }
     for (size_t i = 1; i < ctx->relationalExpression().size(); i++) {
         llvm::Value* operand = nullptr;
@@ -1591,6 +1625,9 @@ std::any Visitor::visitEqualityExpression(ZigCCParser::EqualityExpressionContext
             result = this->CreateCmpNEQ(result, operand);
         }
     }
+    if (ret_ptr != nullptr) {
+        return std::make_pair(ret_ptr, result);
+    }
     return result;
 }
 
@@ -1598,6 +1635,7 @@ std::any Visitor::visitAndExpression(ZigCCParser::AndExpressionContext *ctx)
 {
     llvm::Value* alloc = nullptr;
     llvm::Value* result = nullptr;
+    llvm::Value* ret_ptr = nullptr;
     auto equalityExpression_0 = visitEqualityExpression(ctx->equalityExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (equalityExpression_0.type() == typeid(std::string)) {
@@ -1610,6 +1648,9 @@ std::any Visitor::visitAndExpression(ZigCCParser::AndExpressionContext *ctx)
         result = builder.CreateLoad(alloc->getType()->getNonOpaquePointerElementType(), alloc);
     } else if (equalityExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(equalityExpression_0);
+    } else if (equalityExpression_0.type() == typeid(std::pair<llvm::Value*, llvm::Value*>)) {
+        ret_ptr = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(equalityExpression_0).first;
+        result = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(equalityExpression_0).second;
     }
     for (size_t i = 1; i < ctx->equalityExpression().size(); i++) {
         llvm::Value* operand = nullptr;
@@ -1628,6 +1669,9 @@ std::any Visitor::visitAndExpression(ZigCCParser::AndExpressionContext *ctx)
         // 类型检查与转化
         result = this->CreateBitwiseAND(result, operand);
     }
+    if (ret_ptr != nullptr) {
+        return std::make_pair(ret_ptr, result);
+    }
     return result;
 }
 
@@ -1635,6 +1679,7 @@ std::any Visitor::visitExclusiveOrExpression(ZigCCParser::ExclusiveOrExpressionC
 {
     llvm::Value* alloc = nullptr;
     llvm::Value* result = nullptr;
+    llvm::Value* ret_ptr = nullptr;
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     auto andExpression_0 = visitAndExpression(ctx->andExpression(0));
     if (andExpression_0.type() == typeid(std::string)) {
@@ -1647,6 +1692,9 @@ std::any Visitor::visitExclusiveOrExpression(ZigCCParser::ExclusiveOrExpressionC
         result = builder.CreateLoad(alloc->getType()->getNonOpaquePointerElementType(), alloc);
     } else if (andExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(andExpression_0);
+    } else if (andExpression_0.type() == typeid(std::pair<llvm::Value*, llvm::Value*>)) {
+        ret_ptr = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(andExpression_0).first;
+        result = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(andExpression_0).second;
     }
     for (size_t i = 1; i < ctx->andExpression().size(); i++) {
         llvm::Value* operand = nullptr;
@@ -1665,6 +1713,9 @@ std::any Visitor::visitExclusiveOrExpression(ZigCCParser::ExclusiveOrExpressionC
         // 类型检查与转化
         result = this->CreateBitwiseXOR(result, operand);
     }
+    if (ret_ptr != nullptr) {
+        return std::make_pair(ret_ptr, result);
+    }
     return result;
 }
 
@@ -1672,6 +1723,7 @@ std::any Visitor::visitInclusiveOrExpression(ZigCCParser::InclusiveOrExpressionC
 {
     llvm::Value* alloc = nullptr;
     llvm::Value* result = nullptr;
+    llvm::Value* ret_ptr = nullptr;
     auto exclusiveOrExpression_0 = visitExclusiveOrExpression(ctx->exclusiveOrExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (exclusiveOrExpression_0.type() == typeid(std::string)) {
@@ -1684,6 +1736,9 @@ std::any Visitor::visitInclusiveOrExpression(ZigCCParser::InclusiveOrExpressionC
         result = builder.CreateLoad(alloc->getType()->getNonOpaquePointerElementType(), alloc);
     } else if (exclusiveOrExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(exclusiveOrExpression_0);
+    } else if (exclusiveOrExpression_0.type() == typeid(std::pair<llvm::Value*, llvm::Value*>)) {
+        ret_ptr = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(exclusiveOrExpression_0).first;
+        result = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(exclusiveOrExpression_0).second;
     }
     for (size_t i = 1; i < ctx->exclusiveOrExpression().size(); i++) {
         llvm::Value* operand = nullptr;
@@ -1702,6 +1757,9 @@ std::any Visitor::visitInclusiveOrExpression(ZigCCParser::InclusiveOrExpressionC
         // 类型检查与转化
         result = this->CreateBitwiseOR(result, operand);
     }
+    if (ret_ptr != nullptr) {
+        return std::make_pair(ret_ptr, result);
+    }
     return result;
 }
 
@@ -1709,6 +1767,7 @@ std::any Visitor::visitLogicalAndExpression(ZigCCParser::LogicalAndExpressionCon
 {
     llvm::Value* alloc = nullptr;
     llvm::Value* result = nullptr;
+    llvm::Value* ret_ptr = nullptr;
     auto inclusiveOrExpression_0 = visitInclusiveOrExpression(ctx->inclusiveOrExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (inclusiveOrExpression_0.type() == typeid(std::string)) {
@@ -1721,6 +1780,9 @@ std::any Visitor::visitLogicalAndExpression(ZigCCParser::LogicalAndExpressionCon
         result = builder.CreateLoad(alloc->getType()->getNonOpaquePointerElementType(), alloc);
     } else if (inclusiveOrExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(inclusiveOrExpression_0);
+    } else if (inclusiveOrExpression_0.type() == typeid(std::pair<llvm::Value*, llvm::Value*>)) {
+        ret_ptr = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(inclusiveOrExpression_0).first;
+        result = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(inclusiveOrExpression_0).second;
     }
     // （需要做逻辑运算的情况下）判断得到的表达式是否能转化为 bool 类型
     if (ctx->inclusiveOrExpression().size() > 1) {
@@ -1752,6 +1814,9 @@ std::any Visitor::visitLogicalAndExpression(ZigCCParser::LogicalAndExpressionCon
         }
         result = builder.CreateLogicalAnd(result, operand);
     }
+    if (ret_ptr != nullptr) {
+        return std::make_pair(ret_ptr, result);
+    }
     return result;
 }
 
@@ -1759,6 +1824,7 @@ std::any Visitor::visitLogicalOrExpression(ZigCCParser::LogicalOrExpressionConte
 {
     llvm::Value* alloc = nullptr;
     llvm::Value* result = nullptr;
+    llvm::Value* ret_ptr = nullptr;
     auto logicalAndExpression_0 = visitLogicalAndExpression(ctx->logicalAndExpression(0));
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (logicalAndExpression_0.type() == typeid(std::string)) {
@@ -1771,6 +1837,9 @@ std::any Visitor::visitLogicalOrExpression(ZigCCParser::LogicalOrExpressionConte
         result = builder.CreateLoad(alloc->getType()->getNonOpaquePointerElementType(), alloc);
     } else if (logicalAndExpression_0.type() == typeid(llvm::Value *)) {
         result = std::any_cast<llvm::Value*>(logicalAndExpression_0);
+    } else if (logicalAndExpression_0.type() == typeid(std::pair<llvm::Value*, llvm::Value*>)) {
+        ret_ptr = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(logicalAndExpression_0).first;
+        result = std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(logicalAndExpression_0).second;
     }
     // （需要做逻辑运算的情况下）判断得到的表达式是否能转化为 bool 类型
     if (ctx->logicalAndExpression().size() > 1) {
@@ -1802,6 +1871,9 @@ std::any Visitor::visitLogicalOrExpression(ZigCCParser::LogicalOrExpressionConte
         }
         result = builder.CreateLogicalOr(result, operand);
     }
+    if (ret_ptr != nullptr) {
+        return std::make_pair(ret_ptr, result);
+    }
     return result;
 }
 
@@ -1821,15 +1893,22 @@ std::any Visitor::visitAssignmentExpression(ZigCCParser::AssignmentExpressionCon
     // TODO: 加入类型检查和类型转换
     if (auto AssignmentOperator = ctx->assignmentOperator()) {
         std::string AssignOp = std::any_cast<std::string>(visitAssignmentOperator(AssignmentOperator));
-        auto lhs = std::any_cast<std::string>(visitLogicalOrExpression(ctx->logicalOrExpression()));
-        // 判断该变量是否是之前处理过的
+        auto LogicalOrExpression = visitLogicalOrExpression(ctx->logicalOrExpression());
         llvm::Value* alloca;
-        if (this->currentScope().getVariable(lhs) == nullptr) {
-            std::cout << "error: use of undeclared identifier '" << lhs << "'" << std::endl;
-            // TODO: Exception
-        } else {
-            alloca = this->currentScope().getVariable(lhs);
+
+        if (LogicalOrExpression.type() == typeid(std::string)) {
+            std::string name = std::any_cast<std::string>(LogicalOrExpression);
+            auto alloca = this->getVariable(name);
+            // 判断该变量是否是之前处理过的
+            if (alloca == nullptr) {
+                std::cout << "error: use of undeclared identifier '" << name << "'" << std::endl;
+            } else {
+                alloca = this->currentScope().getVariable(name);
+            }
+        } else if (LogicalOrExpression.type() == typeid(std::pair<llvm::Value*, llvm::Value*>)) {
+            alloca = std::any_cast< std::pair<llvm::Value*, llvm::Value*> >(LogicalOrExpression).first;
         }
+        
         auto rhs = std::any_cast<llvm::Value*>(visitInitializerClause(ctx->initializerClause()));
         auto value = builder.CreateLoad(alloca->getType(), alloca);
         // 判断赋值号右边的变量是否初始化过（有待改进，不知道是哪个变量）
@@ -1867,7 +1946,12 @@ std::any Visitor::visitAssignmentExpression(ZigCCParser::AssignmentExpressionCon
             return result;
         }
     } else if (auto ConditionalExpression = ctx->conditionalExpression()) {
-        return visitConditionalExpression(ConditionalExpression);
+        auto CondExpr = visitConditionalExpression(ConditionalExpression);
+        if (CondExpr.type() == typeid(std::pair<llvm::Value*, llvm::Value*>)) {
+            return std::any_cast<std::pair<llvm::Value*, llvm::Value*>>(CondExpr).second;
+        } else {
+            return CondExpr;
+        }
     } else if (auto LogicalOrExpression = ctx->logicalOrExpression()) {
         return visitLogicalOrExpression(LogicalOrExpression);
     } else if (auto ThrowExpression = ctx->throwExpression()) {
@@ -2402,7 +2486,7 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
     // TODO: 目前暂未考虑一行中有两种类型的情况（const int 之类的）
     // 当前只考虑 int x, y = 0; int x = y = 0; 这种情况，enum 以及 class 等复杂类型之后再作处理（添加分支处理（？））
     // 还有强制类型转换可以做（感觉应该不难）
-    
+
     // 判断空语句
     if (!ctx->declSpecifierSeq() && !ctx->initDeclaratorList() && !ctx->attributeSpecifierSeq()) {
         return nullptr;
@@ -2415,21 +2499,27 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
         if (VisitDeclSpecifierSeq.type() == typeid(llvm::Type *)) {
             type = std::any_cast<llvm::Type*>(VisitDeclSpecifierSeq);
         } else if(VisitDeclSpecifierSeq.type() == typeid(std::string)) {
+            if (std::any_cast<std::string>(VisitDeclSpecifierSeq) == "ClassDef") {
+                return nullptr; // 暂时不允许声明类的时候同时定义变量
+            }
             temp_name = std::any_cast<std::string>(VisitDeclSpecifierSeq);
         }
     }
     // 判断是否是对象的定义
+    std::string classname = "";
     ClassType* classinfo = nullptr;
     for (auto scope = scopes.rbegin(); scope != scopes.rend(); scope++) {
         auto classes = scope->classes;
         for (auto thisclass : classes) {
             if (std::get<0>(thisclass) == temp_name) {
+                classname = std::get<0>(thisclass);
                 classinfo = std::get<1>(thisclass);
                 type = std::get<2>(thisclass);
                 break;
             }
         }
     }
+
     std::vector< std::pair<std::string, llvm::Value*> > vars;
     int pointer_cnt = 0;
     std::vector<llvm::Value*> array_cnt;
@@ -2709,6 +2799,9 @@ _ZIGCC_DECL_NOT_FUNCTION_CALL:
                     builder.CreateStore(var.second, alloca);
                 }
                 this->currentScope().setVariable(std::get<0>(var), alloca);
+                if (classname != "") {
+                    this->currentScope().objects[std::get<0>(var)] = std::make_pair(classname, alloca);
+                }
             }
         }
     } else { // 全局变量的情况
@@ -2908,6 +3001,7 @@ std::any Visitor::visitTheTypeName(ZigCCParser::TheTypeNameContext *ctx)
     } else if (auto SimpleTemplateId = ctx->simpleTemplateId()) {
         return visitSimpleTemplateId(SimpleTemplateId);
     }
+    return nullptr;
 }
 
 std::any Visitor::visitDecltypeSpecifier(ZigCCParser::DecltypeSpecifierContext *ctx)
@@ -2917,7 +3011,11 @@ std::any Visitor::visitDecltypeSpecifier(ZigCCParser::DecltypeSpecifierContext *
 
 std::any Visitor::visitElaboratedTypeSpecifier(ZigCCParser::ElaboratedTypeSpecifierContext *ctx)
 {
-
+    if (ctx->classKey() != nullptr) {
+        std::string classtype = std::any_cast<std::string>(visitClassKey(ctx->classKey()));
+        std::string classname = ctx->Identifier()->getText();
+        return std::make_pair(classtype, classname);
+    }
 }
 
 std::any Visitor::visitEnumName(ZigCCParser::EnumNameContext *ctx)
@@ -3501,6 +3599,7 @@ std::any Visitor::visitClassSpecifier(ZigCCParser::ClassSpecifierContext *ctx)
     std::vector<llvm::Type*> member_types;
 
     if (ctx->classHead() != nullptr) {
+        // 得到类的类型、类名、基类名、继承方式
         std::tuple<std::string, std::string, std::string, std::string> ret = std::any_cast< std::tuple<std::string, std::string, std::string, std::string> >(visitClassHead(ctx->classHead()));
         classtype = std::get<0>(ret);
         classname = std::get<1>(ret);
@@ -3540,7 +3639,7 @@ std::any Visitor::visitClassSpecifier(ZigCCParser::ClassSpecifierContext *ctx)
             scopes.back().classes.push_back(std::make_tuple(classname, classinfo, newunion));
         }
     }
-    return nullptr;
+    return std::string("ClassDef");
 }
 
 std::any Visitor::visitClassHead(ZigCCParser::ClassHeadContext *ctx)
@@ -3734,13 +3833,36 @@ std::any Visitor::visitMemberdeclaration(ZigCCParser::MemberdeclarationContext *
         std::pair< llvm::Type*, std::vector<std::string> > ret;
 
         llvm::Type* type = nullptr;
-        std::string temp_name;
+        std::string temp_name = "";
         auto VisitDeclSpecifierSeq = visitDeclSpecifierSeq(decl);
         if (VisitDeclSpecifierSeq.type() == typeid(llvm::Type *)) {
             type = std::any_cast<llvm::Type*>(VisitDeclSpecifierSeq);
-        } else if(VisitDeclSpecifierSeq.type() == typeid(std::string)) {
+        } else if (VisitDeclSpecifierSeq.type() == typeid(std::string)) {
             temp_name = std::any_cast<std::string>(VisitDeclSpecifierSeq);
+        } else if (VisitDeclSpecifierSeq.type() == typeid(std::pair<std::string, std::string>)) {
+            auto pair = std::any_cast<std::pair<std::string, std::string>>(VisitDeclSpecifierSeq);
+            temp_name = pair.second;
         }
+
+        // 如果是嵌套定义
+        bool FindClass = false;
+        if (temp_name != "") {
+            for (auto it = scopes.rbegin(); it != scopes.rend(); it++) {
+                if (it->classes.size() > 0) {
+                    for (auto it2 = it->classes.rbegin(); it2 != it->classes.rend(); it2++) {
+                        if (std::get<0>(*it2) == temp_name) {
+                            FindClass = true;
+                            type = std::get<2>(*it2);
+                            break;
+                        }
+                    }
+                }
+                if (FindClass) {
+                    break;
+                }
+            }
+        }
+
         // TODO: 函数声明，暂时只允许在类内定义函数
         for (auto MemberDeclarator : ctx->memberDeclaratorList()->memberDeclarator()) {
             // TODO: 有漏洞！一行只允许一个类型，int *x, y 未实现
@@ -3749,6 +3871,11 @@ std::any Visitor::visitMemberdeclaration(ZigCCParser::MemberdeclarationContext *
 
             pointer_cnt = MemberDeclarator->declarator()->pointerDeclarator()->pointerOperator().size();
             if (type != nullptr && pointer_cnt > 0) {
+                for (int i = 0; i < pointer_cnt; i++) {
+                    type = llvm::PointerType::get(type, 0);
+                }
+            } else if (type == nullptr && pointer_cnt > 0 && FindClass) {
+                type = llvm::Type::getInt32Ty(*llvm_context);
                 for (int i = 0; i < pointer_cnt; i++) {
                     type = llvm::PointerType::get(type, 0);
                 }
