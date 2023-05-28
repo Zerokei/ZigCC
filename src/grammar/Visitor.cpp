@@ -2119,18 +2119,109 @@ std::any Visitor::visitSelectionStatement(ZigCCParser::SelectionStatementContext
         // 退出当前作用域
         scopes.pop_back();
     } else if (ctx->Switch() != nullptr) {
+        // WARNING: 并未成功实现
         // TODO: 注意 switch 语句的条件不允许赋值，这和 if 语句不同，并且也不一定需要是 bool 类型
-        llvm::Value* condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
-        if (condition == nullptr) {
-            std::cout << "Error: Condition is not a valid expression." << std::endl;
-            return nullptr;
-        }
         llvm::Function* function = currentScope().currentFunction;
         if (function == nullptr) {
             std::cout << "Error: Switch statement not within a function." << std::endl;
             return nullptr;
         }
-        // TODO: 未完成
+        llvm::Value* condition = std::any_cast<llvm::Value*>(visitCondition(ctx->condition()));
+        if (condition == nullptr) {
+            std::cout << "Error: Condition is not a valid expression." << std::endl;
+            return nullptr;
+        }
+        
+        auto statements = ctx->statement(0)->compoundStatement()->statementSeq()->statement();
+        size_t label_cnt = 0;
+        for(const auto &stmt: statements) {
+            if(nullptr != stmt->labeledStatement()) {
+                ++label_cnt;
+            }
+        }
+
+        std::vector<llvm::BasicBlock *> caseBB;
+        std::vector<llvm::BasicBlock *> cmpBB;
+        // 创建 case 与 cmp 需要的基本块
+        for(size_t i = 0 ; i < label_cnt; ++i) {
+            caseBB.push_back(llvm::BasicBlock::Create(*llvm_context, llvm::Twine(std::string("case_") + std::to_string(i))));
+        }
+        auto switchEndBB = llvm::BasicBlock::Create(*llvm_context, llvm::Twine(std::string("switchEnd")));
+        // 目前处理的基本块 - CMP 块 - Case 块 - 后续（switchEnd）
+        cmpBB.push_back(builder.GetInsertBlock());
+        for(size_t i = 1; i < label_cnt; ++i) {
+            cmpBB.push_back(llvm::BasicBlock::Create(*llvm_context, llvm::Twine(std::string("cmp_") + std::to_string(i))));
+        }
+        cmpBB.push_back(switchEndBB);
+        
+        bool has_default = false;
+        size_t now_case = 0;
+        // CMP 块的处理
+        for(const auto &stmt: statements) {
+            if(auto LabeledStatement = stmt->labeledStatement()) {
+                // 当前遇到一个新的 case，插入基本块
+                if(0 != now_case) {
+                    // 第一个 cmp 不需要插基本块点
+                    (cmpBB[now_case])->insertInto(function);
+                    builder.SetInsertPoint(cmpBB[now_case]);
+                }
+                if(nullptr != LabeledStatement->Case()) {
+                    // 有 Case，非default
+                    auto ConstantExpression = visitConstantExpression(LabeledStatement->constantExpression());
+                    auto case_value = std::any_cast<llvm::Value *>(ConstantExpression);
+                    builder.CreateCondBr(CreateCmpEQ(condition, case_value), caseBB[now_case], cmpBB[now_case + 1]);
+                } else {
+                    // default
+                    if(has_default) {
+                        // 之前已经有default
+                        std::cout << "Error: multiple defaults in switch statment." << std::endl;
+                        return nullptr;
+                    }
+                    has_default = true;
+                    builder.CreateBr(caseBB[now_case]);
+                }
+                ++now_case;
+            }
+        }
+
+        // case 块处理
+        this->scopes.push_back(Scope(function));
+
+        now_case = 0;
+        for(const auto &stmt: statements) {
+            auto prev_cond_done_BB_pair = this->cond_done_BB_pair;
+
+            std::pair<llvm::BasicBlock *, llvm::BasicBlock *> switch_BB_pair;
+            // switch 块不会隔离 continue 的作用域，仅隔离 break 的作用域
+            if(nullptr != this->cond_done_BB_pair) {
+                switch_BB_pair = std::pair<llvm::BasicBlock *, llvm::BasicBlock *>(this->cond_done_BB_pair->first, switchEndBB);
+            } else {
+                switch_BB_pair = std::pair<llvm::BasicBlock *, llvm::BasicBlock *>(nullptr, switchEndBB);
+            }
+        
+            this->cond_done_BB_pair = &switch_BB_pair;
+            
+            auto visiting_stmt = stmt;
+            if(nullptr != stmt->labeledStatement()) {
+                // 遇到新的 case
+                caseBB[now_case]->insertInto(function);
+                builder.SetInsertPoint(caseBB[now_case]);
+                // TODO: case x: 后边语句为空的情况
+                visiting_stmt = stmt->labeledStatement()->statement();
+                ++now_case;
+            }
+            visitStatement(visiting_stmt);
+
+            this->cond_done_BB_pair = prev_cond_done_BB_pair;
+        }
+
+        this->scopes.pop_back();
+
+        // 设置结束的基本块
+        if(switchEndBB->hasNPredecessorsOrMore(1)) {
+            switchEndBB->insertInto(function);
+            builder.SetInsertPoint(switchEndBB);
+        }
     }
     return nullptr;
 }
@@ -2348,7 +2439,7 @@ std::any Visitor::visitJumpStatement(ZigCCParser::JumpStatementContext *ctx)
 {
     if (ctx->Break() != nullptr) {
         // Second with WHILE_DONE & FOR_DONE
-        if(nullptr == this->cond_done_BB_pair) {
+        if(nullptr == this->cond_done_BB_pair || nullptr == this->cond_done_BB_pair->second) {
             std::cout << "Error: Using break out of loop-body." << std::endl;
             return nullptr;
         }
@@ -2356,7 +2447,7 @@ std::any Visitor::visitJumpStatement(ZigCCParser::JumpStatementContext *ctx)
         return nullptr;
     } else if (ctx->Continue() != nullptr) {
         // Firtst with WHILE_COND & FOR_TAIL
-        if(nullptr == cond_done_BB_pair) {
+        if(nullptr == this->cond_done_BB_pair || nullptr == this->cond_done_BB_pair->first) {
             std::cout << "Error: Using break out of loop-body." << std::endl;
             return nullptr;
         }
