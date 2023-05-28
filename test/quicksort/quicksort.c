@@ -1,7 +1,7 @@
 int printf(char *s, ...);
 int scanf(char *s, ...);
 
-void quicksort(int A[100], int left, int right) {
+void quicksort(int *A, int left, int right) {
     int i;
     int j;
     int x;
@@ -45,7 +45,7 @@ int main()
     }
     int left = 0;
     int right = N - 1;
-    quicksort(B, left, right);
+    quicksort(&B[0], left, right);
     i = 0;
     while(i < N) {
         printf("%d\n", B[i]);
