@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
     }
     if (NoInputFile)
         // std::cout << "ZigCC: fatal error: no input files" << std::endl;
-        InputFile = "../test/3-classbase.cpp";
+        InputFile = "../test/4-inheritance_polymorphism.cpp";
     // if (InvalidArg || NoInputFile) {
     //     std::cout << "compilation terminated." << std::endl;
     //     return EXIT_FAILURE;

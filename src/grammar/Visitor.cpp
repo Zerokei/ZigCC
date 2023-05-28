@@ -836,7 +836,9 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
                 }
             }
         }
-
+        if (prev_ctx != nullptr) {
+            ctx = prev_ctx;
+        }
         // 找到成员的定义并检查权限
         size_t member_index = -1;
         llvm::Function* func = nullptr;
@@ -870,7 +872,7 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
                 }
             }
         }
-        if ((member_index == -1 && prev_ctx == nullptr) || (func == nullptr && prev_ctx != nullptr)) {
+        if ((member_index == -1 && prev_ctx == nullptr) && (func == nullptr && prev_ctx != nullptr)) {
             std::cout << "Error: Use of undeclared identifier '" << classname << "." << membername << "'" << std::endl;
             return nullptr;
         } else if (member_index != -1) {
@@ -886,7 +888,9 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
                 return builder.CreatePointerCast(object_alloc, ret_type->getPointerTo());
             }
         } else if (func != nullptr) {
-            return nullptr;
+            builder.CreateCall(func);
+            std::cout << "Return from a.f()" << std::endl;
+            return (llvm::Value*)builder.getInt32(0);
         }
     } else if ((ctx->Arrow() != nullptr) || (ctx->LeftParen() != nullptr)) { // a->x
         ZigCCParser::PostfixExpressionContext * prev_ctx = nullptr;
@@ -985,7 +989,7 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
                 }
             }
         }
-        if ((member_index == -1 && prev_ctx == nullptr) || (func == nullptr && prev_ctx != nullptr)) {
+        if ((member_index == -1 && prev_ctx == nullptr) && (func == nullptr && prev_ctx != nullptr)) {
             std::cout << "Error: Use of undeclared identifier '" << classname << "." << membername << "'" << std::endl;
             return nullptr;
         } else if (member_index != -1) {
@@ -1001,7 +1005,9 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
                 return builder.CreatePointerCast(object_alloc, ret_type->getPointerTo());
             }
         } else if (func != nullptr) {
-
+            builder.CreateCall(func);
+            std::cout << "Return from a->f()" << std::endl;
+            return (llvm::Value*)builder.getInt32(0);
         }
     } else if (ctx->LeftBracket() && ctx->RightBracket()) {
         std::vector<llvm::Value*> Indices;
@@ -1381,6 +1387,7 @@ std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpre
     llvm::Value* result = nullptr;
     llvm::Value* ret_ptr = nullptr;
     auto pointerMemberExpression_0 = visitPointerMemberExpression(ctx->pointerMemberExpression(0));
+    std::cout << "return from visitPointerMemberExpression" << std::endl;
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (pointerMemberExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(pointerMemberExpression_0);
@@ -3748,7 +3755,7 @@ std::any Visitor::visitClassHead(ZigCCParser::ClassHeadContext *ctx)
     auto baseclass = std::string("");
     auto heritance_access = std::string("");
     if (auto baseClause = ctx->baseClause()) {
-        auto pair = std::any_cast< std::pair<std::string, std::string> >(visitBaseClause(baseClause));
+        auto pair = std::any_cast< std::pair<std::string, Access> >(visitBaseClause(baseClause));
         baseclass = pair.first;
         heritance_access = pair.second;
     }
@@ -3801,6 +3808,41 @@ std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationConte
 
     std::vector<llvm::Type*> member_types;
 
+    ClassType* parent_classinfo = nullptr;
+    llvm::Type* parent_type = nullptr;
+
+    if (classinfo->ParentClass != "") {
+        // 请勿模仿此处写法，此处为了方便实现，直接将父类的成员变量加入到子类中
+        // 实际上应当调用父类构造函数来实现
+        for (auto it = scopes.back().classes.rbegin(); it != scopes.back().classes.rend(); it++) {
+            if (std::get<0>(*it) == classinfo->ParentClass) {
+                parent_classinfo = std::get<1>(*it);
+                parent_type = std::get<2>(*it);
+                break;
+            }
+        }
+        if (parent_classinfo == nullptr) {
+            std::cout << "Error: Parent class not found" << std::endl;
+        }
+        for (auto var : parent_classinfo->variables) {
+            variables.push_back(var);
+        }
+        for (auto func : parent_classinfo->functions) {
+            functions[func.first] = func.second;
+        }
+        for (auto ctor : parent_classinfo->constructors) {
+            constructors[ctor.first] = ctor.second;
+        }
+        for (auto vtable : parent_classinfo->VTable) {
+            VTable.push_back(vtable);
+        }
+        
+        int member_num = parent_type->getStructNumElements();
+        for (int i = 0; i < member_num; i++) {
+            member_types.push_back(parent_type->getStructElementType(i));
+        }
+    }
+
     if (MemberDecl != nullptr) {
         for (int i = 0; i < ctx->memberdeclaration().size(); i++) {
             Access access = Access::Public;
@@ -3827,13 +3869,38 @@ std::any Visitor::visitMemberSpecification(ZigCCParser::MemberSpecificationConte
                 } else if (pair.second == "ctor") {
                     constructors[pair.first->getName().str()] = access;
                 } else if (pair.second == "virtual") {
+                    // 如果 virtual 函数实现了，则 erase 原先的
+                    for (auto it = VTable.begin(); it != VTable.end(); it++) {
+                        if (*it == pair.first->getName().str()) {
+                            VTable.erase(it);
+                            break;
+                        }
+                    }
                     VTable.push_back(pair.first->getName().str());
                 }
             } else if (Member.type() == typeid(std::pair< llvm::Type*, std::vector<std::string> >)) {
                 std::pair< llvm::Type*, std::vector<std::string> > pair = std::any_cast<std::pair< llvm::Type*, std::vector<std::string> >>(Member);
+                int index = 0;
                 for (auto name : pair.second) {
+                    // 判断父类是否已经有这一定义，有就 erase
+                    for (auto it = variables.begin(); it != variables.end(); it++) {
+                        if (it->first == name) {
+                            variables.erase(it);
+                            break;
+                        }
+                        index++;
+                    }
                     variables.push_back(std::make_pair(name, access));
                 }
+                
+                for (auto it = member_types.begin(); it != member_types.end(); it++) {
+                    if (index == 0) {
+                        member_types.erase(it);
+                        break;
+                    }
+                    index--;
+                }
+
                 for (int i = 0; i < pair.second.size(); i++) {
                     member_types.push_back(pair.first);
                 }

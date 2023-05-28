@@ -1,25 +1,22 @@
-#include <iostream>
+int printf(char *s, ...);
 
 class Base
 {
 public:
 	virtual void func() {
-		std::cout << "Base!" << std::endl;
+		printf("Base!\n");
 	}
-public:
-    void print() {
-        std::cout << "a = " << a << std::endl;
-    }
 protected:
     int a;
 private:
     int b;
 };
-class Derived :public Base
+
+class Derived : public Base
 {
 public:
 	virtual void func() {
-		std::cout << "Derived!" << std::endl;
+		printf("Derived!\n");
 	}
 private:
     int b;
@@ -31,12 +28,8 @@ int main()
     Derived derived;
     Base* p = new Derived;
 
-    base.print();
 	base.func();
-
-    derived.print();
 	derived.func();
-
     p->func();
 
 	return 0;
