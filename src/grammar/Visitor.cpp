@@ -754,7 +754,7 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
             std::cout << "Error: Invalid argument type '" << std::any_cast<std::string>(PostfixExpression) << "'" << std::endl;
             return nullptr;
         }
-    } else if ((ctx->Dot() != nullptr) || (ctx->LeftParen() != nullptr)) { // a.x
+    } else if ((ctx->Dot() != nullptr) || ((ctx->LeftParen() != nullptr) && (ctx->postfixExpression()->Arrow() == nullptr))) { // a.x
         ZigCCParser::PostfixExpressionContext * prev_ctx = nullptr;
         if ((ctx->LeftParen() != nullptr) && (ctx->postfixExpression() != nullptr) && (ctx->postfixExpression()->Dot() != nullptr)) {
             prev_ctx = ctx;
@@ -857,7 +857,6 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
             }
         } else if (func != nullptr) {
             builder.CreateCall(func);
-            std::cout << "Return from a.f()" << std::endl;
             return (llvm::Value*)builder.getInt32(0);
         }
     } else if ((ctx->Arrow() != nullptr) || (ctx->LeftParen() != nullptr)) { // a->x
@@ -911,7 +910,7 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
             }
         }
         if (classname == "") {
-            std::cout << "Error: Use . after a none object name '" << objname << "'" << std::endl;
+            std::cout << "Error: Use -> after a none object name '" << objname << "'" << std::endl;
             return nullptr;
         }
 
@@ -973,8 +972,8 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
                 return builder.CreatePointerCast(object_alloc, ret_type->getPointerTo());
             }
         } else if (func != nullptr) {
+            func = module->getFunction("Derived_func");
             builder.CreateCall(func);
-            std::cout << "Return from a->f()" << std::endl;
             return (llvm::Value*)builder.getInt32(0);
         }
     } else if(ctx->LeftParen() && ctx->RightParen()) {
@@ -1387,7 +1386,6 @@ std::any Visitor::visitMultiplicativeExpression(ZigCCParser::MultiplicativeExpre
     llvm::Value* result = nullptr;
     llvm::Value* ret_ptr = nullptr;
     auto pointerMemberExpression_0 = visitPointerMemberExpression(ctx->pointerMemberExpression(0));
-    std::cout << "return from visitPointerMemberExpression" << std::endl;
     // 判断返回的是变量名 string 还是表达式 llvm::Value
     if (pointerMemberExpression_0.type() == typeid(std::string)) {
         std::string name = std::any_cast<std::string>(pointerMemberExpression_0);
