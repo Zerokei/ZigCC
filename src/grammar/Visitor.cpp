@@ -1230,13 +1230,18 @@ std::any Visitor::visitNewExpression(ZigCCParser::NewExpressionContext *ctx)
                     if (std::get<0>(thisclass) == classname) {
                         if (ctx->newTypeId()->newDeclarator() != nullptr) {
                             // 定义数组
-
+                            llvm::Value* array_size = std::any_cast<llvm::Value*>(visitExpression(ctx->newTypeId()->newDeclarator()->noPointerNewDeclarator()->expression()));
+                            llvm::Type* array_type = llvm::ArrayType::get(std::get<2>(thisclass), static_cast<llvm::ConstantInt*>(array_size)->getSExtValue());
+                            llvm::Value* array_alloc = builder.CreateAlloca(array_type);
+                            return array_alloc;
                         } else if (ctx->newInitializer() == nullptr) {
                             // 无参数构造函数
-                            
+                            llvm::Value* alloc = builder.CreateAlloca(std::get<2>(thisclass));
+                            return alloc;
                         } else {
                             // 有参数构造函数
-                            
+                            llvm::Value* alloc = builder.CreateAlloca(std::get<2>(thisclass));
+                            return alloc;
                         }
                     }
                 }
