@@ -835,11 +835,13 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
                             return nullptr;
                         }
                         func = module->getFunction(classname + "_" + membername);
+                        goto _TAG_FIND_FUNC;
                     }
                     // TODO: 我们不考虑主动调用构造函数和析构函数的情况，只考虑调用成员函数
                 }
             }
         }
+_TAG_FIND_FUNC:
         if ((member_index == -1 && prev_ctx == nullptr) && (func == nullptr && prev_ctx != nullptr)) {
             std::cout << "Error: Use of undeclared identifier '" << classname << "." << membername << "'" << std::endl;
             return nullptr;
@@ -951,11 +953,13 @@ std::any Visitor::visitPostfixExpression(ZigCCParser::PostfixExpressionContext *
                             return nullptr;
                         }
                         func = module->getFunction(classname + "_" + membername);
+                        goto __ANOTHER_TAG_FIND_FUNC;
                     }
                     // TODO: 我们不考虑主动调用构造函数和析构函数的情况，只考虑调用成员函数
                 }
             }
         }
+__ANOTHER_TAG_FIND_FUNC:
         if ((member_index == -1 && prev_ctx == nullptr) && (func == nullptr && prev_ctx != nullptr)) {
             std::cout << "Error: Use of undeclared identifier '" << classname << "." << membername << "'" << std::endl;
             return nullptr;
