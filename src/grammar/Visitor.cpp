@@ -2236,6 +2236,7 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
                 std::vector<std::string> param_names;
                 std::vector<llvm::Value *> param_values;
                 std::vector<llvm::Type *> param_types;
+                // bool has_expression = false;
                 if(L_paren = _L_paren_noPointerDeclarator->LeftParen()) {
                     // 单参数
                     fun_name = temp_name;
@@ -2281,13 +2282,13 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
                     }
                 } else {
                     // 通过式子值获得参数类型
+                    // has_expression = true;
                     for(const auto &value: param_values) {
                         llvm::Type *temp_type = value->getType();
                         if(value)
                         param_types.push_back(temp_type);
                     }
                 }
-                
 
                 // 根据函数，获得函数要求的参数类型
                 llvm::ArrayRef<llvm::Type *> _array_need_param_types = callee_type->params();
@@ -2295,6 +2296,23 @@ std::any Visitor::visitSimpleDeclaration(ZigCCParser::SimpleDeclarationContext *
 
                 if (need_param_types.size() == param_types.size() || callee_type->isVarArg() && need_param_types.size() <= param_types.size()) {
                     // TODO: 类型检查与匹配，如果无法 cast 应报错
+                    for(size_t i = 0; i < param_values.size(); ++i) {
+                        llvm::Value *temp_value = param_values[i];
+                        if(temp_value->getType()->isArrayTy()) {
+                            std::vector<llvm::Value *> Indices;
+                            Indices.push_back(builder.getInt32(0));
+                            Indices.push_back(builder.getInt32(0));
+
+                            llvm::Type *element_type = temp_value->getType()->getArrayElementType();
+                            auto temp_alloca = builder.CreateAlloca(temp_value->getType());
+                            builder.CreateStore(temp_value, temp_alloca);
+
+
+                            auto GEP = builder.CreateInBoundsGEP(temp_alloca->getType()->getNonOpaquePointerElementType(), temp_alloca, Indices);
+                            // temp_value = builder.CreateLoad(element_type, GEP);
+                            param_values[i] = GEP;
+                        }
+                    }
                     builder.CreateCall(callee_type, callee, param_values);
                     continue;
                 } else {
@@ -3139,8 +3157,18 @@ std::any Visitor::visitFunctionDefinition(ZigCCParser::FunctionDefinitionContext
     //      （不需要检查 scope 中是否已经有同名变量）
     auto fun_arg_iter = function->arg_begin();
     for (const auto& param: params) {
+        llvm::Value *arg_value = &*fun_arg_iter;
         std::string param_name = param.first;
         llvm::Type *param_type = param.second;
+
+        // llvm::Value *array = builder.CreateLoad(arg_value->getType()->getNonOpaquePointerElementType(), arg_value);
+        // if(arg_value->getType()->isArrayTy()) {
+        //     llvm::Type *element_type = arg_value->getType()->getArrayElementType();
+        //     auto GEP = builder.CreateInBoundsGEP(arg_value->getType()->getNonOpaquePointerElementType(), arg_value, 0);
+        //     arg_value = builder.CreateLoad(element_type, GEP);
+        //     param_type = arg_value->getType();
+        // }
+
         auto alloca = this->builder.CreateAlloca(param_type, nullptr, param_name);
         builder.CreateStore(fun_arg_iter, alloca);
         fun_arg_iter++;
