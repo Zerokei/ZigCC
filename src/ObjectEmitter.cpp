@@ -12,7 +12,6 @@ void ZigCC::ObjectEmitter::emit(const std::unique_ptr<llvm::Module> &module, con
         // auto cpu = "generic-rv64";
         auto cpu = "generic";
         auto features = "";
-
         llvm::TargetOptions opt;
         auto RM = llvm::Optional<llvm::Reloc::Model>();
         auto targetMachine = target->createTargetMachine(targetTriple, cpu, features, opt, RM);

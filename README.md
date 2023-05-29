@@ -24,7 +24,11 @@
 # 根据 dockerfile 生成运行时环境
 $ docker build -t zigcc:v1.0 .
 # 进入 docker 镜像进行调试
+<<<<<<< HEAD
 $ docker run -it -v $PWD:/zigcc --rm zigcc:v1.0
+=======
+$ docker run -it -v /path/to/ZigCC:/zigcc --rm zigcc:v1.0
+>>>>>>> f3c16e55fd48fe935964b1c7d2ebd6c89915eb27
 # 编译 zigcc
 $ make clean && make -j
 # 编译 riscv 可执行文件

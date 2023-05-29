@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
     int InvalidArg = 0;
     int NoInputFile = 1;
     std::string target_isa = "x86";
-    for (int i = 1; i < 2; i++) {
+    for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
             if (argv[i][1] == 'o') {
                 if (i == argc - 1) {
@@ -48,6 +48,7 @@ int main(int argc, char* argv[])
             InputFile = argv[i];
             NoInputFile = 0;
     }
+    std::cout<<target_isa<<std::endl;
     if (NoInputFile)
         // std::cout << "ZigCC: fatal error: no input files" << std::endl;
         InputFile = "../test/4-inheritance_polymorphism.cpp";
