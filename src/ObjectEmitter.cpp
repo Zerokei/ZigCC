@@ -1,14 +1,15 @@
 #include "ObjectEmitter.h"
+#include <cstdlib>
 
 void ZigCC::ObjectEmitter::emit(const std::unique_ptr<llvm::Module> &module, const std::string &filename, std::string &error)
 {
-    // auto targetTriple = "riscv64-unknown-linux-gnu";
-    auto targetTriple = llvm::sys::getDefaultTargetTriple();
+    auto targetTriple = "riscv64-unknown-linux-gnu";
+    // auto targetTriple = llvm::sys::getDefaultTargetTriple();
     auto target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
     if (!target) return;
 
-    // auto cpu = "generic-rv64";
-    auto cpu = "generic";
+    auto cpu = "generic-rv64";
+    // auto cpu = "generic";
     auto features = "";
 
     llvm::TargetOptions opt;
@@ -37,4 +38,7 @@ void ZigCC::ObjectEmitter::emit(const std::unique_ptr<llvm::Module> &module, con
     }
     pass.run(*module);
     dest.flush();
+    std::system("clang -target riscv64-unknown-linux-gnu -march=rv64g -c ir.ll -o a.o");
+    std::system("riscv64-linux-gnu-gcc -no-pie a.o");
+    std::system("rm a.o"); 
 }
