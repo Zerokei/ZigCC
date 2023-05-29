@@ -25,6 +25,8 @@
 $ docker build -t zigcc:v1.0 .
 # 进入 docker 镜像进行调试
 $ docker run -it -v ~/ZigCC:/zigcc --rm zigcc:v1.0
+# 编译 zigcc
+$ make clean && make -j
 # 编译 riscv 可执行文件
 $ bin/debug/zigcc test/quicksort/quicksort.c
 # qemu 运行可执行文件
