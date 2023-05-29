@@ -20,7 +20,8 @@ int main(int argc, char* argv[])
     // Deal with the input argument
     int InvalidArg = 0;
     int NoInputFile = 1;
-    for (int i = 1; i < argc; i++) {
+    std::string target_isa = "x86";
+    for (int i = 1; i < 2; i++) {
         if (argv[i][0] == '-') {
             if (argv[i][1] == 'o') {
                 if (i == argc - 1) {
@@ -28,6 +29,16 @@ int main(int argc, char* argv[])
                     InvalidArg = 1;
                 }
                 TargetFile = argv[++i];
+            }
+            else if (argv[i][1] == '-') {
+                std::string arg(argv[i]);
+                if (arg.find("--target") == 0) {
+                    target_isa = arg.substr(9);
+                }
+                else {
+                    std::cout << "ZigCC: error: unrecognized command line option " << argv[i] << std::endl;
+                    InvalidArg = 1;
+                }
             }
             else {
                 std::cout << "ZigCC: error: unrecognized command line option " << argv[i] << std::endl;
@@ -63,9 +74,10 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+
     // 输出并编译 LLVM IR
     std::string error;
-    ZigCC::ObjectEmitter::emit(FE.visitor.module, TargetFile, error);
+    ZigCC::ObjectEmitter::emit(FE.visitor.module, TargetFile, error, target_isa);
     if (!error.empty()) {
         llvm::errs() << error;
     }

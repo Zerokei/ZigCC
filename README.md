@@ -29,6 +29,8 @@ $ docker run -it -v $PWD:/zigcc --rm zigcc:v1.0
 $ make clean && make -j
 # 编译 riscv 可执行文件
 $ bin/debug/zigcc test/quicksort/quicksort.c
+$ bin/debug/zigcc test/quicksort/quicksort.c --target=rv64
+$ bin/debug/zigcc test/quicksort/quicksort.c --target=x86
 # qemu 运行可执行文件
 $ qemu-riscv64-static a.out
 ```
