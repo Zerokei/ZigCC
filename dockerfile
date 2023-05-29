@@ -15,6 +15,7 @@ RUN apt-get install -y gcc
 RUN apt-get install -y make
 RUN apt-get install -y vim
 RUN apt-get install -y gcc-riscv64-linux-gnu gdb-multiarch
+RUN apt-get install -y gcc-arm-linux-gnueabihf
 RUN apt-get install -y clang qemu-user-static
 RUN cp /usr/riscv64-linux-gnu/lib/libc.so.6 /lib/libc.so.6
 RUN cp /usr/riscv64-linux-gnu/lib/ld-linux-riscv64-lp64d.so.1 /lib/ld-linux-riscv64-lp64d.so.1
