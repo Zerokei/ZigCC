@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
             InputFile = argv[i];
             NoInputFile = 0;
     }
-    std::cout<<target_isa<<std::endl;
+    // std::cout<<target_isa<<std::endl;
     if (NoInputFile)
         // std::cout << "ZigCC: fatal error: no input files" << std::endl;
         InputFile = "../test/4-inheritance_polymorphism.cpp";

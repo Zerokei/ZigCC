@@ -30,7 +30,7 @@ int main()
 
 	base.func();
 	derived.func();
-    p->func();
+    p->func()
 
 	return 0;
 }

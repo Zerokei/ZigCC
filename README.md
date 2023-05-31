@@ -1,4 +1,7 @@
 # ZigCC: A Simplified C++ Compiler using antlr4 and llvm
+
+![](cover.png)
+
 ## 2022-2023学年春夏学期浙江大学编译原理课程 Project
 
 ## 项目架构
